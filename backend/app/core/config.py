@@ -17,10 +17,7 @@ class CustomBaseSettings(BaseSettings):
 
 
 class DBSettings(CustomBaseSettings):
-    model_config = SettingsConfigDict(
-        **CustomBaseSettings.model_config,
-        env_prefix="DB_",
-    )
+    model_config = CustomBaseSettings.model_config.update(env_prefix="DB_")
 
     host: str
     port: int
@@ -44,10 +41,7 @@ class DBSettings(CustomBaseSettings):
 
 
 class RedisSettings(CustomBaseSettings):
-    model_config = SettingsConfigDict(
-        **CustomBaseSettings.model_config,
-        env_prefix="REDIS_",
-    )
+    model_config = CustomBaseSettings.model_config.update(env_prefix="REDIS_")
 
     host: str
     port: int
@@ -69,19 +63,13 @@ class RedisSettings(CustomBaseSettings):
 
 
 class CORSSettings(CustomBaseSettings):
-    model_config = SettingsConfigDict(
-        **CustomBaseSettings.model_config,
-        env_prefix="CORS_",
-    )
+    model_config = CustomBaseSettings.model_config.update(env_prefix="CORS_")
 
     origins: list[str]
 
 
 class AuthSettings(CustomBaseSettings):
-    model_config = SettingsConfigDict(
-        **CustomBaseSettings.model_config,
-        env_prefix="AUTH_",
-    )
+    model_config = CustomBaseSettings.model_config.update(env_prefix="AUTH_")
 
     jwt_secret_key: SecretStr
     access_token_expire_seconds: int
