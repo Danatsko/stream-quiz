@@ -10,6 +10,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.core.db import close_db_connection
+from app.core.redis import close_redis_connection
 
 
 @asynccontextmanager
@@ -17,6 +18,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, Any]:
     yield
 
     await close_db_connection()
+    await close_redis_connection()
 
 
 app = FastAPI(lifespan=lifespan)
