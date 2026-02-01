@@ -12,11 +12,11 @@ from alembic import context
 BASE_DIR_PATH = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(BASE_DIR_PATH))
 
-from app.core.config import settings
-from app.core.models import Base
+from app.core.config import settings  # noqa: E402
+from app.core.models import Base  # noqa: E402
 
-from app.users import models as users_models  # noqa
-from app.auth import models as auth_models  # noqa
+from app.users import models as users_models  # noqa: E402, F401
+from app.auth import models as auth_models  # noqa: E402, F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
