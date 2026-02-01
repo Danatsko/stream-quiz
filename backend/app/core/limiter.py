@@ -7,4 +7,5 @@ limiter = Limiter(
     key_func=get_remote_address,
     strategy="sliding-window-counter",
     storage_uri=settings.redis.url,
+    swallow_errors=True,
 )
