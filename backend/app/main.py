@@ -2,7 +2,7 @@ import asyncio
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from typing import AsyncGenerator, Any
+from typing import AsyncGenerator, Any, Annotated
 
 from fastapi import FastAPI, status, Depends, HTTPException, Request, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
@@ -65,8 +65,8 @@ app.include_router(
 @limiter.limit("300/minute")
 async def health(
     request: Request,
-    session: AsyncSession = Depends(get_db_session),
-    redis_client: Redis = Depends(get_redis_client),
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+    redis_client: Annotated[Redis, Depends(get_redis_client)],
 ) -> HealthResponse:
     checks_registry = {
         "database": lambda: session.execute(text("SELECT 1")),
