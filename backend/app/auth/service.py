@@ -1,0 +1,118 @@
+import uuid
+import hashlib
+import hmac
+from datetime import datetime, timezone, timedelta
+import secrets
+from typing import Any
+
+from fastapi import HTTPException, status
+import jwt
+from pwdlib import PasswordHash
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.auth.db_crud import create_refresh_token
+from app.core.config import settings
+from app.users import create_user
+
+password_hash = PasswordHash.recommended()
+
+
+async def generate_access_token(user_uuid: uuid.UUID) -> str:
+    iat = datetime.now(tz=timezone.utc)
+    exp = iat + timedelta(seconds=settings.auth.access_token_expire_seconds)
+    data_to_encode = {
+        "sub": str(user_uuid),
+        "iat": iat,
+        "exp": exp,
+    }
+    token = jwt.encode(
+        payload=data_to_encode,
+        key=settings.auth.jwt_secret_key.get_secret_value(),
+        algorithm=settings.auth.jwt_algorithm,
+    )
+
+    return token
+
+
+async def generate_refresh_token() -> str:
+    token = secrets.token_hex(nbytes=32)
+
+    return token
+
+
+async def pepper_refresh_token(token: str) -> str:
+    token_bytes = token.encode(encoding="utf-8")
+    pepper_bytes = settings.auth.refresh_token_pepper.get_secret_value().encode(
+        encoding="utf-8"
+    )
+    peppered_token = hmac.new(
+        key=pepper_bytes,
+        msg=token_bytes,
+        digestmod=hashlib.sha256,
+    ).hexdigest()
+
+    return peppered_token
+
+
+async def hash_password(password: str) -> str:
+    password_bytes = password.encode(encoding="utf-8")
+    pepper_bytes = settings.auth.password_pepper.get_secret_value().encode(
+        encoding="utf-8"
+    )
+    peppered_password = hmac.new(
+        key=pepper_bytes,
+        msg=password_bytes,
+        digestmod=hashlib.sha256,
+    ).hexdigest()
+    hashed_password = password_hash.hash(password=peppered_password)
+
+    return hashed_password
+
+
+async def registration(
+    username: str, email: str, password: str, session: AsyncSession
+) -> dict[str, Any]:
+    hashed_password = await hash_password(password=password)
+    user_db = await create_user(
+        username=username,
+        email=email,
+        password=hashed_password,
+        session=session,
+    )
+    access_token = await generate_access_token(user_uuid=user_db.uuid)
+    refresh_token = await generate_refresh_token()
+    peppered_refresh_token = await pepper_refresh_token(token=refresh_token)
+    refresh_token_expires_at = datetime.now(tz=timezone.utc) + timedelta(
+        seconds=settings.auth.refresh_token_expire_seconds
+    )
+
+    try:
+        await create_refresh_token(
+            user_id=user_db.id,
+            token=peppered_refresh_token,
+            expires_at=refresh_token_expires_at,
+            session=session,
+        )
+    except IntegrityError as exc:
+        msg = str(exc.orig)
+
+        if "Key (id)=" in msg:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Something went wrong",
+            )
+        elif "Key (token)=" in msg:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Something went wrong",
+            )
+        else:
+            raise exc
+
+    result = {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+    }
+
+    return result

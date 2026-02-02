@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import AsyncGenerator, Any
 
-from fastapi import FastAPI, status, Depends, HTTPException, Request
+from fastapi import FastAPI, status, Depends, HTTPException, Request, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from redis.asyncio import Redis
 from slowapi import _rate_limit_exceeded_handler
@@ -13,6 +13,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import auth_router
 from app.core.config import settings
 from app.core.health import perform_check
 from app.core.limiter import limiter
@@ -42,6 +43,17 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+api_router_v1 = APIRouter()
+api_router_v1.include_router(
+    router=auth_router,
+    prefix="/auth",
+    tags=["auth"],
+)
+app.include_router(
+    router=api_router_v1,
+    prefix="/api/v1",
 )
 
 

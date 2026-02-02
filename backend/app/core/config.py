@@ -70,6 +70,7 @@ class CORSSettings(CustomBaseSettings):
 class AuthSettings(CustomBaseSettings):
     model_config = CustomBaseSettings.model_config.update(env_prefix="AUTH_")
 
+    jwt_algorithm: str
     jwt_secret_key: SecretStr
     access_token_expire_seconds: int
     refresh_token_expire_seconds: int
