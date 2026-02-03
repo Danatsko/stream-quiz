@@ -4,8 +4,16 @@ from fastapi import APIRouter, status, Request, Response, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import ensure_unauthenticated_user
-from app.auth.schemas import RegistrationResponse, RegistrationRequest
-from app.auth.service import registration as service_registration
+from app.auth.schemas import (
+    RegistrationResponse,
+    RegistrationRequest,
+    LoginResponse,
+    LoginRequest,
+)
+from app.auth.service import (
+    registration as service_registration,
+    login as service_login,
+)
 from app.core.config import settings
 from app.core.db import get_db_session
 from app.core.limiter import limiter
@@ -49,3 +57,41 @@ async def registration(
     )
 
     return RegistrationResponse()
+
+
+@auth_router.post(
+    path="/login",
+    status_code=status.HTTP_200_OK,
+    response_model=LoginResponse,
+    dependencies=[Depends(ensure_unauthenticated_user)],
+)
+@limiter.limit("5/minute")
+async def login(
+    request: Request,
+    response: Response,
+    login_data: LoginRequest,
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> LoginResponse:
+    result = await service_login(
+        **login_data.model_dump(),
+        session=session,
+    )
+
+    response.set_cookie(
+        key="access_token",
+        value=result["access_token"],
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=settings.auth.access_token_expire_seconds,
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=result["refresh_token"],
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=settings.auth.refresh_token_expire_seconds,
+    )
+
+    return LoginResponse()

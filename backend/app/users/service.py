@@ -2,7 +2,10 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.users.db_crud import create_user as db_crud_create_user
+from app.users.db_crud import (
+    create_user as db_crud_create_user,
+    get_user_by_email as db_crud_get_user_by_email,
+)
 from app.users.models import User
 
 
@@ -38,3 +41,12 @@ async def create_user(
             )
         else:
             raise exc
+
+
+async def get_user_by_email(email: str, session: AsyncSession) -> User | None:
+    user_db = await db_crud_get_user_by_email(
+        email=email,
+        session=session,
+    )
+
+    return user_db

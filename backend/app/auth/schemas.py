@@ -26,3 +26,12 @@ class RegistrationRequest(Base):
 
 class RegistrationResponse(Base):
     pass
+
+
+class LoginRequest(Base):
+    email: EmailStr
+    password: passwordAnnotated
+
+
+class LoginResponse(Base):
+    pass

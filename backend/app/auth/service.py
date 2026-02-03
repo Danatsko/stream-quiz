@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.db_crud import create_refresh_token
 from app.core.config import settings
-from app.users import create_user
+from app.users import create_user, get_user_by_email
 
 password_hash = PasswordHash.recommended()
 
@@ -70,6 +70,24 @@ async def hash_password(password: str) -> str:
     return hashed_password
 
 
+async def verify_password(password: str, hashed_password: str) -> bool:
+    password_bytes = password.encode(encoding="utf-8")
+    pepper_bytes = settings.auth.password_pepper.get_secret_value().encode(
+        encoding="utf-8"
+    )
+    peppered_password = hmac.new(
+        key=pepper_bytes,
+        msg=password_bytes,
+        digestmod=hashlib.sha256,
+    ).hexdigest()
+    is_verified = password_hash.verify(
+        password=peppered_password,
+        hash=hashed_password,
+    )
+
+    return is_verified
+
+
 async def registration(
     username: str, email: str, password: str, session: AsyncSession
 ) -> dict[str, Any]:
@@ -80,6 +98,67 @@ async def registration(
         password=hashed_password,
         session=session,
     )
+    access_token = await generate_access_token(user_uuid=user_db.uuid)
+    refresh_token = await generate_refresh_token()
+    peppered_refresh_token = await pepper_refresh_token(token=refresh_token)
+    refresh_token_expires_at = datetime.now(tz=timezone.utc) + timedelta(
+        seconds=settings.auth.refresh_token_expire_seconds
+    )
+
+    try:
+        await create_refresh_token(
+            user_id=user_db.id,
+            token=peppered_refresh_token,
+            expires_at=refresh_token_expires_at,
+            session=session,
+        )
+    except IntegrityError as exc:
+        msg = str(exc.orig)
+
+        if "Key (id)=" in msg:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Something went wrong",
+            )
+        elif "Key (token)=" in msg:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Something went wrong",
+            )
+        else:
+            raise exc
+
+    result = {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+    }
+
+    return result
+
+
+async def login(email: str, password: str, session: AsyncSession) -> dict[str, Any]:
+    user_db = await get_user_by_email(
+        email=email,
+        session=session,
+    )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect credentials",
+        )
+
+    is_valid_password = await verify_password(
+        password=password,
+        hashed_password=user_db.password,
+    )
+
+    if not is_valid_password:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect credentials",
+        )
+
     access_token = await generate_access_token(user_uuid=user_db.uuid)
     refresh_token = await generate_refresh_token()
     peppered_refresh_token = await pepper_refresh_token(token=refresh_token)
