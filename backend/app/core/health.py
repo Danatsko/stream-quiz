@@ -9,14 +9,20 @@ async def perform_check(
     start_time = time.perf_counter()
 
     try:
-        await asyncio.wait_for(check_func(), timeout=timeout)
+        await asyncio.wait_for(
+            fut=check_func(),
+            timeout=timeout,
+        )
 
         response_time_ms = (time.perf_counter() - start_time) * 1_000
 
         return {
             "status": True,
             "detail": "connected",
-            "response_time_ms": round(response_time_ms, 2),
+            "response_time_ms": round(
+                number=response_time_ms,
+                ndigits=2,
+            ),
         }
     except Exception as exc:
         response_time_ms = (time.perf_counter() - start_time) * 1_000
@@ -24,5 +30,8 @@ async def perform_check(
         return {
             "status": False,
             "detail": str(exc),
-            "response_time_ms": round(response_time_ms, 2),
+            "response_time_ms": round(
+                number=response_time_ms,
+                ndigits=2,
+            ),
         }

@@ -33,12 +33,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, Any]:
 app = FastAPI(lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(
-    RateLimitExceeded,
-    _rate_limit_exceeded_handler,
+    exc_class_or_status_code=RateLimitExceeded,
+    handler=_rate_limit_exceeded_handler,
 )
-app.add_middleware(SlowAPIMiddleware)
+app.add_middleware(middleware_class=SlowAPIMiddleware)
 app.add_middleware(
-    CORSMiddleware,
+    middleware_class=CORSMiddleware,
     allow_origins=settings.cors.origins,
     allow_credentials=True,
     allow_methods=["*"],
