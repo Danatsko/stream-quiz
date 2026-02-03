@@ -1,5 +1,5 @@
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 import jwt
 from fastapi import Cookie, HTTPException, status, Depends
@@ -10,10 +10,10 @@ from app.core.config import settings
 from app.core.redis import get_redis_client
 
 
-async def get_optional_user_uuid(
+async def get_optional_auth_context(
     redis_client: Annotated[Redis, Depends(get_redis_client)],
     access_token: Annotated[str | None, Cookie()] = None,
-) -> uuid.UUID | None:
+) -> dict[str, Any] | None:
     if access_token is None:
         return None
 
@@ -32,27 +32,30 @@ async def get_optional_user_uuid(
             algorithms=[settings.auth.jwt_algorithm],
         )
 
-        return uuid.UUID(payload["sub"])
+        return {
+            "access_token": access_token,
+            "user_uuid": uuid.UUID(payload["user_uuid"]),
+        }
     except (jwt.ExpiredSignatureError, jwt.PyJWTError):
         return None
 
 
-async def get_current_user_uuid(
-    user_uuid: Annotated[uuid.UUID | None, Depends(get_optional_user_uuid)],
-) -> uuid.UUID:
-    if user_uuid is None:
+async def get_current_auth_context(
+    auth_context: Annotated[dict[str, Any] | None, Depends(get_optional_auth_context)],
+) -> dict[str, Any]:
+    if auth_context is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required",
         )
 
-    return user_uuid
+    return auth_context
 
 
 async def ensure_unauthenticated_user(
-    user_uuid: Annotated[uuid.UUID | None, Depends(get_optional_user_uuid)],
+    auth_context: Annotated[dict[str, Any] | None, Depends(get_optional_auth_context)],
 ) -> None:
-    if user_uuid is not None:
+    if auth_context is not None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Already authenticated",
