@@ -34,3 +34,13 @@ async def get_user_by_email(email: str, session: AsyncSession) -> User | None:
     result = await session.scalar(stmt)
 
     return result
+
+
+async def get_user_by_id(id: int, session: AsyncSession) -> User | None:
+    stmt = select(User).where(
+        User.id == id,
+        User.deleted_at.is_(None),
+    )
+    result = await session.scalar(stmt)
+
+    return result

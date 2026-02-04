@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.users.db_crud import (
     create_user as db_crud_create_user,
     get_user_by_email as db_crud_get_user_by_email,
+    get_user_by_id as db_crud_get_user_by_id,
 )
 from app.users.models import User
 
@@ -46,6 +47,15 @@ async def create_user(
 async def get_user_by_email(email: str, session: AsyncSession) -> User | None:
     user_db = await db_crud_get_user_by_email(
         email=email,
+        session=session,
+    )
+
+    return user_db
+
+
+async def get_user_by_id(id: int, session: AsyncSession) -> User | None:
+    user_db = await db_crud_get_user_by_id(
+        id=id,
         session=session,
     )
 

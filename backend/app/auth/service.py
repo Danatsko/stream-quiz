@@ -12,10 +12,14 @@ from redis.asyncio import Redis
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.db_crud import create_refresh_token, revoke_refresh_token_by_token
+from app.auth.db_crud import (
+    create_refresh_token,
+    revoke_refresh_token_by_token,
+    get_refresh_token_by_token,
+)
 from app.auth.redis_crud import blacklist_access_token
 from app.core.config import settings
-from app.users import create_user, get_user_by_email
+from app.users import create_user, get_user_by_email, get_user_by_id
 
 password_hash = PasswordHash.recommended()
 
@@ -223,3 +227,67 @@ async def logout(
                 ttl=ttl,
                 redis_client=redis_client,
             )
+
+
+async def refresh(
+    access_token: str | None,
+    access_token_exp: int | None,
+    refresh_token: str,
+    session: AsyncSession,
+    redis_client: Redis,
+) -> dict[str, Any]:
+    if access_token is not None:
+        current_timestamp = datetime.now(tz=timezone.utc).timestamp()
+        ttl = int(access_token_exp - current_timestamp)
+
+        if ttl > 0:
+            await blacklist_access_token(
+                token=access_token,
+                ttl=ttl,
+                redis_client=redis_client,
+            )
+
+    peppered_refresh_token = await pepper_refresh_token(token=refresh_token)
+    refresh_token_db = await get_refresh_token_by_token(
+        token=peppered_refresh_token,
+        session=session,
+    )
+
+    if refresh_token_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+        )
+
+    if refresh_token_db.expires_at < datetime.now(tz=timezone.utc):
+        await revoke_refresh_token_by_token(
+            token=peppered_refresh_token,
+            session=session,
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+        )
+
+    user_db = await get_user_by_id(
+        id=refresh_token_db.user_id,
+        session=session,
+    )
+
+    if user_db is None:
+        await revoke_refresh_token_by_token(
+            token=peppered_refresh_token,
+            session=session,
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or deleted"
+        )
+
+    new_access_token = await generate_access_token(user_uuid=user_db.uuid)
+    result = {
+        "access_token": new_access_token,
+    }
+
+    return result

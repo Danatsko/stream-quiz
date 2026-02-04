@@ -39,3 +39,7 @@ class LoginResponse(Base):
 
 class LogoutResponse(Base):
     pass
+
+
+class RefreshResponse(Base):
+    pass
