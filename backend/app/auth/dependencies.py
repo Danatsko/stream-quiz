@@ -12,7 +12,7 @@ from app.core.redis import get_redis_client
 
 async def get_optional_auth_context(
     redis_client: Annotated[Redis, Depends(get_redis_client)],
-    access_token: Annotated[str | None, Cookie()] = None,
+    access_token: Annotated[str | None, Cookie(alias="access_token")] = None,
 ) -> dict[str, Any] | None:
     if access_token is None:
         return None
@@ -33,8 +33,9 @@ async def get_optional_auth_context(
         )
 
         return {
+            "user_uuid": uuid.UUID(payload["sub"]),
             "access_token": access_token,
-            "user_uuid": uuid.UUID(payload["user_uuid"]),
+            "payload": payload,
         }
     except (jwt.ExpiredSignatureError, jwt.PyJWTError):
         return None
@@ -60,3 +61,15 @@ async def ensure_unauthenticated_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Already authenticated",
         )
+
+
+async def get_current_refresh_token(
+    refresh_token: Annotated[str | None, Cookie(alias="refresh_token")] = None,
+) -> str:
+    if refresh_token is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token required",
+        )
+
+    return refresh_token

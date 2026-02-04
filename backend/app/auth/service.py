@@ -8,10 +8,12 @@ from typing import Any
 from fastapi import HTTPException, status
 import jwt
 from pwdlib import PasswordHash
+from redis.asyncio import Redis
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.db_crud import create_refresh_token
+from app.auth.db_crud import create_refresh_token, revoke_refresh_token_by_token
+from app.auth.redis_crud import blacklist_access_token
 from app.core.config import settings
 from app.users import create_user, get_user_by_email
 
@@ -195,3 +197,29 @@ async def login(email: str, password: str, session: AsyncSession) -> dict[str, A
     }
 
     return result
+
+
+async def logout(
+    access_token: str | None,
+    access_token_exp: int | None,
+    refresh_token: str,
+    session: AsyncSession,
+    redis_client: Redis,
+) -> None:
+    peppered_refresh_token = await pepper_refresh_token(token=refresh_token)
+
+    await revoke_refresh_token_by_token(
+        token=peppered_refresh_token,
+        session=session,
+    )
+
+    if access_token is not None:
+        current_timestamp = datetime.now(tz=timezone.utc).timestamp()
+        ttl = int(access_token_exp - current_timestamp)
+
+        if ttl > 0:
+            await blacklist_access_token(
+                token=access_token,
+                ttl=ttl,
+                redis_client=redis_client,
+            )

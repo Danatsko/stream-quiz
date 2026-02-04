@@ -1,22 +1,30 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, status, Request, Response, Depends
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import ensure_unauthenticated_user
+from app.auth.dependencies import (
+    get_optional_auth_context,
+    ensure_unauthenticated_user,
+    get_current_refresh_token,
+)
 from app.auth.schemas import (
     RegistrationResponse,
     RegistrationRequest,
     LoginResponse,
     LoginRequest,
+    LogoutResponse,
 )
 from app.auth.service import (
     registration as service_registration,
     login as service_login,
+    logout as service_logout,
 )
 from app.core.config import settings
 from app.core.db import get_db_session
 from app.core.limiter import limiter
+from app.core.redis import get_redis_client
 
 auth_router = APIRouter()
 
@@ -95,3 +103,48 @@ async def login(
     )
 
     return LoginResponse()
+
+
+@auth_router.post(
+    path="/logout",
+    status_code=status.HTTP_200_OK,
+    response_model=LogoutResponse,
+)
+@limiter.limit("5/minute")
+async def logout(
+    request: Request,
+    response: Response,
+    auth_context: Annotated[dict[str, Any] | None, Depends(get_optional_auth_context)],
+    refresh_token: Annotated[str, Depends(get_current_refresh_token)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+    redis_client: Annotated[Redis, Depends(get_redis_client)],
+) -> LogoutResponse:
+    access_token = None
+    access_token_exp = None
+
+    if auth_context is not None:
+        access_token = auth_context["access_token"]
+        access_token_exp = auth_context["payload"]["exp"]
+
+    await service_logout(
+        access_token=access_token,
+        access_token_exp=access_token_exp,
+        refresh_token=refresh_token,
+        session=session,
+        redis_client=redis_client,
+    )
+
+    response.delete_cookie(
+        key="access_token",
+        httponly=True,
+        secure=False,
+        samesite="lax",
+    )
+    response.delete_cookie(
+        key="refresh_token",
+        httponly=True,
+        secure=False,
+        samesite="lax",
+    )
+
+    return LogoutResponse()

@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import RefreshToken
@@ -18,3 +19,19 @@ async def create_refresh_token(
     await session.flush()
 
     return refresh_token
+
+
+async def revoke_refresh_token_by_token(token: str, session: AsyncSession) -> bool:
+    stmt = (
+        update(RefreshToken)
+        .where(
+            RefreshToken.token == token,
+            RefreshToken.is_revoked.is_(False),
+        )
+        .values(is_revoked=True)
+    )
+    result = await session.execute(stmt)
+
+    await session.flush()
+
+    return result.rowcount == 1

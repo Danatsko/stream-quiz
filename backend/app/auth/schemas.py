@@ -35,3 +35,7 @@ class LoginRequest(Base):
 
 class LoginResponse(Base):
     pass
+
+
+class LogoutResponse(Base):
+    pass
