@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field, computed_field, PostgresDsn, RedisDsn, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -13,6 +14,17 @@ class CustomBaseSettings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+
+class AppSettings(CustomBaseSettings):
+    model_config = CustomBaseSettings.model_config.update(env_prefix="APP_")
+
+    environment: Literal["development", "production", "testing"]
+
+    @computed_field
+    @property
+    def debug(self) -> bool:
+        return self.environment != "production"
 
 
 class DBSettings(CustomBaseSettings):
@@ -79,6 +91,7 @@ class AuthSettings(CustomBaseSettings):
 
 
 class Settings(CustomBaseSettings):
+    app: AppSettings = Field(default_factory=AppSettings)
     db: DBSettings = Field(default_factory=DBSettings)
     redis: RedisSettings = Field(default_factory=RedisSettings)
     cors: CORSSettings = Field(default_factory=CORSSettings)

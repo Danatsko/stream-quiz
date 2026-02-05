@@ -7,6 +7,7 @@ from app.core.config import settings
 _engine = create_async_engine(
     url=settings.db.url,
     pool_pre_ping=True,
+    echo=settings.app.debug,
 )
 _session_factory = async_sessionmaker(
     _engine,

@@ -30,7 +30,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, Any]:
     await close_redis_connection()
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan,
+    debug=settings.app.debug,
+)
 app.state.limiter = limiter
 app.add_exception_handler(
     exc_class_or_status_code=RateLimitExceeded,

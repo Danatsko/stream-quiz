@@ -53,7 +53,7 @@ async def registration(
         key="access_token",
         value=result["access_token"],
         httponly=True,
-        secure=False,
+        secure=(not settings.app.debug),
         samesite="lax",
         max_age=settings.auth.access_token_expire_seconds,
     )
@@ -61,7 +61,7 @@ async def registration(
         key="refresh_token",
         value=result["refresh_token"],
         httponly=True,
-        secure=False,
+        secure=(not settings.app.debug),
         samesite="lax",
         max_age=settings.auth.refresh_token_expire_seconds,
     )
@@ -91,7 +91,7 @@ async def login(
         key="access_token",
         value=result["access_token"],
         httponly=True,
-        secure=False,
+        secure=(not settings.app.debug),
         samesite="lax",
         max_age=settings.auth.access_token_expire_seconds,
     )
@@ -99,7 +99,7 @@ async def login(
         key="refresh_token",
         value=result["refresh_token"],
         httponly=True,
-        secure=False,
+        secure=(not settings.app.debug),
         samesite="lax",
         max_age=settings.auth.refresh_token_expire_seconds,
     )
@@ -139,13 +139,13 @@ async def logout(
     response.delete_cookie(
         key="access_token",
         httponly=True,
-        secure=False,
+        secure=(not settings.app.debug),
         samesite="lax",
     )
     response.delete_cookie(
         key="refresh_token",
         httponly=True,
-        secure=False,
+        secure=(not settings.app.debug),
         samesite="lax",
     )
 
@@ -185,7 +185,7 @@ async def refresh(
         key="access_token",
         value=result["access_token"],
         httponly=True,
-        secure=False,
+        secure=(not settings.app.debug),
         samesite="lax",
         max_age=settings.auth.access_token_expire_seconds,
     )
