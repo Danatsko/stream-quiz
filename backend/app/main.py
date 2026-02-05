@@ -20,6 +20,7 @@ from app.core.limiter import limiter
 from app.core.db import get_db_session, close_db_connection
 from app.core.redis import get_redis_client, close_redis_connection
 from app.core.schemas import HealthResponse
+from app.users import users_router
 
 
 @asynccontextmanager
@@ -53,6 +54,11 @@ api_router_v1.include_router(
     router=auth_router,
     prefix="/auth",
     tags=["auth"],
+)
+api_router_v1.include_router(
+    router=users_router,
+    prefix="/users",
+    tags=["users"],
 )
 app.include_router(
     router=api_router_v1,
