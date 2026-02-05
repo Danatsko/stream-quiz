@@ -282,7 +282,8 @@ async def refresh(
         )
 
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or deleted"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found or deleted",
         )
 
     new_access_token = await generate_access_token(user_uuid=user_db.uuid)
