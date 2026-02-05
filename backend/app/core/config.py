@@ -17,7 +17,12 @@ class CustomBaseSettings(BaseSettings):
 
 
 class AppSettings(CustomBaseSettings):
-    model_config = CustomBaseSettings.model_config.update(env_prefix="APP_")
+    model_config = SettingsConfigDict(
+        **{
+            **CustomBaseSettings.model_config,
+            "env_prefix": "APP_",
+        }
+    )
 
     environment: Literal["development", "production", "testing"]
 
@@ -28,7 +33,12 @@ class AppSettings(CustomBaseSettings):
 
 
 class DBSettings(CustomBaseSettings):
-    model_config = CustomBaseSettings.model_config.update(env_prefix="DB_")
+    model_config = SettingsConfigDict(
+        **{
+            **CustomBaseSettings.model_config,
+            "env_prefix": "DB_",
+        }
+    )
 
     host: str
     port: int
@@ -52,7 +62,12 @@ class DBSettings(CustomBaseSettings):
 
 
 class RedisSettings(CustomBaseSettings):
-    model_config = CustomBaseSettings.model_config.update(env_prefix="REDIS_")
+    model_config = SettingsConfigDict(
+        **{
+            **CustomBaseSettings.model_config,
+            "env_prefix": "REDIS_",
+        }
+    )
 
     host: str
     port: int
@@ -74,13 +89,23 @@ class RedisSettings(CustomBaseSettings):
 
 
 class CORSSettings(CustomBaseSettings):
-    model_config = CustomBaseSettings.model_config.update(env_prefix="CORS_")
+    model_config = SettingsConfigDict(
+        **{
+            **CustomBaseSettings.model_config,
+            "env_prefix": "CORS_",
+        }
+    )
 
     origins: list[str]
 
 
 class AuthSettings(CustomBaseSettings):
-    model_config = CustomBaseSettings.model_config.update(env_prefix="AUTH_")
+    model_config = SettingsConfigDict(
+        **{
+            **CustomBaseSettings.model_config,
+            "env_prefix": "AUTH_",
+        }
+    )
 
     jwt_algorithm: str
     jwt_secret_key: SecretStr
