@@ -29,6 +29,7 @@ async def generate_access_token(user_uuid: uuid.UUID) -> str:
     exp = iat + timedelta(seconds=settings.auth.access_token_expire_seconds)
     data_to_encode = {
         "sub": str(user_uuid),
+        "jti": str(uuid.uuid7()),
         "iat": iat,
         "exp": exp,
     }
@@ -204,7 +205,7 @@ async def login(email: str, password: str, session: AsyncSession) -> dict[str, A
 
 
 async def logout(
-    access_token: str | None,
+    access_token_jti: uuid.UUID | None,
     access_token_exp: int | None,
     refresh_token: str,
     session: AsyncSession,
@@ -217,32 +218,32 @@ async def logout(
         session=session,
     )
 
-    if access_token is not None:
+    if access_token_jti is not None:
         current_timestamp = datetime.now(tz=timezone.utc).timestamp()
         ttl = int(access_token_exp - current_timestamp)
 
         if ttl > 0:
             await blacklist_access_token(
-                token=access_token,
+                jti=access_token_jti,
                 ttl=ttl,
                 redis_client=redis_client,
             )
 
 
 async def refresh(
-    access_token: str | None,
+    access_token_jti: uuid.UUID | None,
     access_token_exp: int | None,
     refresh_token: str,
     session: AsyncSession,
     redis_client: Redis,
 ) -> dict[str, Any]:
-    if access_token is not None:
+    if access_token_jti is not None:
         current_timestamp = datetime.now(tz=timezone.utc).timestamp()
         ttl = int(access_token_exp - current_timestamp)
 
         if ttl > 0:
             await blacklist_access_token(
-                token=access_token,
+                jti=access_token_jti,
                 ttl=ttl,
                 redis_client=redis_client,
             )

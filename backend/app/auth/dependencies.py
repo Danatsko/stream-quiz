@@ -5,7 +5,7 @@ import jwt
 from fastapi import Cookie, HTTPException, status, Depends
 from redis.asyncio import Redis
 
-from app.auth.redis_crud import is_access_token_blacklisted
+from app.auth.redis_crud import is_access_token_blacklisted, is_user_blacklisted
 from app.core.config import settings
 from app.core.redis import get_redis_client
 
@@ -17,28 +17,44 @@ async def get_optional_auth_context(
     if access_token is None:
         return None
 
-    is_blacklisted = await is_access_token_blacklisted(
-        token=access_token,
-        redis_client=redis_client,
-    )
-
-    if is_blacklisted:
-        return None
-
     try:
         payload = jwt.decode(
             jwt=access_token,
             key=settings.auth.jwt_secret_key.get_secret_value(),
             algorithms=[settings.auth.jwt_algorithm],
         )
+        raw_user_uuid = payload.get("sub")
+        raw_jti = payload.get("jti")
 
-        return {
-            "user_uuid": uuid.UUID(payload["sub"]),
-            "access_token": access_token,
-            "payload": payload,
-        }
-    except (jwt.ExpiredSignatureError, jwt.PyJWTError):
+        if raw_user_uuid is None or raw_jti is None:
+            return None
+
+        user_uuid = uuid.UUID(raw_user_uuid)
+        jti = uuid.UUID(raw_jti)
+    except (jwt.ExpiredSignatureError, jwt.PyJWTError, ValueError):
         return None
+
+    is_jti_blacklisted = await is_access_token_blacklisted(
+        jti=jti,
+        redis_client=redis_client,
+    )
+
+    if is_jti_blacklisted:
+        return None
+
+    is_user_uuid_blacklisted = await is_user_blacklisted(
+        user_uuid=user_uuid,
+        redis_client=redis_client,
+    )
+
+    if is_user_uuid_blacklisted:
+        return None
+
+    return {
+        "user_uuid": user_uuid,
+        "access_token": access_token,
+        "payload": payload,
+    }
 
 
 async def get_current_auth_context(

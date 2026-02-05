@@ -1,3 +1,4 @@
+import uuid
 from typing import Annotated, Any
 
 from fastapi import APIRouter, status, Request, Response, Depends
@@ -121,15 +122,15 @@ async def logout(
     session: Annotated[AsyncSession, Depends(get_db_session)],
     redis_client: Annotated[Redis, Depends(get_redis_client)],
 ) -> LogoutResponse:
-    access_token = None
+    access_token_jti = None
     access_token_exp = None
 
     if auth_context is not None:
-        access_token = auth_context["access_token"]
+        access_token_jti = uuid.UUID(auth_context["payload"]["jti"])
         access_token_exp = auth_context["payload"]["exp"]
 
     await service_logout(
-        access_token=access_token,
+        access_token_jti=access_token_jti,
         access_token_exp=access_token_exp,
         refresh_token=refresh_token,
         session=session,
@@ -166,15 +167,15 @@ async def refresh(
     session: Annotated[AsyncSession, Depends(get_db_session)],
     redis_client: Annotated[Redis, Depends(get_redis_client)],
 ) -> RefreshResponse:
-    access_token = None
+    access_token_jti = None
     access_token_exp = None
 
     if auth_context is not None:
-        access_token = auth_context["access_token"]
+        access_token_jti = uuid.UUID(auth_context["payload"]["jti"])
         access_token_exp = auth_context["payload"]["exp"]
 
     result = await service_refresh(
-        access_token=access_token,
+        access_token_jti=access_token_jti,
         access_token_exp=access_token_exp,
         refresh_token=refresh_token,
         session=session,
