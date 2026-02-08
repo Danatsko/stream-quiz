@@ -1,0 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;400;500;600;700&display=swap');
+
+:root {
+  --color-background: #000000;
+  --color-text: #ffffff;
+  --color-primary: #9823f5;
+  --color-secondary: #c45037;
+  --linear-gradient-primary: -webkit-linear-gradient(
+    50deg,
+    var(--color-primary),
+    var(--color-secondary)
+  );
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family:
+    'Inter',
+    sans-serif,
+    -apple-system,
+    BlinkMacSystemFont;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  cursor: default;
+}
