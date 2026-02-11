@@ -18,7 +18,7 @@
   user-select: none;
   transition:
     opacity 0.1s ease,
-    transform 0.3s ease,
+    transform 0.1s ease,
     background-color 0.1s ease;
 }
 .btn:hover {

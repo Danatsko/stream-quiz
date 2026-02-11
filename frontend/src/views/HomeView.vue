@@ -2,6 +2,13 @@
 import AppButton from '@/components/AppButton.vue'
 import AppLogo from '@/components/AppLogo.vue'
 import homeVector from '@/assets/homeVector.svg'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const goToRegistration = (): void => {
+  router.push({ name: 'Registration' })
+}
 </script>
 
 <template>
@@ -11,7 +18,7 @@ import homeVector from '@/assets/homeVector.svg'
         <AppLogo />
         <nav class="header-nav-actions">
           <AppButton>Sign in</AppButton>
-          <AppButton class="header-btn-signup">Sign up</AppButton>
+          <AppButton class="header-btn-signup" @click="goToRegistration">Sign up</AppButton>
         </nav>
       </div>
     </header>
