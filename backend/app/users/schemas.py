@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated
 
-from pydantic import StringConstraints
+from pydantic import StringConstraints, EmailStr
 
 from app.core.schemas import Base
 
@@ -17,4 +17,4 @@ usernameAnnotated = Annotated[
 class GETMeResponse(Base):
     uuid: uuid.UUID
     username: usernameAnnotated
-    email: usernameAnnotated
+    email: EmailStr
