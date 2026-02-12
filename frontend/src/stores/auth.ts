@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { AxiosError } from 'axios'
-import type { RegistrationPayload } from '@/types/auth'
+import type { LoginPayload, RegistrationPayload } from '@/types/auth'
 import type { User } from '@/types/user'
 import { authAPI } from '@/api/auth'
 import { usersAPI } from '@/api/users'
@@ -30,10 +30,29 @@ export const useAuthStore = defineStore('auth', () => {
       await fetchUser()
     } catch (registrationError) {
       if (registrationError instanceof AxiosError) {
-        error.value = registrationError.response?.data?.message || 'Error during registration'
+        error.value = registrationError.response?.data?.detail || 'Error during registration'
       }
 
       throw registrationError
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const login = async (payload: LoginPayload): Promise<void> => {
+    isLoading.value = true
+    resetError()
+
+    try {
+      await authAPI.login(payload)
+      isAuthChecked.value = false
+      await fetchUser()
+    } catch (loginError) {
+      if (loginError instanceof AxiosError) {
+        error.value = loginError.response?.data?.detail || 'Error during login'
+      }
+
+      throw loginError
     } finally {
       isLoading.value = false
     }
@@ -80,6 +99,7 @@ export const useAuthStore = defineStore('auth', () => {
     error,
     isAuthenticated,
     registration,
+    login,
     logout,
     fetchUser,
   }

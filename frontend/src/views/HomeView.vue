@@ -6,6 +6,9 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
+const goToLogin = (): void => {
+  router.push({ name: 'Login' })
+}
 const goToRegistration = (): void => {
   router.push({ name: 'Registration' })
 }
@@ -17,7 +20,7 @@ const goToRegistration = (): void => {
       <div class="container header-content">
         <AppLogo />
         <nav class="header-nav-actions">
-          <AppButton>Sign in</AppButton>
+          <AppButton @click="goToLogin">Sign in</AppButton>
           <AppButton class="header-btn-signup" @click="goToRegistration">Sign up</AppButton>
         </nav>
       </div>

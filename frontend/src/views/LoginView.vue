@@ -5,62 +5,38 @@ import { ref, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import useAuthStore from '@/stores/auth.ts'
 
-interface RegistrationFormState {
-  username: string
+interface LoginFormState {
   email: string
   password: string
-  confirmPassword: string
 }
 
 const MIN_PASSWORD_LENGTH = 8
-const MIN_USERNAME_LENGTH = 3
-const MAX_USERNAME_LENGTH = 30
 
 const authStore = useAuthStore()
 
-const registrationForm = ref<RegistrationFormState>({
-  username: '',
+const loginForm = ref<LoginFormState>({
   email: '',
   password: '',
-  confirmPassword: '',
-})
-
-const isUsernameValid = computed((): boolean => {
-  const { username } = registrationForm.value
-
-  return !!username && username.length >= MIN_USERNAME_LENGTH
 })
 
 const isEmailValid = computed((): boolean => {
-  const { email } = registrationForm.value
+  const { email } = loginForm.value
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
   return !!email && emailRegex.test(email)
 })
 
 const isPasswordValid = computed((): boolean => {
-  const { password } = registrationForm.value
+  const { password } = loginForm.value
 
   return !!password && password.length >= MIN_PASSWORD_LENGTH
 })
 
-const isPasswordMatched = computed((): boolean => {
-  const { password, confirmPassword } = registrationForm.value
-
-  return !!confirmPassword && !!password && password === confirmPassword
-})
-
 const isFormValid = computed((): boolean => {
-  const f = registrationForm.value
-  const isNotEmpty = !!f.username && !!f.email && !!f.password && !!f.confirmPassword
+  const f = loginForm.value
+  const isNotEmpty = !!f.email && !!f.password
 
-  return (
-    isNotEmpty &&
-    isUsernameValid.value &&
-    isPasswordValid.value &&
-    isEmailValid.value &&
-    isPasswordMatched.value
-  )
+  return isNotEmpty && isPasswordValid.value && isEmailValid.value
 })
 
 const handleSubmit = async () => {
@@ -69,10 +45,9 @@ const handleSubmit = async () => {
   }
 
   try {
-    await authStore.registration({
-      username: registrationForm.value.username,
-      email: registrationForm.value.email,
-      password: registrationForm.value.password,
+    await authStore.login({
+      email: loginForm.value.email,
+      password: loginForm.value.password,
     })
   } catch (error) {}
 }
@@ -81,50 +56,27 @@ const handleSubmit = async () => {
 <template>
   <div class="layout">
     <div class="header">
-      <h1 class="header-title">Create account</h1>
-      <p class="header-subtitle">Start your journey with us</p>
+      <h1 class="header-title">Welcome back</h1>
+      <p class="header-subtitle">Continue your journey with us</p>
     </div>
 
     <div class="main">
       <form class="form" @submit.prevent="handleSubmit">
-        <div class="form-group">
-          <label for="username">Username</label>
-          <div class="input-wrapper">
-            <Icon icon="mdi:user-outline" class="input-icon" />
-            <input
-              class="input"
-              :class="{ 'input-error': registrationForm.username && !isUsernameValid }"
-              id="username"
-              type="text"
-              placeholder="Username"
-              v-model="registrationForm.username"
-              :minlength="MIN_USERNAME_LENGTH"
-              :maxLength="MAX_USERNAME_LENGTH"
-              required
-            />
-          </div>
-          <AppErrorMessage v-if="registrationForm.username && !isUsernameValid">
-            Minimum {{ MIN_USERNAME_LENGTH }} characters
-          </AppErrorMessage>
-        </div>
-
         <div class="form-group">
           <label for="email">Email</label>
           <div class="input-wrapper">
             <Icon icon="mdi:email-outline" class="input-icon" />
             <input
               class="input"
-              :class="{ 'input-error': registrationForm.email && !isEmailValid }"
+              :class="{ 'input-error': loginForm.email && !isEmailValid }"
               id="email"
               type="email"
               placeholder="example@example.com"
-              v-model="registrationForm.email"
+              v-model="loginForm.email"
               required
             />
           </div>
-          <AppErrorMessage v-if="registrationForm.email && !isEmailValid">
-            Invalid email
-          </AppErrorMessage>
+          <AppErrorMessage v-if="loginForm.email && !isEmailValid"> Invalid email </AppErrorMessage>
         </div>
 
         <div class="form-group">
@@ -133,49 +85,30 @@ const handleSubmit = async () => {
             <Icon icon="mdi:password-outline" class="input-icon" />
             <input
               class="input"
-              :class="{ 'input-error': registrationForm.password && !isPasswordValid }"
+              :class="{ 'input-error': loginForm.password && !isPasswordValid }"
               id="password"
               type="password"
               placeholder="••••••••"
-              v-model="registrationForm.password"
+              v-model="loginForm.password"
               :minlength="MIN_PASSWORD_LENGTH"
               required
             />
           </div>
-          <AppErrorMessage v-if="registrationForm.password && !isPasswordValid">
+          <AppErrorMessage v-if="loginForm.password && !isPasswordValid">
             Minimum {{ MIN_PASSWORD_LENGTH }} characters
           </AppErrorMessage>
         </div>
 
-        <div class="form-group">
-          <label for="confirm-password">Confirm password</label>
-          <div class="input-wrapper">
-            <Icon icon="mdi:password-outline" class="input-icon" />
-            <input
-              class="input"
-              :class="{ 'input-error': registrationForm.confirmPassword && !isPasswordMatched }"
-              id="confirm-password"
-              type="password"
-              placeholder="••••••••"
-              v-model="registrationForm.confirmPassword"
-              required
-            />
-          </div>
-          <AppErrorMessage v-if="registrationForm.confirmPassword && !isPasswordMatched">
-            Passwords do not match
-          </AppErrorMessage>
-        </div>
-
-        <AppButton class="btn-signup" type="submit" :disabled="!isFormValid || authStore.isLoading">
-          {{ authStore.isLoading ? 'Processing' : 'Sign up' }}
+        <AppButton class="btn-signin" type="submit" :disabled="!isFormValid || authStore.isLoading">
+          {{ authStore.isLoading ? 'Processing' : 'Sign in' }}
         </AppButton>
       </form>
     </div>
 
     <div class="footer">
       <p class="footer-subtitle">
-        Already have an account?
-        <RouterLink class="signin-link" :to="{ name: 'Login' }">Sign in</RouterLink>
+        Don't have an account?
+        <RouterLink class="signup-link" :to="{ name: 'Registration' }">Sign up</RouterLink>
       </p>
     </div>
   </div>
@@ -256,7 +189,7 @@ const handleSubmit = async () => {
 .input-error {
   border-color: red;
 }
-.btn-signup {
+.btn-signin {
   background: var(--linear-gradient-primary);
   color: var(--color-text);
   margin: 0.3rem 0;
@@ -273,7 +206,7 @@ const handleSubmit = async () => {
   font-weight: 500;
   margin-top: 0;
 }
-.signin-link {
+.signup-link {
   font-weight: 700;
   text-decoration: none;
   background: var(--linear-gradient-primary);
@@ -282,7 +215,7 @@ const handleSubmit = async () => {
   cursor: pointer;
   transition: opacity 0.2s;
 }
-.signin-link:hover {
+.signup-link:hover {
   opacity: 0.5;
   text-decoration: underline;
 }
