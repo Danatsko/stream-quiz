@@ -4,6 +4,7 @@ import AppErrorMessage from '@/components/AppErrorMessage.vue'
 import { ref, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import useAuthStore from '@/stores/auth.ts'
+import { useRouter } from 'vue-router'
 
 interface RegistrationFormState {
   username: string
@@ -17,6 +18,7 @@ const MIN_USERNAME_LENGTH = 3
 const MAX_USERNAME_LENGTH = 30
 
 const authStore = useAuthStore()
+const router = useRouter()
 
 const registrationForm = ref<RegistrationFormState>({
   username: '',
@@ -74,6 +76,7 @@ const handleSubmit = async () => {
       email: registrationForm.value.email,
       password: registrationForm.value.password,
     })
+    await router.push({ name: 'Take' })
   } catch (error) {}
 }
 </script>

@@ -4,6 +4,7 @@ import AppErrorMessage from '@/components/AppErrorMessage.vue'
 import { ref, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import useAuthStore from '@/stores/auth.ts'
+import { useRouter } from 'vue-router'
 
 interface LoginFormState {
   email: string
@@ -13,6 +14,7 @@ interface LoginFormState {
 const MIN_PASSWORD_LENGTH = 8
 
 const authStore = useAuthStore()
+const router = useRouter()
 
 const loginForm = ref<LoginFormState>({
   email: '',
@@ -49,6 +51,7 @@ const handleSubmit = async () => {
       email: loginForm.value.email,
       password: loginForm.value.password,
     })
+    await router.push({ name: 'Take' })
   } catch (error) {}
 }
 </script>
