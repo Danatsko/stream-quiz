@@ -14,7 +14,7 @@ usernameAnnotated = Annotated[
 ]
 
 
-class GETMeResponse(Base):
+class GetMeResponse(Base):
     uuid: uuid.UUID
     username: usernameAnnotated
     email: EmailStr
