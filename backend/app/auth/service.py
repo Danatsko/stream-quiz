@@ -19,7 +19,7 @@ from app.auth.db_crud import (
 )
 from app.auth.redis_crud import blacklist_access_token
 from app.core.config import settings
-from app.users import create_user, get_user_by_email, get_user_by_id
+from app.users.service import create_user, get_user_by_email, get_user_by_id
 
 password_hash = PasswordHash.recommended()
 

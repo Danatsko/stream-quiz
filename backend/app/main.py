@@ -13,14 +13,14 @@ from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import auth_router
+from app.auth.router import auth_router
 from app.core.config import settings
 from app.core.health import perform_check
 from app.core.limiter import limiter
 from app.core.db import get_db_session, close_db_connection
 from app.core.redis import get_redis_client, close_redis_connection
 from app.core.schemas import HealthResponse
-from app.users import users_router
+from app.users.router import users_router
 
 
 @asynccontextmanager
