@@ -1,0 +1,77 @@
+from sqlalchemy import BigInteger, String, Boolean, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.core.models import Base, UUIDMixin
+
+
+class Quiz(Base, UUIDMixin):
+    __tablename__ = "quiz"
+
+    creator_id: Mapped[int] = mapped_column(
+        BigInteger(),
+        ForeignKey(
+            "user.id",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+    name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+    description: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+    )
+    is_public: Mapped[bool] = mapped_column(
+        Boolean(),
+        nullable=False,
+    )
+
+
+class QuizQuestion(Base, UUIDMixin):
+    __tablename__ = "quiz_question"
+
+    quiz_id: Mapped[int] = mapped_column(
+        BigInteger(),
+        ForeignKey(
+            "quiz.id",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+    text: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+    )
+    is_multiple_answers: Mapped[bool] = mapped_column(
+        Boolean(),
+        nullable=False,
+    )
+
+
+class QuizQuestionOption(Base, UUIDMixin):
+    __tablename__ = "quiz_question_option"
+
+    quiz_question_id: Mapped[int] = mapped_column(
+        BigInteger(),
+        ForeignKey(
+            "quiz_question.id",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+    text: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+    )
+    is_correct: Mapped[bool] = mapped_column(
+        Boolean(),
+        nullable=False,
+    )
