@@ -17,6 +17,7 @@ from app.core.models import Base  # noqa: E402
 
 from app.users import models as users_models  # noqa: E402, F401
 from app.auth import models as auth_models  # noqa: E402, F401
+from app.quizzes import models as quizzes_models  # noqa: E402, F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
