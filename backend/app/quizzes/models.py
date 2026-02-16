@@ -1,5 +1,5 @@
 from sqlalchemy import BigInteger, String, Boolean, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.models import Base, UUIDMixin
 
@@ -30,6 +30,12 @@ class Quiz(Base, UUIDMixin):
         nullable=False,
     )
 
+    questions: Mapped[list["QuizQuestion"]] = relationship(
+        back_populates="quiz",
+        cascade="all, delete-orphan",
+        lazy="raise_on_sql",
+    )
+
 
 class QuizQuestion(Base, UUIDMixin):
     __tablename__ = "quiz_question"
@@ -53,6 +59,16 @@ class QuizQuestion(Base, UUIDMixin):
         nullable=False,
     )
 
+    quiz: Mapped["Quiz"] = relationship(
+        back_populates="questions",
+        lazy="raise_on_sql",
+    )
+    options: Mapped[list["QuizQuestionOption"]] = relationship(
+        back_populates="question",
+        cascade="all, delete-orphan",
+        lazy="raise_on_sql",
+    )
+
 
 class QuizQuestionOption(Base, UUIDMixin):
     __tablename__ = "quiz_question_option"
@@ -74,4 +90,9 @@ class QuizQuestionOption(Base, UUIDMixin):
     is_correct: Mapped[bool] = mapped_column(
         Boolean(),
         nullable=False,
+    )
+
+    question: Mapped["QuizQuestion"] = relationship(
+        back_populates="options",
+        lazy="raise_on_sql",
     )
