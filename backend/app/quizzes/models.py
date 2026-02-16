@@ -17,7 +17,7 @@ class Quiz(Base, UUIDMixin):
         nullable=False,
         index=True,
     )
-    name: Mapped[str] = mapped_column(
+    title: Mapped[str] = mapped_column(
         String(100),
         nullable=False,
     )
