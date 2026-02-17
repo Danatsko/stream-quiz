@@ -9,7 +9,7 @@ from app.users.db_crud import (
     create_user as db_crud_create_user,
     get_user_by_email as db_crud_get_user_by_email,
     get_user_by_id as db_crud_get_user_by_id,
-    get_user_by_uuid,
+    get_user_by_uuid as db_crud_get_user_by_uuid,
 )
 from app.users.models import User
 
@@ -66,8 +66,17 @@ async def get_user_by_id(id: int, session: AsyncSession) -> User | None:
     return user_db
 
 
+async def get_user_by_uuid(uuid: uuid.UUID, session: AsyncSession) -> User | None:
+    user_db = await db_crud_get_user_by_uuid(
+        uuid=uuid,
+        session=session,
+    )
+
+    return user_db
+
+
 async def get_me(uuid: uuid.UUID, session: AsyncSession) -> dict[str, Any]:
-    user_db = await get_user_by_uuid(
+    user_db = await db_crud_get_user_by_uuid(
         uuid=uuid,
         session=session,
     )
@@ -77,4 +86,5 @@ async def get_me(uuid: uuid.UUID, session: AsyncSession) -> dict[str, Any]:
         "username": user_db.username,
         "email": user_db.email,
     }
+
     return result
