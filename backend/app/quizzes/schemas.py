@@ -77,3 +77,17 @@ class CreateQuizRequest(CreateQuiz):
 
 class CreateQuizResponse(Base):
     uuid: uuid.UUID
+
+
+class GetSummaryQuiz(QuizBase):
+    creator_uuid: uuid.UUID | None
+    uuid: uuid.UUID
+    total_questions: int
+
+
+class GetQuizzesResponse(Base):
+    quizzes: list[GetSummaryQuiz]
+    total_quizzes: int
+    page: int
+    size: int
+    total_pages: int

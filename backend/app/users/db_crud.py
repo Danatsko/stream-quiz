@@ -56,3 +56,16 @@ async def get_user_by_uuid(uuid: uuid.UUID, session: AsyncSession) -> User | Non
     result = await session.scalar(stmt)
 
     return result
+
+
+async def get_user_uuids_by_ids(
+    ids: set[int], session: AsyncSession
+) -> dict[int, uuid.UUID]:
+    stmt = select(User.id, User.uuid).where(
+        User.id.in_(ids),
+        User.deleted_at.is_(None),
+    )
+    result = await session.execute(stmt)
+    result = dict(result.all())
+
+    return result
