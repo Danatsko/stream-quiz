@@ -51,6 +51,4 @@ async def revoke_refresh_token_by_token(
     )
     result = await session.execute(stmt)
 
-    await session.flush()
-
     return result.rowcount == 1
