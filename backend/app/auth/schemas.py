@@ -19,7 +19,7 @@ passwordAnnotated = Annotated[
 
 
 class RegistrationRequest(Base):
-    username: usernameAnnotated | None = DEFAULT_USERNAME
+    username: usernameAnnotated = DEFAULT_USERNAME
     email: EmailStr
     password: passwordAnnotated
 
