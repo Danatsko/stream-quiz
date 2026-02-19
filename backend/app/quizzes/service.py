@@ -9,6 +9,7 @@ from app.quizzes.db_crud import (
     get_quizzes_total_count,
     get_quizzes as db_crud_get_quizzes,
     get_quiz_by_uuid,
+    update_quiz_by_uuid,
 )
 from app.users.service import get_user_by_uuid, get_user_uuids_by_ids, get_user_by_id
 
@@ -163,3 +164,30 @@ async def get_quiz(
     }
 
     return result
+
+
+async def update_quiz(
+    quiz_uuid: uuid.UUID,
+    user_uuid: uuid.UUID,
+    update_quiz_data: dict[str, Any],
+    session: AsyncSession,
+) -> None:
+    if not update_quiz_data:
+        return
+
+    user_db = await get_user_by_uuid(
+        uuid=user_uuid,
+        session=session,
+    )
+    is_updated = await update_quiz_by_uuid(
+        uuid=quiz_uuid,
+        user_id=user_db.id,
+        update_quiz_data=update_quiz_data,
+        session=session,
+    )
+
+    if not is_updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quiz not found, or you do not have permission to update it",
+        )

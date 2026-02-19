@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated, Self
 
-from pydantic import StringConstraints, Field, model_validator
+from pydantic import StringConstraints, Field, model_validator, field_validator
 
 from app.core.schemas import Base
 
@@ -110,4 +110,40 @@ class GetDetailedQuiz(QuizBase):
 
 
 class GetQuizResponse(GetDetailedQuiz):
+    pass
+
+
+class UpdateQuizRequest(Base):
+    title: (
+        Annotated[
+            str,
+            StringConstraints(
+                min_length=3,
+                max_length=100,
+            ),
+        ]
+        | None
+    ) = None
+    description: (
+        Annotated[
+            str,
+            StringConstraints(
+                min_length=3,
+                max_length=500,
+            ),
+        ]
+        | None
+    ) = None
+    is_public: bool | None = None
+
+    @field_validator("title", "description", "is_public")
+    @classmethod
+    def prevent_explicit_null(cls, value):
+        if value is None:
+            raise ValueError("Null is not allowed for this field")
+
+        return value
+
+
+class UpdateQuizResponse(Base):
     pass

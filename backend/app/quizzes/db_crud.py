@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from sqlalchemy import or_, select, func
+from sqlalchemy import or_, select, func, update
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -116,3 +116,22 @@ async def get_quiz_by_uuid(
     result = await session.scalar(stmt)
 
     return result
+
+
+async def update_quiz_by_uuid(
+    uuid: uuid.UUID,
+    user_id: int,
+    update_quiz_data: dict[str, Any],
+    session: AsyncSession,
+) -> bool:
+    stmt = (
+        update(Quiz)
+        .where(
+            Quiz.uuid == uuid,
+            Quiz.creator_id == user_id,
+        )
+        .values(**update_quiz_data)
+    )
+    result = await session.execute(stmt)
+
+    return result.rowcount == 1
