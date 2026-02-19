@@ -24,22 +24,6 @@ class RegistrationRequest(Base):
     password: passwordAnnotated
 
 
-class RegistrationResponse(Base):
-    pass
-
-
 class LoginRequest(Base):
     email: EmailStr
     password: passwordAnnotated
-
-
-class LoginResponse(Base):
-    pass
-
-
-class LogoutResponse(Base):
-    pass
-
-
-class RefreshResponse(Base):
-    pass

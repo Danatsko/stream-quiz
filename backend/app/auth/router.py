@@ -11,12 +11,8 @@ from app.auth.dependencies import (
     get_current_refresh_token,
 )
 from app.auth.schemas import (
-    RegistrationResponse,
     RegistrationRequest,
-    LoginResponse,
     LoginRequest,
-    LogoutResponse,
-    RefreshResponse,
 )
 from app.auth.service import (
     registration as service_registration,
@@ -35,7 +31,6 @@ auth_router = APIRouter()
 @auth_router.post(
     path="/registration",
     status_code=status.HTTP_201_CREATED,
-    response_model=RegistrationResponse,
     dependencies=[Depends(ensure_unauthenticated_user)],
 )
 @limiter.limit("5/minute")
@@ -44,7 +39,7 @@ async def registration(
     response: Response,
     registration_data: RegistrationRequest,
     session: Annotated[AsyncSession, Depends(get_db_session)],
-) -> RegistrationResponse:
+) -> None:
     result = await service_registration(
         **registration_data.model_dump(),
         session=session,
@@ -67,13 +62,10 @@ async def registration(
         max_age=settings.auth.refresh_token_expire_seconds,
     )
 
-    return RegistrationResponse()
-
 
 @auth_router.post(
     path="/login",
-    status_code=status.HTTP_200_OK,
-    response_model=LoginResponse,
+    status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(ensure_unauthenticated_user)],
 )
 @limiter.limit("5/minute")
@@ -82,7 +74,7 @@ async def login(
     response: Response,
     login_data: LoginRequest,
     session: Annotated[AsyncSession, Depends(get_db_session)],
-) -> LoginResponse:
+) -> None:
     result = await service_login(
         **login_data.model_dump(),
         session=session,
@@ -105,13 +97,10 @@ async def login(
         max_age=settings.auth.refresh_token_expire_seconds,
     )
 
-    return LoginResponse()
-
 
 @auth_router.post(
     path="/logout",
-    status_code=status.HTTP_200_OK,
-    response_model=LogoutResponse,
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 @limiter.limit("5/minute")
 async def logout(
@@ -121,7 +110,7 @@ async def logout(
     refresh_token: Annotated[str, Depends(get_current_refresh_token)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
     redis_client: Annotated[Redis, Depends(get_redis_client)],
-) -> LogoutResponse:
+) -> None:
     access_token_jti = None
     access_token_exp = None
 
@@ -150,13 +139,10 @@ async def logout(
         samesite="lax",
     )
 
-    return LogoutResponse()
-
 
 @auth_router.post(
     path="/refresh",
-    status_code=status.HTTP_200_OK,
-    response_model=RefreshResponse,
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 @limiter.limit("5/minute")
 async def refresh(
@@ -166,7 +152,7 @@ async def refresh(
     refresh_token: Annotated[str, Depends(get_current_refresh_token)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
     redis_client: Annotated[Redis, Depends(get_redis_client)],
-) -> RefreshResponse:
+) -> None:
     access_token_jti = None
     access_token_exp = None
 
@@ -190,5 +176,3 @@ async def refresh(
         samesite="lax",
         max_age=settings.auth.access_token_expire_seconds,
     )
-
-    return RefreshResponse()

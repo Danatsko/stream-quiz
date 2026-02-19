@@ -143,7 +143,3 @@ class UpdateQuizRequest(Base):
             raise ValueError("Null is not allowed for this field")
 
         return value
-
-
-class UpdateQuizResponse(Base):
-    pass

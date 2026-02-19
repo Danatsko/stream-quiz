@@ -12,7 +12,6 @@ from app.quizzes.schemas import (
     CreateQuizRequest,
     GetQuizzesResponse,
     GetQuizResponse,
-    UpdateQuizResponse,
     UpdateQuizRequest,
 )
 from app.quizzes.service import (
@@ -110,8 +109,7 @@ async def get_quiz(
 
 @quizzes_router.patch(
     path="/{quiz_uuid}",
-    status_code=status.HTTP_200_OK,
-    response_model=UpdateQuizResponse,
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 @limiter.limit("300/minute")
 async def update_quiz(
@@ -120,7 +118,7 @@ async def update_quiz(
     update_quiz_data: UpdateQuizRequest,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
-) -> UpdateQuizResponse:
+) -> None:
     user_uuid = auth_context["user_uuid"]
 
     await service_update_quiz(
@@ -129,5 +127,3 @@ async def update_quiz(
         update_quiz_data=update_quiz_data.model_dump(exclude_unset=True),
         session=session,
     )
-
-    return UpdateQuizResponse()
