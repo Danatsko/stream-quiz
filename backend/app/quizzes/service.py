@@ -16,7 +16,8 @@ from app.users.service import get_user_by_uuid, get_user_uuids_by_ids, get_user_
 
 
 async def create_quiz(
-    quiz_data: dict[str, Any],
+    title: str,
+    description: str,
     user_uuid: uuid.UUID,
     session: AsyncSession,
 ) -> dict[str, Any]:
@@ -25,7 +26,8 @@ async def create_quiz(
         session=session,
     )
     quiz_db = await db_crud_create_quiz(
-        quiz_data=quiz_data,
+        title=title,
+        description=description,
         creator_id=user_db.id,
         session=session,
     )

@@ -71,8 +71,21 @@ class CreateQuiz(QuizBase):
     questions: list[CreateQuizQuestion] = Field(min_length=1)
 
 
-class CreateQuizRequest(CreateQuiz):
-    pass
+class CreateQuizRequest(Base):
+    title: Annotated[
+        str,
+        StringConstraints(
+            min_length=3,
+            max_length=100,
+        ),
+    ]
+    description: Annotated[
+        str,
+        StringConstraints(
+            min_length=3,
+            max_length=500,
+        ),
+    ]
 
 
 class CreateQuizResponse(Base):

@@ -5,36 +5,20 @@ from sqlalchemy import or_, select, func, update, delete
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.quizzes.models import Quiz, QuizQuestion, QuizQuestionOption
+from app.quizzes.models import Quiz, QuizQuestion
 
 
 async def create_quiz(
-    quiz_data: dict[str, Any],
+    title: str,
+    description: str,
     creator_id: int,
     session: AsyncSession,
 ) -> Quiz:
     quiz = Quiz(
         creator_id=creator_id,
-        title=quiz_data["title"],
-        description=quiz_data["description"],
-        is_public=quiz_data["is_public"],
+        title=title,
+        description=description,
     )
-
-    for question_data in quiz_data["questions"]:
-        question = QuizQuestion(
-            text=question_data["text"],
-            is_multiple_answers=question_data["is_multiple_answers"],
-        )
-
-        for option_data in question_data["options"]:
-            option = QuizQuestionOption(
-                text=option_data["text"],
-                is_correct=option_data["is_correct"],
-            )
-
-            question.options.append(option)
-
-        quiz.questions.append(question)
 
     session.add(quiz)
     await session.flush()
