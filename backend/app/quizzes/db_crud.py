@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from sqlalchemy import or_, select, func, update
+from sqlalchemy import or_, select, func, update, delete
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -131,6 +131,20 @@ async def update_quiz_by_uuid(
             Quiz.creator_id == user_id,
         )
         .values(**update_quiz_data)
+    )
+    result = await session.execute(stmt)
+
+    return result.rowcount == 1
+
+
+async def delete_quiz_by_uuid(
+    uuid: uuid.UUID,
+    user_id: int,
+    session: AsyncSession,
+) -> bool:
+    stmt = delete(Quiz).where(
+        Quiz.uuid == uuid,
+        Quiz.creator_id == user_id,
     )
     result = await session.execute(stmt)
 
