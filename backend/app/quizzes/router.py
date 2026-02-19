@@ -1,3 +1,4 @@
+import uuid
 from typing import Annotated, Any
 
 from fastapi import APIRouter, status, Request, Depends, Query
@@ -10,10 +11,12 @@ from app.quizzes.schemas import (
     CreateQuizResponse,
     CreateQuizRequest,
     GetQuizzesResponse,
+    GetQuizResponse,
 )
 from app.quizzes.service import (
     create_quiz as service_create_quiz,
     get_quizzes as service_get_quizzes,
+    get_quiz as service_get_quiz,
 )
 
 quizzes_router = APIRouter()
@@ -70,4 +73,33 @@ async def get_quizzes(
         page=result["page"],
         size=result["size"],
         total_pages=result["total_pages"],
+    )
+
+
+@quizzes_router.get(
+    path="/{quiz_uuid}",
+    status_code=status.HTTP_200_OK,
+    response_model=GetQuizResponse,
+)
+@limiter.limit("300/minute")
+async def get_quiz(
+    request: Request,
+    quiz_uuid: uuid.UUID,
+    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> GetQuizResponse:
+    user_uuid = auth_context["user_uuid"]
+    result = await service_get_quiz(
+        quiz_uuid=quiz_uuid,
+        user_uuid=user_uuid,
+        session=session,
+    )
+
+    return GetQuizResponse(
+        uuid=result["uuid"],
+        creator_uuid=result["creator_uuid"],
+        title=result["title"],
+        description=result["description"],
+        is_public=result["is_public"],
+        questions=result["questions"],
     )

@@ -1,6 +1,8 @@
+import uuid
 from typing import Any
 
 from sqlalchemy import or_, select, func
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.quizzes.models import Quiz, QuizQuestion, QuizQuestionOption
@@ -83,5 +85,24 @@ async def get_quizzes(
     )
     result = await session.execute(stmt)
     result = result.all()
+
+    return result
+
+
+async def get_quiz_by_uuid(
+    uuid: uuid.UUID, user_id: int, session: AsyncSession
+) -> Quiz | None:
+    stmt = (
+        select(Quiz)
+        .where(
+            Quiz.uuid == uuid,
+            or_(
+                Quiz.is_public.is_(True),
+                Quiz.creator_id == user_id,
+            ),
+        )
+        .options(selectinload(Quiz.questions).selectinload(QuizQuestion.options))
+    )
+    result = await session.scalar(stmt)
 
     return result

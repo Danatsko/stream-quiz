@@ -91,3 +91,23 @@ class GetQuizzesResponse(Base):
     page: int
     size: int
     total_pages: int
+
+
+class GetDetailedQuizQuestionOption(QuizQuestionOptionBase):
+    uuid: uuid.UUID
+    is_correct: bool | None
+
+
+class GetDetailedQuizQuestion(QuizQuestionBase):
+    uuid: uuid.UUID
+    options: list[GetDetailedQuizQuestionOption]
+
+
+class GetDetailedQuiz(QuizBase):
+    creator_uuid: uuid.UUID | None
+    uuid: uuid.UUID
+    questions: list[GetDetailedQuizQuestion]
+
+
+class GetQuizResponse(GetDetailedQuiz):
+    pass
