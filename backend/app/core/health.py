@@ -4,7 +4,8 @@ from typing import Callable, Awaitable, Any
 
 
 async def perform_check(
-    check_func: Callable[[], Awaitable[Any]], timeout: float = 5.0
+    check_func: Callable[[], Awaitable[Any]],
+    timeout: float = 5.0,
 ) -> dict[str, Any]:
     start_time = time.perf_counter()
 

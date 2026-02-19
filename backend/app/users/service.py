@@ -16,7 +16,10 @@ from app.users.models import User
 
 
 async def create_user(
-    username: str, email: str, password: str, session: AsyncSession
+    username: str,
+    email: str,
+    password: str,
+    session: AsyncSession,
 ) -> User:
     try:
         user_db = await db_crud_create_user(
@@ -49,7 +52,10 @@ async def create_user(
             raise exc
 
 
-async def get_user_by_email(email: str, session: AsyncSession) -> User | None:
+async def get_user_by_email(
+    email: str,
+    session: AsyncSession,
+) -> User | None:
     user_db = await db_crud_get_user_by_email(
         email=email,
         session=session,
@@ -58,7 +64,10 @@ async def get_user_by_email(email: str, session: AsyncSession) -> User | None:
     return user_db
 
 
-async def get_user_by_id(id: int, session: AsyncSession) -> User | None:
+async def get_user_by_id(
+    id: int,
+    session: AsyncSession,
+) -> User | None:
     user_db = await db_crud_get_user_by_id(
         id=id,
         session=session,
@@ -67,7 +76,10 @@ async def get_user_by_id(id: int, session: AsyncSession) -> User | None:
     return user_db
 
 
-async def get_user_by_uuid(uuid: uuid.UUID, session: AsyncSession) -> User | None:
+async def get_user_by_uuid(
+    uuid: uuid.UUID,
+    session: AsyncSession,
+) -> User | None:
     user_db = await db_crud_get_user_by_uuid(
         uuid=uuid,
         session=session,
@@ -77,7 +89,8 @@ async def get_user_by_uuid(uuid: uuid.UUID, session: AsyncSession) -> User | Non
 
 
 async def get_user_uuids_by_ids(
-    ids: set[int], session: AsyncSession
+    ids: set[int],
+    session: AsyncSession,
 ) -> dict[int, uuid.UUID]:
     user_uuids_db = await db_crud_get_user_uuids_by_ids(
         ids=ids,
@@ -87,7 +100,10 @@ async def get_user_uuids_by_ids(
     return user_uuids_db
 
 
-async def get_me(uuid: uuid.UUID, session: AsyncSession) -> dict[str, Any]:
+async def get_me(
+    uuid: uuid.UUID,
+    session: AsyncSession,
+) -> dict[str, Any]:
     user_db = await db_crud_get_user_by_uuid(
         uuid=uuid,
         session=session,

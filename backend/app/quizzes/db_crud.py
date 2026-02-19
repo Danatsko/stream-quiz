@@ -9,7 +9,9 @@ from app.quizzes.models import Quiz, QuizQuestion, QuizQuestionOption
 
 
 async def create_quiz(
-    quiz_data: dict[str, Any], creator_id: int, session: AsyncSession
+    quiz_data: dict[str, Any],
+    creator_id: int,
+    session: AsyncSession,
 ) -> Quiz:
     quiz = Quiz(
         creator_id=creator_id,
@@ -47,7 +49,10 @@ async def create_quiz(
     return quiz
 
 
-async def get_quizzes_total_count(user_id: int, session: AsyncSession) -> int:
+async def get_quizzes_total_count(
+    user_id: int,
+    session: AsyncSession,
+) -> int:
     stmt = (
         select(func.count())
         .select_from(Quiz)
@@ -64,7 +69,10 @@ async def get_quizzes_total_count(user_id: int, session: AsyncSession) -> int:
 
 
 async def get_quizzes(
-    user_id: int, limit: int, offset: int, session: AsyncSession
+    user_id: int,
+    limit: int,
+    offset: int,
+    session: AsyncSession,
 ) -> list[tuple[Quiz, int]]:
     stmt = (
         select(
@@ -90,7 +98,9 @@ async def get_quizzes(
 
 
 async def get_quiz_by_uuid(
-    uuid: uuid.UUID, user_id: int, session: AsyncSession
+    uuid: uuid.UUID,
+    user_id: int,
+    session: AsyncSession,
 ) -> Quiz | None:
     stmt = (
         select(Quiz)

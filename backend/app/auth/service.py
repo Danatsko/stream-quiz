@@ -77,7 +77,10 @@ async def hash_password(password: str) -> str:
     return hashed_password
 
 
-async def verify_password(password: str, hashed_password: str) -> bool:
+async def verify_password(
+    password: str,
+    hashed_password: str,
+) -> bool:
     password_bytes = password.encode(encoding="utf-8")
     pepper_bytes = settings.auth.password_pepper.get_secret_value().encode(
         encoding="utf-8"
@@ -96,7 +99,10 @@ async def verify_password(password: str, hashed_password: str) -> bool:
 
 
 async def registration(
-    username: str, email: str, password: str, session: AsyncSession
+    username: str,
+    email: str,
+    password: str,
+    session: AsyncSession,
 ) -> dict[str, Any]:
     hashed_password = await hash_password(password=password)
     user_db = await create_user(
@@ -143,7 +149,11 @@ async def registration(
     return result
 
 
-async def login(email: str, password: str, session: AsyncSession) -> dict[str, Any]:
+async def login(
+    email: str,
+    password: str,
+    session: AsyncSession,
+) -> dict[str, Any]:
     user_db = await get_user_by_email(
         email=email,
         session=session,

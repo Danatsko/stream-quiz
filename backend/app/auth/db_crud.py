@@ -7,7 +7,10 @@ from app.auth.models import RefreshToken
 
 
 async def create_refresh_token(
-    user_id: int, token: str, expires_at: datetime, session: AsyncSession
+    user_id: int,
+    token: str,
+    expires_at: datetime,
+    session: AsyncSession,
 ) -> RefreshToken:
     refresh_token = RefreshToken(
         user_id=user_id,
@@ -22,7 +25,8 @@ async def create_refresh_token(
 
 
 async def get_refresh_token_by_token(
-    token: str, session: AsyncSession
+    token: str,
+    session: AsyncSession,
 ) -> RefreshToken | None:
     stmt = select(RefreshToken).where(
         RefreshToken.token == token,
@@ -33,7 +37,10 @@ async def get_refresh_token_by_token(
     return result
 
 
-async def revoke_refresh_token_by_token(token: str, session: AsyncSession) -> bool:
+async def revoke_refresh_token_by_token(
+    token: str,
+    session: AsyncSession,
+) -> bool:
     stmt = (
         update(RefreshToken)
         .where(

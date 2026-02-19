@@ -14,7 +14,9 @@ from app.users.service import get_user_by_uuid, get_user_uuids_by_ids, get_user_
 
 
 async def create_quiz(
-    quiz_data: dict[str, Any], user_uuid: uuid.UUID, session: AsyncSession
+    quiz_data: dict[str, Any],
+    user_uuid: uuid.UUID,
+    session: AsyncSession,
 ) -> dict[str, Any]:
     user_db = await get_user_by_uuid(
         uuid=user_uuid,
@@ -31,7 +33,10 @@ async def create_quiz(
 
 
 async def get_quizzes(
-    page: int, size: int, user_uuid: uuid.UUID, session: AsyncSession
+    page: int,
+    size: int,
+    user_uuid: uuid.UUID,
+    session: AsyncSession,
 ) -> dict[str, Any]:
     offset = (page - 1) * size
     user_db = await get_user_by_uuid(
@@ -95,7 +100,9 @@ async def get_quizzes(
 
 
 async def get_quiz(
-    quiz_uuid: uuid.UUID, user_uuid: uuid.UUID, session: AsyncSession
+    quiz_uuid: uuid.UUID,
+    user_uuid: uuid.UUID,
+    session: AsyncSession,
 ) -> dict[str, Any]:
     user_db = await get_user_by_uuid(
         uuid=user_uuid,
