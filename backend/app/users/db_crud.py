@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import select, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.users.models import User
@@ -12,23 +12,18 @@ async def create_user(
     password: str,
     session: AsyncSession,
 ) -> User:
-    user = User(
-        username=username,
-        email=email,
-        password=password,
+    stmt = (
+        insert(User)
+        .values(
+            username=username,
+            email=email,
+            password=password,
+        )
+        .returning(User)
     )
+    result = await session.scalar(stmt)
 
-    session.add(instance=user)
-    await session.flush()
-    await session.refresh(
-        instance=user,
-        attribute_names=[
-            "id",
-            "uuid",
-        ],
-    )
-
-    return user
+    return result
 
 
 async def get_user_by_email(

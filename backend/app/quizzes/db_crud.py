@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from sqlalchemy import or_, select, func, update, delete
+from sqlalchemy import or_, select, func, update, delete, insert
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,23 +14,18 @@ async def create_quiz(
     creator_id: int,
     session: AsyncSession,
 ) -> Quiz:
-    quiz = Quiz(
-        creator_id=creator_id,
-        title=title,
-        description=description,
+    stmt = (
+        insert(Quiz)
+        .values(
+            creator_id=creator_id,
+            title=title,
+            description=description,
+        )
+        .returning(Quiz)
     )
+    result = await session.scalar(stmt)
 
-    session.add(quiz)
-    await session.flush()
-    await session.refresh(
-        instance=quiz,
-        attribute_names=[
-            "id",
-            "uuid",
-        ],
-    )
-
-    return quiz
+    return result
 
 
 async def get_quizzes_total_count(
