@@ -97,6 +97,20 @@ async def get_available_quiz_with_relations_by_uuid(
     return result
 
 
+async def get_quiz_by_uuid(
+    uuid: uuid.UUID,
+    user_id: int,
+    session: AsyncSession,
+) -> Quiz | None:
+    stmt = select(Quiz).where(
+        Quiz.uuid == uuid,
+        Quiz.creator_id == user_id,
+    )
+    result = await session.scalar(stmt)
+
+    return result
+
+
 async def update_quiz_by_uuid(
     uuid: uuid.UUID,
     user_id: int,
