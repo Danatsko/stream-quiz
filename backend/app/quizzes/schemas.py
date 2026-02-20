@@ -67,10 +67,6 @@ class CreateQuizQuestion(QuizQuestionBase):
         return self
 
 
-class CreateQuiz(QuizBase):
-    questions: list[CreateQuizQuestion] = Field(min_length=1)
-
-
 class CreateQuizRequest(Base):
     title: Annotated[
         str,
@@ -156,3 +152,11 @@ class UpdateQuizRequest(Base):
             raise ValueError("Null is not allowed for this field")
 
         return value
+
+
+class CreateQuizQuestionRequest(CreateQuizQuestion):
+    pass
+
+
+class CreateQuizQuestionResponse(Base):
+    uuid: uuid.UUID

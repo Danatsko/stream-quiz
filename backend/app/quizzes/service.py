@@ -11,6 +11,7 @@ from app.quizzes.db_crud import (
     get_quiz_by_uuid,
     update_quiz_by_uuid,
     delete_quiz_by_uuid,
+    create_quiz_question as db_crud_create_quiz_question,
 )
 from app.users.service import get_user_by_uuid, get_user_uuids_by_ids, get_user_by_id
 
@@ -216,3 +217,39 @@ async def delete_quiz(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Quiz not found, or you do not have permission to delete it",
         )
+
+
+async def create_quiz_question(
+    quiz_uuid: uuid.UUID,
+    user_uuid: uuid.UUID,
+    text: str,
+    is_multiple_answers: bool,
+    options: list[dict[str, Any]],
+    session: AsyncSession,
+) -> dict[str, Any]:
+    user_db = await get_user_by_uuid(
+        uuid=user_uuid,
+        session=session,
+    )
+    quiz_db = await get_quiz_by_uuid(
+        uuid=quiz_uuid,
+        user_id=user_db.id,
+        session=session,
+    )
+
+    if quiz_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quiz not found, or you do not have permission to update it",
+        )
+
+    quiz_question_db = await db_crud_create_quiz_question(
+        quiz_id=quiz_db.id,
+        text=text,
+        is_multiple_answers=is_multiple_answers,
+        options=options,
+        session=session,
+    )
+    result = {"uuid": quiz_question_db.uuid}
+
+    return result

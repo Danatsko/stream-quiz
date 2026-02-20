@@ -13,6 +13,8 @@ from app.quizzes.schemas import (
     GetQuizzesResponse,
     GetQuizResponse,
     UpdateQuizRequest,
+    CreateQuizQuestionRequest,
+    CreateQuizQuestionResponse,
 )
 from app.quizzes.service import (
     create_quiz as service_create_quiz,
@@ -20,6 +22,7 @@ from app.quizzes.service import (
     get_quiz as service_get_quiz,
     update_quiz as service_update_quiz,
     delete_quiz as service_delete_quiz,
+    create_quiz_question as service_create_quiz_question,
 )
 
 quizzes_router = APIRouter()
@@ -44,9 +47,7 @@ async def create_quiz(
         session=session,
     )
 
-    return CreateQuizResponse(
-        uuid=result["uuid"],
-    )
+    return CreateQuizResponse(uuid=result["uuid"])
 
 
 @quizzes_router.get(
@@ -148,3 +149,27 @@ async def delete_quiz(
         user_uuid=user_uuid,
         session=session,
     )
+
+
+@quizzes_router.post(
+    path="/{quiz_uuid}/questions",
+    status_code=status.HTTP_201_CREATED,
+    response_model=CreateQuizQuestionResponse,
+)
+@limiter.limit("300/minute")
+async def create_quiz_question(
+    request: Request,
+    quiz_uuid: uuid.UUID,
+    create_quiz_question_data: CreateQuizQuestionRequest,
+    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> CreateQuizQuestionResponse:
+    user_uuid = auth_context["user_uuid"]
+    result = await service_create_quiz_question(
+        **create_quiz_question_data.model_dump(),
+        quiz_uuid=quiz_uuid,
+        user_uuid=user_uuid,
+        session=session,
+    )
+
+    return CreateQuizQuestionResponse(uuid=result["uuid"])

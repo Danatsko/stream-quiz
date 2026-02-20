@@ -5,7 +5,7 @@ from sqlalchemy import or_, select, func, update, delete, insert
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.quizzes.models import Quiz, QuizQuestion
+from app.quizzes.models import Quiz, QuizQuestion, QuizQuestionOption
 
 
 async def create_quiz(
@@ -128,3 +128,31 @@ async def delete_quiz_by_uuid(
     result = await session.execute(stmt)
 
     return result.rowcount == 1
+
+
+async def create_quiz_question(
+    quiz_id: int,
+    text: str,
+    is_multiple_answers: bool,
+    options: list[dict[str, Any]],
+    session: AsyncSession,
+) -> QuizQuestion:
+    stmt_question = (
+        insert(QuizQuestion)
+        .values(
+            quiz_id=quiz_id,
+            text=text,
+            is_multiple_answers=is_multiple_answers,
+        )
+        .returning(QuizQuestion)
+    )
+    result_question = await session.scalar(stmt_question)
+
+    for option in options:
+        option.update({"quiz_question_id": result_question.id})
+
+    stmt_options = insert(QuizQuestionOption).values(options)
+
+    await session.execute(stmt_options)
+
+    return result_question
