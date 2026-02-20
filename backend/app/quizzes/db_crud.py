@@ -156,3 +156,40 @@ async def create_quiz_question(
     await session.execute(stmt_options)
 
     return result_question
+
+
+async def get_quiz_question_by_uuid(
+    uuid: uuid.UUID,
+    quiz_id: int,
+    session: AsyncSession,
+) -> QuizQuestion | None:
+    stmt = (
+        select(QuizQuestion)
+        .where(
+            QuizQuestion.uuid == uuid,
+            QuizQuestion.quiz_id == quiz_id,
+        )
+        .options(selectinload(QuizQuestion.options))
+    )
+    result = await session.scalar(stmt)
+
+    return result
+
+
+async def update_quiz_question_by_uuid(
+    uuid: uuid.UUID,
+    quiz_id: int,
+    update_quiz_question_data: dict[str, Any],
+    session: AsyncSession,
+) -> bool:
+    stmt = (
+        update(QuizQuestion)
+        .where(
+            QuizQuestion.uuid == uuid,
+            QuizQuestion.quiz_id == quiz_id,
+        )
+        .values(**update_quiz_question_data)
+    )
+    result = await session.execute(stmt)
+
+    return result.rowcount == 1

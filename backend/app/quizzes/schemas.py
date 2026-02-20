@@ -160,3 +160,25 @@ class CreateQuizQuestionRequest(CreateQuizQuestion):
 
 class CreateQuizQuestionResponse(Base):
     uuid: uuid.UUID
+
+
+class UpdateQuizQuestionRequest(Base):
+    text: (
+        Annotated[
+            str,
+            StringConstraints(
+                min_length=3,
+                max_length=500,
+            ),
+        ]
+        | None
+    ) = None
+    is_multiple_answers: bool | None = None
+
+    @field_validator("text", "is_multiple_answers")
+    @classmethod
+    def prevent_explicit_null(cls, value):
+        if value is None:
+            raise ValueError("Null is not allowed for this field")
+
+        return value

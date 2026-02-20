@@ -15,6 +15,7 @@ from app.quizzes.schemas import (
     UpdateQuizRequest,
     CreateQuizQuestionRequest,
     CreateQuizQuestionResponse,
+    UpdateQuizQuestionRequest,
 )
 from app.quizzes.service import (
     create_quiz as service_create_quiz,
@@ -23,6 +24,7 @@ from app.quizzes.service import (
     update_quiz as service_update_quiz,
     delete_quiz as service_delete_quiz,
     create_quiz_question as service_create_quiz_question,
+    update_quiz_question as service_update_quiz_question,
 )
 
 quizzes_router = APIRouter()
@@ -173,3 +175,29 @@ async def create_quiz_question(
     )
 
     return CreateQuizQuestionResponse(uuid=result["uuid"])
+
+
+@quizzes_router.patch(
+    path="/{quiz_uuid}/questions/{quiz_question_uuid}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+@limiter.limit("300/minute")
+async def update_quiz_question(
+    request: Request,
+    quiz_uuid: uuid.UUID,
+    quiz_question_uuid: uuid.UUID,
+    update_quiz_question_data: UpdateQuizQuestionRequest,
+    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> None:
+    user_uuid = auth_context["user_uuid"]
+
+    await service_update_quiz_question(
+        quiz_uuid=quiz_uuid,
+        quiz_question_uuid=quiz_question_uuid,
+        user_uuid=user_uuid,
+        update_quiz_question_data=update_quiz_question_data.model_dump(
+            exclude_unset=True
+        ),
+        session=session,
+    )
