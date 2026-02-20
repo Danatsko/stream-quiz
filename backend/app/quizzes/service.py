@@ -7,12 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.quizzes.db_crud import (
     create_quiz as db_crud_create_quiz,
     get_quizzes_total_count,
-    get_quizzes as db_crud_get_quizzes,
-    get_quiz_by_uuid,
+    get_available_quizzes_list,
+    get_available_quiz_with_relations_by_uuid,
     update_quiz_by_uuid,
     delete_quiz_by_uuid,
     create_quiz_question as db_crud_create_quiz_question,
-    get_quiz_question_by_uuid,
+    get_quiz_question_with_relations_by_uuid,
     update_quiz_question_by_uuid,
     delete_quiz_question_by_uuid,
 )
@@ -67,7 +67,7 @@ async def get_quizzes(
 
         return result
 
-    quizzes_db = await db_crud_get_quizzes(
+    quizzes_db = await get_available_quizzes_list(
         user_id=user_db.id,
         limit=size,
         offset=offset,
@@ -116,7 +116,7 @@ async def get_quiz(
         uuid=user_uuid,
         session=session,
     )
-    quiz_db = await get_quiz_by_uuid(
+    quiz_db = await get_available_quiz_with_relations_by_uuid(
         uuid=quiz_uuid,
         user_id=user_db.id,
         session=session,
@@ -234,7 +234,7 @@ async def create_quiz_question(
         uuid=user_uuid,
         session=session,
     )
-    quiz_db = await get_quiz_by_uuid(
+    quiz_db = await get_available_quiz_with_relations_by_uuid(
         uuid=quiz_uuid,
         user_id=user_db.id,
         session=session,
@@ -272,7 +272,7 @@ async def update_quiz_question(
         uuid=user_uuid,
         session=session,
     )
-    quiz_db = await get_quiz_by_uuid(
+    quiz_db = await get_available_quiz_with_relations_by_uuid(
         uuid=quiz_uuid,
         user_id=user_db.id,
         session=session,
@@ -284,7 +284,7 @@ async def update_quiz_question(
             detail="Quiz not found, or you do not have permission to update it",
         )
 
-    quiz_question_db = await get_quiz_question_by_uuid(
+    quiz_question_db = await get_quiz_question_with_relations_by_uuid(
         uuid=quiz_question_uuid,
         quiz_id=quiz_db.id,
         session=session,
@@ -333,7 +333,7 @@ async def delete_quiz_question(
         uuid=user_uuid,
         session=session,
     )
-    quiz_db = await get_quiz_by_uuid(
+    quiz_db = await get_available_quiz_with_relations_by_uuid(
         uuid=quiz_uuid,
         user_id=user_db.id,
         session=session,

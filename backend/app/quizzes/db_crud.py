@@ -47,7 +47,7 @@ async def get_quizzes_total_count(
     return result or 0
 
 
-async def get_quizzes(
+async def get_available_quizzes_list(
     user_id: int,
     limit: int,
     offset: int,
@@ -76,7 +76,7 @@ async def get_quizzes(
     return result
 
 
-async def get_quiz_by_uuid(
+async def get_available_quiz_with_relations_by_uuid(
     uuid: uuid.UUID,
     user_id: int,
     session: AsyncSession,
@@ -158,7 +158,7 @@ async def create_quiz_question(
     return result_question
 
 
-async def get_quiz_question_by_uuid(
+async def get_quiz_question_with_relations_by_uuid(
     uuid: uuid.UUID,
     quiz_id: int,
     session: AsyncSession,
