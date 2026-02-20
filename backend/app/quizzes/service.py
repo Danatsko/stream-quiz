@@ -14,6 +14,7 @@ from app.quizzes.db_crud import (
     create_quiz_question as db_crud_create_quiz_question,
     get_quiz_question_by_uuid,
     update_quiz_question_by_uuid,
+    delete_quiz_question_by_uuid,
 )
 from app.users.service import get_user_by_uuid, get_user_uuids_by_ids, get_user_by_id
 
@@ -319,4 +320,39 @@ async def update_quiz_question(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Quiz question not found, or you do not have permission to update it",
+        )
+
+
+async def delete_quiz_question(
+    quiz_uuid: uuid.UUID,
+    quiz_question_uuid: uuid.UUID,
+    user_uuid: uuid.UUID,
+    session: AsyncSession,
+) -> None:
+    user_db = await get_user_by_uuid(
+        uuid=user_uuid,
+        session=session,
+    )
+    quiz_db = await get_quiz_by_uuid(
+        uuid=quiz_uuid,
+        user_id=user_db.id,
+        session=session,
+    )
+
+    if quiz_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quiz not found, or you do not have permission to delete it",
+        )
+
+    is_deleted = await delete_quiz_question_by_uuid(
+        uuid=quiz_question_uuid,
+        quiz_id=quiz_db.id,
+        session=session,
+    )
+
+    if not is_deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quiz question not found, or you do not have permission to delete it",
         )

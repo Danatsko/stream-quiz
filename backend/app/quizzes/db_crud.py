@@ -193,3 +193,17 @@ async def update_quiz_question_by_uuid(
     result = await session.execute(stmt)
 
     return result.rowcount == 1
+
+
+async def delete_quiz_question_by_uuid(
+    uuid: uuid.UUID,
+    quiz_id: int,
+    session: AsyncSession,
+) -> bool:
+    stmt = delete(QuizQuestion).where(
+        QuizQuestion.uuid == uuid,
+        QuizQuestion.quiz_id == quiz_id,
+    )
+    result = await session.execute(stmt)
+
+    return result.rowcount == 1
