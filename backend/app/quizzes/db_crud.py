@@ -221,3 +221,23 @@ async def delete_quiz_question_by_uuid(
     result = await session.execute(stmt)
 
     return result.rowcount == 1
+
+
+async def create_quiz_question_option(
+    quiz_question_id: int,
+    text: str,
+    is_correct: bool,
+    session: AsyncSession,
+) -> QuizQuestionOption:
+    stmt = (
+        insert(QuizQuestionOption)
+        .values(
+            quiz_question_id=quiz_question_id,
+            text=text,
+            is_correct=is_correct,
+        )
+        .returning(QuizQuestionOption)
+    )
+    result = await session.scalar(stmt)
+
+    return result

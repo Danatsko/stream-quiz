@@ -182,3 +182,11 @@ class UpdateQuizQuestionRequest(Base):
             raise ValueError("Null is not allowed for this field")
 
         return value
+
+
+class CreateQuizQuestionOptionRequest(CreateQuizQuestionOption):
+    pass
+
+
+class CreateQuizQuestionOptionResponse(Base):
+    uuid: uuid.UUID
