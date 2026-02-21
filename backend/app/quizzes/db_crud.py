@@ -241,3 +241,22 @@ async def create_quiz_question_option(
     result = await session.scalar(stmt)
 
     return result
+
+
+async def update_quiz_question_option_by_uuid(
+    uuid: uuid.UUID,
+    quiz_question_id: int,
+    update_quiz_question_option_data: dict[str, Any],
+    session: AsyncSession,
+) -> bool:
+    stmt = (
+        update(QuizQuestionOption)
+        .where(
+            QuizQuestionOption.uuid == uuid,
+            QuizQuestionOption.quiz_question_id == quiz_question_id,
+        )
+        .values(**update_quiz_question_option_data)
+    )
+    result = await session.execute(stmt)
+
+    return result.rowcount == 1

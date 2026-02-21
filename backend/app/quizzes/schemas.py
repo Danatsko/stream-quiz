@@ -190,3 +190,25 @@ class CreateQuizQuestionOptionRequest(CreateQuizQuestionOption):
 
 class CreateQuizQuestionOptionResponse(Base):
     uuid: uuid.UUID
+
+
+class UpdateQuizQuestionOptionRequest(Base):
+    text: (
+        Annotated[
+            str,
+            StringConstraints(
+                min_length=3,
+                max_length=500,
+            ),
+        ]
+        | None
+    ) = None
+    is_correct: bool | None = None
+
+    @field_validator("text", "is_correct")
+    @classmethod
+    def prevent_explicit_null(cls, value):
+        if value is None:
+            raise ValueError("Null is not allowed for this field")
+
+        return value
