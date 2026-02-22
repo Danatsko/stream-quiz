@@ -33,17 +33,7 @@ async def create_user(
     except IntegrityError as exc:
         msg = str(exc.orig)
 
-        if "Key (id)=" in msg:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Something went wrong",
-            )
-        elif "Key (uuid)=" in msg:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Something went wrong",
-            )
-        elif "Key (email)=" in msg:
+        if "Key (email)=" in msg:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="User already exists",

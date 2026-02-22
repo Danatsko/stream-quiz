@@ -118,28 +118,12 @@ async def registration(
         seconds=settings.auth.refresh_token_expire_seconds
     )
 
-    try:
-        await create_refresh_token(
-            user_id=user_db.id,
-            token=peppered_refresh_token,
-            expires_at=refresh_token_expires_at,
-            session=session,
-        )
-    except IntegrityError as exc:
-        msg = str(exc.orig)
-
-        if "Key (id)=" in msg:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Something went wrong",
-            )
-        elif "Key (token)=" in msg:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Something went wrong",
-            )
-        else:
-            raise exc
+    await create_refresh_token(
+        user_id=user_db.id,
+        token=peppered_refresh_token,
+        expires_at=refresh_token_expires_at,
+        session=session,
+    )
 
     result = {
         "access_token": access_token,
@@ -183,28 +167,12 @@ async def login(
         seconds=settings.auth.refresh_token_expire_seconds
     )
 
-    try:
-        await create_refresh_token(
-            user_id=user_db.id,
-            token=peppered_refresh_token,
-            expires_at=refresh_token_expires_at,
-            session=session,
-        )
-    except IntegrityError as exc:
-        msg = str(exc.orig)
-
-        if "Key (id)=" in msg:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Something went wrong",
-            )
-        elif "Key (token)=" in msg:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Something went wrong",
-            )
-        else:
-            raise exc
+    await create_refresh_token(
+        user_id=user_db.id,
+        token=peppered_refresh_token,
+        expires_at=refresh_token_expires_at,
+        session=session,
+    )
 
     result = {
         "access_token": access_token,
