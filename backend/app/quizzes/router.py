@@ -31,6 +31,7 @@ from app.quizzes.service import (
     delete_quiz_question as service_delete_quiz_question,
     create_quiz_question_option as service_create_quiz_question_option,
     update_quiz_question_option as service_update_quiz_question_option,
+    delete_quiz_question_option as service_delete_quiz_question_option,
 )
 
 quizzes_router = APIRouter()
@@ -280,6 +281,30 @@ async def update_quiz_question_option(
         update_quiz_question_option_data=update_quiz_question_option_data.model_dump(
             exclude_unset=True
         ),
+        user_uuid=user_uuid,
+        session=session,
+    )
+
+
+@quizzes_router.delete(
+    path="/{quiz_uuid}/questions/{quiz_question_uuid}/options/{quiz_question_option_uuid}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+@limiter.limit("300/minute")
+async def delete_quiz_question_option(
+    request: Request,
+    quiz_uuid: uuid.UUID,
+    quiz_question_uuid: uuid.UUID,
+    quiz_question_option_uuid: uuid.UUID,
+    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> None:
+    user_uuid = auth_context["user_uuid"]
+
+    await service_delete_quiz_question_option(
+        quiz_uuid=quiz_uuid,
+        quiz_question_uuid=quiz_question_uuid,
+        quiz_question_option_uuid=quiz_question_option_uuid,
         user_uuid=user_uuid,
         session=session,
     )

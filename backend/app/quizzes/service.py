@@ -18,6 +18,7 @@ from app.quizzes.db_crud import (
     delete_quiz_question_by_uuid,
     create_quiz_question_option as db_crud_create_quiz_question_option,
     update_quiz_question_option_by_uuid,
+    delete_quiz_question_option_by_uuid,
 )
 from app.users.service import get_user_by_uuid, get_user_uuids_by_ids, get_user_by_id
 
@@ -345,7 +346,7 @@ async def delete_quiz_question(
     if quiz_db is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Quiz not found, or you do not have permission to delete it",
+            detail="Quiz not found, or you do not have permission to update it",
         )
 
     is_deleted = await delete_quiz_question_by_uuid(
@@ -511,6 +512,80 @@ async def update_quiz_question_option(
     )
 
     if not is_updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quiz question option not found",
+        )
+
+
+async def delete_quiz_question_option(
+    quiz_uuid: uuid.UUID,
+    quiz_question_uuid: uuid.UUID,
+    quiz_question_option_uuid: uuid.UUID,
+    user_uuid: uuid.UUID,
+    session: AsyncSession,
+) -> None:
+    user_db = await get_user_by_uuid(
+        uuid=user_uuid,
+        session=session,
+    )
+    quiz_db = await get_quiz_by_uuid(
+        uuid=quiz_uuid,
+        user_id=user_db.id,
+        session=session,
+    )
+
+    if quiz_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quiz not found, or you do not have permission to update it",
+        )
+
+    quiz_question_db = await get_quiz_question_with_relations_by_uuid(
+        uuid=quiz_question_uuid,
+        quiz_id=quiz_db.id,
+        session=session,
+    )
+
+    if quiz_question_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quiz question not found",
+        )
+
+    quiz_question_option_db = next(
+        (
+            option
+            for option in quiz_question_db.options
+            if option.uuid == quiz_question_option_uuid
+        ),
+        None,
+    )
+
+    if quiz_question_option_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quiz question option not found",
+        )
+
+    if quiz_question_option_db.is_correct:
+        correct_count = sum(
+            1 for option in quiz_question_db.options if option.is_correct
+        )
+
+        if correct_count <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Cannot delete the only correct option",
+            )
+
+    is_deleted = await delete_quiz_question_option_by_uuid(
+        uuid=quiz_question_option_uuid,
+        quiz_question_id=quiz_question_db.id,
+        session=session,
+    )
+
+    if not is_deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Quiz question option not found",
