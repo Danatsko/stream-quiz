@@ -26,7 +26,7 @@ const navLinks = [
             :to="{ name: link.pathName }"
           >
             <Icon class="link-icon" :icon="link.icon" />
-            <p class="link">{{ link.label }}</p>
+            <span class="link">{{ link.label }}</span>
           </RouterLink>
         </nav>
 
@@ -48,7 +48,7 @@ const navLinks = [
 
 <style scoped>
 .layout {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
 }
@@ -85,13 +85,12 @@ const navLinks = [
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 0.3rem;
   text-decoration: none;
   font-weight: 500;
   font-size: 1rem;
   padding: 0 0.5rem;
-  border: 1px solid transparent;
   border-radius: 9999px;
 }
 .link-wrapper:hover {
@@ -104,8 +103,6 @@ const navLinks = [
 .link-icon {
   font-size: 1.2rem;
   z-index: 1;
-}
-.link {
 }
 .link-wrapper:hover .link,
 .link-wrapper.router-link-active .link {
@@ -129,17 +126,19 @@ const navLinks = [
 .main {
   border-top: 1px solid #2a2a2a;
   position: relative;
-  padding: 0.5rem 0;
-  overflow: hidden;
+  box-sizing: border-box;
+  flex-direction: column;
   display: flex;
-  align-items: center;
-  justify-content: center;
   flex-grow: 1;
+  overflow: hidden;
+  min-height: 0;
 }
 .main-content {
+  flex: 1;
   display: flex;
-  gap: 1rem;
   justify-content: center;
-  align-items: center;
+  align-items: stretch;
+  overflow: hidden;
+  min-height: 0;
 }
 </style>
