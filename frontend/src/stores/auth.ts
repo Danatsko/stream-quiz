@@ -27,7 +27,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       await authAPI.registration(payload)
       isAuthChecked.value = false
-      await fetchUser()
+      await getMe()
     } catch (registrationError) {
       if (registrationError instanceof AxiosError) {
         error.value = registrationError.response?.data?.detail || 'Error during registration'
@@ -46,7 +46,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       await authAPI.login(payload)
       isAuthChecked.value = false
-      await fetchUser()
+      await getMe()
     } catch (loginError) {
       if (loginError instanceof AxiosError) {
         error.value = loginError.response?.data?.detail || 'Error during login'
@@ -75,7 +75,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const fetchUser = async (): Promise<void> => {
+  const getMe = async (): Promise<void> => {
     if (isAuthChecked.value && !user.value) {
       return
     }
@@ -84,7 +84,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       user.value = await usersAPI.getMe()
-    } catch (fetchUserError) {
+    } catch (getMeError) {
       user.value = null
     } finally {
       isLoading.value = false
@@ -101,7 +101,7 @@ export const useAuthStore = defineStore('auth', () => {
     registration,
     login,
     logout,
-    fetchUser,
+    getMe,
   }
 })
 

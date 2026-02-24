@@ -77,7 +77,7 @@ router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
   if (!authStore.user && !authStore.isAuthChecked) {
-    await authStore.fetchUser()
+    await authStore.getMe()
   }
 
   const isAuthenticated = authStore.isAuthenticated
