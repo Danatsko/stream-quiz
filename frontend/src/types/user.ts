@@ -3,3 +3,5 @@ export interface User {
   username: string
   email: string
 }
+
+export interface GetMeResponse extends User {}
