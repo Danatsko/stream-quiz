@@ -5,29 +5,67 @@ import AppLogo from '@/components/AppLogo.vue'
 
 <template>
   <div class="layout">
-    <div class="main-left">
-      <div class="main-left-glow main-left-glow-left"></div>
-      <div class="main-left-glow main-left-glow-right"></div>
-      <img :src="homeVector" class="main-left-vector main-left-vector-top" alt="" />
-      <div class="main-left-content">
+    <header class="header">
+      <div class="header-content">
         <AppLogo />
       </div>
-      <img :src="homeVector" class="main-left-vector main-left-vector-bottom" alt="" />
-    </div>
-    <div class="main-right">
-      <div class="main-right-content">
-        <RouterView />
+    </header>
+
+    <main class="main">
+      <div class="main-left">
+        <div class="main-left-glow main-left-glow-left"></div>
+        <div class="main-left-glow main-left-glow-right"></div>
+        <img :src="homeVector" class="main-left-vector main-left-vector-top" alt="" />
+        <div class="main-left-content">
+          <AppLogo />
+        </div>
+        <img :src="homeVector" class="main-left-vector main-left-vector-bottom" alt="" />
       </div>
-    </div>
+      <div class="main-right">
+        <div class="main-right-content">
+          <RouterView />
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-content">
+        <p class="footer-copyright">Copyright © 2026 StreamQuiz</p>
+      </div>
+    </footer>
   </div>
 </template>
 
 <style scoped>
 .layout {
-  min-height: 100vh;
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  padding: 0.5rem 0;
+  flex-shrink: 0;
+}
+.header-content {
+  margin: 0 auto;
+  padding: 0 2.5rem;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.main {
+  flex: 1;
   display: flex;
   flex-direction: row;
+  overflow: hidden;
+  border-top: 1px solid #2a2a2a;
+  border-bottom: 1px solid #2a2a2a;
 }
+
 .main-left {
   position: relative;
   border-right: 1px solid #2a2a2a;
@@ -101,5 +139,19 @@ import AppLogo from '@/components/AppLogo.vue'
   gap: 1rem;
   justify-content: center;
   align-items: center;
+}
+
+.footer {
+  padding: 0.5rem 0;
+  flex-shrink: 0;
+}
+.footer-content {
+  display: flex;
+  justify-content: center;
+}
+.footer-copyright {
+  max-width: 300px;
+  font-size: 0.75rem;
+  font-weight: 300;
 }
 </style>
