@@ -1,5 +1,5 @@
 import api from '@/services/api'
-import type { GetMeResponse} from '@/types/user'
+import type { GetMeResponse } from '@/types/user'
 
 export const usersAPI = {
   async getMe(): Promise<GetMeResponse> {
