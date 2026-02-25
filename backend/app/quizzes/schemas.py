@@ -116,6 +116,7 @@ class GetDetailedQuiz(QuizBase):
     creator_uuid: uuid.UUID | None
     uuid: uuid.UUID
     questions: list[GetDetailedQuizQuestion]
+    total_questions: int
 
 
 class GetQuizResponse(GetDetailedQuiz):

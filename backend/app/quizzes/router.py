@@ -115,6 +115,7 @@ async def get_quiz(
         description=result["description"],
         is_public=result["is_public"],
         questions=result["questions"],
+        total_questions=result["total_questions"],
     )
 
 

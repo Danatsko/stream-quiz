@@ -165,6 +165,8 @@ async def get_quiz(
             }
         )
 
+    total_questions = len(questions_data)
+
     result = {
         "uuid": quiz_db.uuid,
         "creator_uuid": creator_db.uuid if creator_db else None,
@@ -172,6 +174,7 @@ async def get_quiz(
         "description": quiz_db.description,
         "is_public": quiz_db.is_public,
         "questions": questions_data,
+        "total_questions": total_questions,
     }
 
     return result
