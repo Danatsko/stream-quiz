@@ -6,11 +6,11 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-const goToLogin = (): void => {
-  router.push({ name: 'Login' })
+const goToLogin = async (): Promise<void> => {
+  await router.push({ name: 'Login' })
 }
-const goToRegistration = (): void => {
-  router.push({ name: 'Registration' })
+const goToRegistration = async (): Promise<void> => {
+  await router.push({ name: 'Registration' })
 }
 </script>
 
