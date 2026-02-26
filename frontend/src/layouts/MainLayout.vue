@@ -43,6 +43,12 @@ const navLinks = [
         <RouterView />
       </div>
     </div>
+
+    <footer class="footer">
+      <div class="footer-content">
+        <p class="footer-copyright">Copyright © 2026 StreamQuiz</p>
+      </div>
+    </footer>
   </div>
 </template>
 
@@ -125,6 +131,7 @@ const navLinks = [
 
 .main {
   border-top: 1px solid #2a2a2a;
+  border-bottom: 1px solid #2a2a2a;
   position: relative;
   box-sizing: border-box;
   flex-direction: column;
@@ -140,5 +147,19 @@ const navLinks = [
   align-items: stretch;
   overflow: hidden;
   min-height: 0;
+}
+
+.footer {
+  padding: 0.5rem 0;
+  flex-shrink: 0;
+}
+.footer-content {
+  display: flex;
+  justify-content: center;
+}
+.footer-copyright {
+  max-width: 300px;
+  font-size: 0.75rem;
+  font-weight: 300;
 }
 </style>
