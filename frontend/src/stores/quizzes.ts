@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { CreateQuizPayload, SummaryQuiz } from '@/types/quizzes'
+import type { CreateQuizPayload, DetailedQuiz, GetQuizResponse, SummaryQuiz } from '@/types/quizzes'
 import { AxiosError } from 'axios'
 import { quizzesAPI } from '@/api/quizzes'
 
 export const useQuizzesStore = defineStore('quizzes', () => {
   const quizzes = ref<Array<SummaryQuiz>>([])
+  const quiz = ref<DetailedQuiz | null>(null)
   const total_quizzes = ref<number | null>(null)
   const page = ref<number | null>(null)
   const size = 10
@@ -22,6 +23,11 @@ export const useQuizzesStore = defineStore('quizzes', () => {
     total_quizzes.value = null
     page.value = null
     total_pages.value = null
+    resetError()
+  }
+
+  const clearQuiz = (): void => {
+    quiz.value = null
     resetError()
   }
 
@@ -70,6 +76,23 @@ export const useQuizzesStore = defineStore('quizzes', () => {
     }
   }
 
+  const getQuiz = async (uuid: string): Promise<void> => {
+    isLoading.value = true
+    resetError()
+
+    try {
+      quiz.value = await quizzesAPI.getQuiz(uuid)
+    } catch (getQuizError) {
+      if (getQuizError instanceof AxiosError) {
+        error.value = getQuizError.response?.data?.detail || 'Error during get quiz'
+      }
+
+      throw getQuizError
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   const deleteQuiz = async (uuid: string): Promise<void> => {
     isLoading.value = true
     resetError()
@@ -78,6 +101,10 @@ export const useQuizzesStore = defineStore('quizzes', () => {
       await quizzesAPI.deleteQuiz(uuid)
 
       quizzes.value = quizzes.value.filter((q) => q.uuid !== uuid)
+
+      if (quiz.value?.uuid === uuid) {
+        quiz.value = null
+      }
     } catch (deleteQuizError) {
       if (deleteQuizError instanceof AxiosError) {
         error.value = deleteQuizError.response?.data?.detail || 'Error during create quiz'
@@ -91,6 +118,7 @@ export const useQuizzesStore = defineStore('quizzes', () => {
 
   return {
     quizzes,
+    quiz,
     total_quizzes,
     page,
     size,
@@ -98,8 +126,10 @@ export const useQuizzesStore = defineStore('quizzes', () => {
     isLoading,
     error,
     clearQuizzes,
+    clearQuiz,
     createQuiz,
     getQuizzes,
+    getQuiz,
     deleteQuiz,
   }
 })

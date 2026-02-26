@@ -6,6 +6,7 @@ import AppErrorMessage from '@/components/AppErrorMessage.vue'
 import useAuthStore from '@/stores/auth'
 import useQuizzesStore from '@/stores/quizzes'
 import { useInfiniteScroll } from '@vueuse/core'
+import { useRouter } from 'vue-router'
 
 interface CreateQuizFormState {
   title: string
@@ -19,6 +20,7 @@ const MAX_DESCRIPTION_LENGTH = 500
 
 const authStore = useAuthStore()
 const quizzesStore = useQuizzesStore()
+const router = useRouter()
 
 const activeTab = ref('All')
 const activeMenuUuid = ref<string | null>(null)
@@ -66,6 +68,15 @@ const filteredQuizzes = computed(() => {
 
 const copyToClipboard = (text: string): void => {
   navigator.clipboard.writeText(text)
+}
+
+const goToQuiz = async (uuid: string): Promise<void> => {
+  await router.push({
+    name: 'Quiz',
+    params: {
+      uuid: uuid,
+    },
+  })
 }
 
 const openCreateQuizDialog = (): void => {
@@ -127,12 +138,13 @@ const handleCreateQuiz = async (): Promise<void> => {
   }
 
   try {
-    await quizzesStore.createQuiz({
+    const uuid = await quizzesStore.createQuiz({
       title: createQuizForm.value.title,
       description: createQuizForm.value.description,
     })
 
     closeCreateQuizDialog()
+    await goToQuiz(uuid)
   } catch (error) {}
 }
 
@@ -154,9 +166,8 @@ const confirmDeleteQuiz = async (): Promise<void> => {
 
   try {
     await quizzesStore.deleteQuiz(quizToDeleteUuid.value)
+    closeDeleteQuizDialog()
   } catch (error) {}
-
-  closeDeleteQuizDialog()
 }
 </script>
 
@@ -164,7 +175,7 @@ const confirmDeleteQuiz = async (): Promise<void> => {
   <div class="layout">
     <header class="header">
       <div class="header-content">
-        <AppButton class="btn-create-quiz" @click="openCreateQuizDialog">Create quiz</AppButton>
+        <AppButton class="btn-view" @click="openCreateQuizDialog">Create quiz</AppButton>
       </div>
     </header>
 
@@ -228,7 +239,7 @@ const confirmDeleteQuiz = async (): Promise<void> => {
             </div>
 
             <div class="card-actions">
-              <button class="btn-view">View</button>
+              <button class="btn-view" @click="goToQuiz(quiz.uuid)">View</button>
               <div class="context-menu-wrapper" v-if="quiz.creator_uuid === currentUserUuid">
                 <button class="btn-icon" @click.stop="toggleMenu(quiz.uuid)">
                   <Icon icon="mdi:dots-vertical" />
@@ -685,7 +696,11 @@ const confirmDeleteQuiz = async (): Promise<void> => {
   color: red;
 }
 .dropdown-item.delete:hover {
-  background-color: rgba(255, 0, 0, 0.1);
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+  box-shadow:
+    0 0 1px 1px #ef4444,
+    0 0 5px 1px rgba(239, 68, 68, 0.5);
 }
 .btn-icon:hover {
   border-color: var(--color-primary);

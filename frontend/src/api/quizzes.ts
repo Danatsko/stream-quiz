@@ -1,5 +1,10 @@
 import api from '@/services/api'
-import type { CreateQuizPayload, CreateQuizResponse, GetQuizzesResponse } from '@/types/quizzes'
+import type {
+  CreateQuizPayload,
+  CreateQuizResponse,
+  GetQuizResponse,
+  GetQuizzesResponse,
+} from '@/types/quizzes'
 
 export const quizzesAPI = {
   async createQuiz(payload: CreateQuizPayload): Promise<CreateQuizResponse> {
@@ -15,6 +20,12 @@ export const quizzesAPI = {
         size: size,
       },
     })
+
+    return response.data
+  },
+
+  async getQuiz(uuid: string): Promise<GetQuizResponse> {
+    const response = await api.get<GetQuizResponse>(`/quizzes/${uuid}`)
 
     return response.data
   },
