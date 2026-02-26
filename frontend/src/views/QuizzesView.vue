@@ -64,6 +64,10 @@ const filteredQuizzes = computed(() => {
   return quizzesStore.quizzes
 })
 
+const copyToClipboard = (text: string): void => {
+  navigator.clipboard.writeText(text)
+}
+
 const openCreateQuizDialog = (): void => {
   isCreateQuizDialogOpen.value = true
   createQuizForm.value.title = ''
@@ -127,9 +131,9 @@ const handleCreateQuiz = async (): Promise<void> => {
       title: createQuizForm.value.title,
       description: createQuizForm.value.description,
     })
-  } catch (error) {}
 
-  closeCreateQuizDialog()
+    closeCreateQuizDialog()
+  } catch (error) {}
 }
 
 const openDeleteQuizDialog = (uuid: string): void => {
@@ -153,10 +157,6 @@ const confirmDeleteQuiz = async (): Promise<void> => {
   } catch (error) {}
 
   closeDeleteQuizDialog()
-}
-
-const copyToClipboard = (text: string): void => {
-  navigator.clipboard.writeText(text)
 }
 </script>
 
@@ -198,7 +198,7 @@ const copyToClipboard = (text: string): void => {
           <p class="empty-text">No quiz found for the selected category</p>
         </div>
 
-        <div v-else>
+        <template v-else>
           <div class="quiz-card" v-for="quiz in filteredQuizzes" :key="quiz.uuid">
             <div class="card-icon-wrapper">
               <Icon icon="mdi:book-open-variant-outline" class="card-icon" />
@@ -217,7 +217,7 @@ const copyToClipboard = (text: string): void => {
 
               <div class="info-bottom-row">
                 <span class="meta-item">
-                  <Icon icon="mdi:book-open-variant-outline" />
+                  <Icon icon="mdi:help-circle-outline" />
                   {{ quiz.total_questions }} questions
                 </span>
                 <div class="quiz-id" @click="copyToClipboard(quiz.uuid)" title="Copy uuid">
@@ -250,15 +250,9 @@ const copyToClipboard = (text: string): void => {
           <div v-if="quizzesStore.isLoading" class="loading-indicator">
             <Icon icon="mdi:loading" class="spin-icon" /> Loading
           </div>
-        </div>
+        </template>
       </div>
     </main>
-
-    <footer class="footer">
-      <div class="footer-content">
-        <p class="footer-copyright">Copyright © 2026 StreamQuiz</p>
-      </div>
-    </footer>
   </div>
 
   <Teleport to="body">
@@ -426,7 +420,7 @@ const copyToClipboard = (text: string): void => {
   min-height: 300px;
   text-align: center;
   gap: 0.5rem;
-  color: #9ca3af;
+  color: white;
 }
 .empty-icon {
   font-size: 4rem;
@@ -472,6 +466,8 @@ const copyToClipboard = (text: string): void => {
   padding: 1.2rem;
   transition: border-color 0.2s;
   flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 .quiz-card:hover {
   border-color: var(--color-primary);
@@ -496,24 +492,34 @@ const copyToClipboard = (text: string): void => {
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 0.4rem;
+  min-width: 0;
 }
 .info-top-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.8rem;
+  max-width: 100%;
 }
 .quiz-title {
   font-size: 1.1rem;
   font-weight: 700;
   margin: 0;
   color: white;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  min-width: 0;
+  max-width: 100%;
 }
 .badge {
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.2rem 0.6rem;
   border-radius: 9999px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .badge.public {
   background-color: color-mix(in srgb, var(--color-primary) 15%, transparent);
@@ -537,6 +543,9 @@ const copyToClipboard = (text: string): void => {
   border-radius: 6px;
   cursor: pointer;
   transition: color 0.2s;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .quiz-id:hover {
   color: white;
@@ -548,6 +557,11 @@ const copyToClipboard = (text: string): void => {
   margin: 0;
   font-size: 0.9rem;
   color: #9ca3af;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .info-bottom-row {
   display: flex;
@@ -556,6 +570,7 @@ const copyToClipboard = (text: string): void => {
   font-size: 0.8rem;
   color: #9ca3af;
   margin-top: 0.2rem;
+  flex-wrap: wrap;
 }
 .meta-item {
   display: flex;
@@ -567,6 +582,7 @@ const copyToClipboard = (text: string): void => {
   align-items: center;
   gap: 0.5rem;
   flex-shrink: 0;
+  margin-left: auto;
 }
 .btn-view {
   background-color: transparent;
@@ -704,20 +720,6 @@ const copyToClipboard = (text: string): void => {
   width: 100%;
 }
 
-.footer {
-  padding: 0.5rem 0;
-  flex-shrink: 0;
-}
-.footer-content {
-  display: flex;
-  justify-content: center;
-}
-.footer-copyright {
-  max-width: 300px;
-  font-size: 0.75rem;
-  font-weight: 300;
-}
-
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -756,7 +758,7 @@ const copyToClipboard = (text: string): void => {
 }
 .modal-header {
   display: flex;
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
   padding: 1.5rem;
 }
