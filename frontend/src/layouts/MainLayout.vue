@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import AppLogo from '@/components/AppLogo.vue'
+import AppFooter from '@/components/AppFooter.vue'
 import { Icon } from '@iconify/vue'
+import AppHeader from '@/components/AppHeader.vue'
 
 const navLinks = [
   { label: 'Take', pathName: 'Take', icon: 'mdi:play-outline' },
-  { label: 'Quizzes', pathName: 'Quizzes', icon: 'mdi:quiz-outline' },
+  { label: 'Quizzes', pathName: 'Quizzes', icon: 'mdi:book-open-variant-outline' },
   { label: 'Rooms', pathName: 'Rooms', icon: 'mdi:cube-outline' },
   { label: 'History', pathName: 'History', icon: 'mdi:clock-outline' },
 ]
@@ -12,12 +13,8 @@ const navLinks = [
 
 <template>
   <div class="layout">
-    <header class="header">
-      <div class="container header-content">
-        <div class="header-left">
-          <AppLogo />
-        </div>
-
+    <AppHeader>
+      <div class="header-slot-inner">
         <nav class="header-center">
           <RouterLink
             class="link-wrapper"
@@ -37,18 +34,15 @@ const navLinks = [
           </RouterLink>
         </nav>
       </div>
-    </header>
+    </AppHeader>
+
     <div class="main">
       <div class="main-content">
         <RouterView />
       </div>
     </div>
 
-    <footer class="footer">
-      <div class="footer-content">
-        <p class="footer-copyright">Copyright © 2026 StreamQuiz</p>
-      </div>
-    </footer>
+    <AppFooter />
   </div>
 </template>
 
@@ -59,25 +53,10 @@ const navLinks = [
   flex-direction: column;
 }
 
-.container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 2.5rem;
-}
-
-.header {
-  padding: 0.5rem 0;
-  flex-shrink: 0;
-}
-.header-content {
+.header-slot-inner {
   display: flex;
+  width: 100%;
   justify-content: space-between;
-  align-items: center;
-}
-.header-left {
-  display: flex;
-  align-items: center;
-  flex: 1;
 }
 .header-center {
   display: flex;
@@ -86,8 +65,14 @@ const navLinks = [
   justify-content: center;
   flex: 1;
 }
+.header-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+}
 .link-wrapper {
-  color: #2a2a2a;
+  color: var(--color-border);
   position: relative;
   display: flex;
   align-items: center;
@@ -121,17 +106,10 @@ const navLinks = [
 .link-wrapper.router-link-active .link-icon {
   color: var(--color-primary);
 }
-.header-right {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 1rem;
-  flex: 1;
-}
 
 .main {
-  border-top: 1px solid #2a2a2a;
-  border-bottom: 1px solid #2a2a2a;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
   position: relative;
   box-sizing: border-box;
   flex-direction: column;
@@ -147,19 +125,5 @@ const navLinks = [
   align-items: stretch;
   overflow: hidden;
   min-height: 0;
-}
-
-.footer {
-  padding: 0.5rem 0;
-  flex-shrink: 0;
-}
-.footer-content {
-  display: flex;
-  justify-content: center;
-}
-.footer-copyright {
-  max-width: 300px;
-  font-size: 0.75rem;
-  font-weight: 300;
 }
 </style>

@@ -261,9 +261,6 @@ const handleSubmit = async () => {
   border-color: red;
 }
 .btn-signup {
-  background: var(--linear-gradient-primary);
-  color: var(--color-text);
-  margin: 0.3rem 0;
   align-self: center;
 }
 

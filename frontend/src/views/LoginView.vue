@@ -176,7 +176,7 @@ const handleSubmit = async () => {
   width: 100%;
   padding: 0.75rem 1rem 0.75rem 2.5rem;
   box-sizing: border-box;
-  border: 1px solid #000000;
+  border: 1px solid black;
   border-radius: 8px;
   font-size: 1rem;
   outline: none;
@@ -194,9 +194,6 @@ const handleSubmit = async () => {
   border-color: red;
 }
 .btn-signin {
-  background: var(--linear-gradient-primary);
-  color: var(--color-text);
-  margin: 0.3rem 0;
   align-self: center;
 }
 

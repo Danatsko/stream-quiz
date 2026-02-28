@@ -2,7 +2,10 @@
 
 :root {
   --color-background: #000000;
+  --color-background-secondary: #121212;
   --color-text: #ffffff;
+  --color-text-secondary: #9ca3af;
+  --color-border: #2a2a2a;
   --color-primary: #9823f5;
   --color-secondary: #c45037;
   --linear-gradient-primary: -webkit-linear-gradient(

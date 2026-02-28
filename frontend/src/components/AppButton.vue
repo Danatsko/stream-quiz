@@ -8,21 +8,26 @@
 
 <style scoped>
 .btn {
-  padding: 0.75rem 1.5rem;
-  border-radius: 9999px;
+  background: var(--color-background);
+  display: flex;
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  border-radius: 9px;
   font-weight: 500;
-  font-family: inherit;
   font-size: 1rem;
   cursor: pointer;
-  border: 1px solid transparent;
+  border: 1px solid var(--color-border);
   user-select: none;
-  transition:
-    opacity 0.1s ease,
-    transform 0.1s ease,
-    background-color 0.1s ease;
+  color: var(--color-text);
+  transition: all 0.2s ease;
 }
 .btn:hover {
-  opacity: 0.9;
+  border-color: var(--color-primary);
+  box-shadow:
+    0 0 1px 1px color-mix(in srgb, var(--color-primary) 90%, transparent),
+    0 0 1px 3px color-mix(in srgb, var(--color-secondary) 90%, transparent);
 }
 .btn:active {
   transform: scale(0.95);

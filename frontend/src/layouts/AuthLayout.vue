@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import homeVector from '@/assets/homeVector.svg'
 import AppLogo from '@/components/AppLogo.vue'
+import AppFooter from '@/components/AppFooter.vue'
+import AppHeader from '@/components/AppHeader.vue'
 </script>
 
 <template>
   <div class="layout">
-    <header class="header">
-      <div class="header-content">
-        <AppLogo />
-      </div>
-    </header>
+    <AppHeader />
 
     <main class="main">
       <div class="main-left">
@@ -28,11 +26,7 @@ import AppLogo from '@/components/AppLogo.vue'
       </div>
     </main>
 
-    <footer class="footer">
-      <div class="footer-content">
-        <p class="footer-copyright">Copyright © 2026 StreamQuiz</p>
-      </div>
-    </footer>
+    <AppFooter />
   </div>
 </template>
 
@@ -45,30 +39,18 @@ import AppLogo from '@/components/AppLogo.vue'
   overflow: hidden;
 }
 
-.header {
-  padding: 0.5rem 0;
-  flex-shrink: 0;
-}
-.header-content {
-  margin: 0 auto;
-  padding: 0 2.5rem;
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-}
-
 .main {
   flex: 1;
   display: flex;
   flex-direction: row;
   overflow: hidden;
-  border-top: 1px solid #2a2a2a;
-  border-bottom: 1px solid #2a2a2a;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .main-left {
   position: relative;
-  border-right: 1px solid #2a2a2a;
+  border-right: 1px solid var(--color-border);
   padding: 0.5rem 0;
   overflow: hidden;
   display: flex;
@@ -125,7 +107,7 @@ import AppLogo from '@/components/AppLogo.vue'
 
 .main-right {
   background: white;
-  border-left: 1px solid #2a2a2a;
+  border-left: 1px solid var(--color-border);
   position: relative;
   padding: 0.5rem 0;
   overflow: hidden;
@@ -139,19 +121,5 @@ import AppLogo from '@/components/AppLogo.vue'
   gap: 1rem;
   justify-content: center;
   align-items: center;
-}
-
-.footer {
-  padding: 0.5rem 0;
-  flex-shrink: 0;
-}
-.footer-content {
-  display: flex;
-  justify-content: center;
-}
-.footer-copyright {
-  max-width: 300px;
-  font-size: 0.75rem;
-  font-weight: 300;
 }
 </style>
