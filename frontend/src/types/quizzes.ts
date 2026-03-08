@@ -54,3 +54,38 @@ export interface CreateQuizPayload {
 export interface CreateQuizResponse {
   uuid: string
 }
+
+export interface UpdateQuizPayload {
+  title?: string
+  description?: string
+  is_public?: boolean
+}
+
+export interface CreateQuizQuestionOptionPayload {
+  text: string
+  is_correct: boolean
+}
+
+export interface CreateQuizQuestionOptionResponse {
+  uuid: string
+}
+
+export interface UpdateQuizQuestionOptionPayload {
+  text?: string
+  is_correct?: boolean
+}
+
+export interface CreateQuizQuestionPayload {
+  text: string
+  is_multiple_answers: boolean
+  options: Array<CreateQuizQuestionOptionPayload>
+}
+
+export interface CreateQuizQuestionResponse {
+  uuid: string
+}
+
+export interface UpdateQuizQuestionPayload {
+  text?: string
+  is_multiple_answers?: boolean
+}

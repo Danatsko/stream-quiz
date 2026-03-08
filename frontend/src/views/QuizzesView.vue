@@ -69,6 +69,17 @@ const goToQuiz = async (uuid: string): Promise<void> => {
   })
 }
 
+const goToEdit = async (uuid: string): Promise<void> => {
+  activeMenuUuid.value = null
+
+  await router.push({
+    name: 'EditQuiz',
+    params: {
+      uuid: uuid,
+    },
+  })
+}
+
 const openCreateQuizDialog = (): void => {
   isCreateQuizDialogOpen.value = true
   createQuizForm.value.title = ''
@@ -81,10 +92,6 @@ const closeCreateQuizDialog = (): void => {
 
 const toggleMenu = (uuid: string): void => {
   activeMenuUuid.value = activeMenuUuid.value === uuid ? null : uuid
-}
-
-const editQuiz = (uuid: string): void => {
-  activeMenuUuid.value = null
 }
 
 const closeDropdowns = (): void => {
@@ -226,7 +233,7 @@ const confirmDeleteQuiz = async (): Promise<void> => {
               </AppButton>
 
               <div class="dropdown-menu" v-if="activeMenuUuid === quiz.uuid" @click.stop>
-                <AppButton @click="editQuiz(quiz.uuid)">
+                <AppButton @click="goToEdit(quiz.uuid)">
                   <span>Edit</span>
                 </AppButton>
 

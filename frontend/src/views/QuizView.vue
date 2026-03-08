@@ -29,7 +29,25 @@ const isCreator = computed((): boolean => {
 
 onMounted(async () => {
   if (quizUuid.value) {
-    await quizzesStore.getQuiz(quizUuid.value)
+    try {
+      await quizzesStore.getQuiz(quizUuid.value)
+
+      if (!quiz.value) {
+        await router.push({ name: 'Quizzes' })
+
+        return
+      }
+
+      if (quiz.value.creator_uuid !== currentUserUuid.value) {
+        if (!quiz.value.is_public) {
+          await router.push({ name: 'Quizzes' })
+
+          return
+        }
+      }
+    } catch (onMountedError) {
+      await router.push({ name: 'Quizzes' })
+    }
   }
 })
 
@@ -39,6 +57,15 @@ onBeforeUnmount(() => {
 
 const goBack = async (): Promise<void> => {
   await router.push({ name: 'Quizzes' })
+}
+
+const goToEdit = async (): Promise<void> => {
+  await router.push({
+    name: 'EditQuiz',
+    params: {
+      uuid: quizUuid.value,
+    },
+  })
 }
 
 const copyToClipboard = (text: string): void => {
@@ -64,8 +91,6 @@ const confirmDeleteQuiz = async (): Promise<void> => {
     await router.push({ name: 'Quizzes' })
   } catch (error) {}
 }
-
-const editQuiz = (): void => {}
 </script>
 
 <template>
@@ -77,7 +102,7 @@ const editQuiz = (): void => {}
         </AppButton>
 
         <div class="header-actions" v-if="isCreator && quiz">
-          <AppButton @click="editQuiz"> Edit </AppButton>
+          <AppButton @click="goToEdit"> Edit </AppButton>
           <AppButton class="btn-delete" @click="openDeleteQuizDialog">Delete</AppButton>
         </div>
       </div>
@@ -86,7 +111,7 @@ const editQuiz = (): void => {}
     <main class="main" v-if="isLoading && !quiz">
       <div class="empty-state">
         <Icon icon="mdi:loading" class="spin-icon empty-icon" />
-        <p class="empty-text">Loading quiz details...</p>
+        <p class="empty-text">Loading</p>
       </div>
     </main>
 
@@ -216,7 +241,7 @@ const editQuiz = (): void => {}
   flex-direction: column;
   overflow-y: auto;
   gap: 1.5rem;
-  padding: 0.5rem;
+  padding: 0.25rem 0.5rem 0.25rem 0.5rem;
   min-height: 0;
   scrollbar-gutter: stable;
 }
