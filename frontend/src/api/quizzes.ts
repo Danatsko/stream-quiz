@@ -46,11 +46,11 @@ export const quizzesAPI = {
   },
 
   async createQuizQuestion(
-    quiz_uuid: string,
+    quizUuid: string,
     payload: CreateQuizQuestionPayload,
   ): Promise<CreateQuizQuestionResponse> {
     const response = await api.post<CreateQuizQuestionResponse>(
-      `/quizzes/${quiz_uuid}/questions`,
+      `/quizzes/${quizUuid}/questions`,
       payload,
     )
 
@@ -58,24 +58,24 @@ export const quizzesAPI = {
   },
 
   async updateQuizQuestion(
-    quiz_uuid: string,
+    quizUuid: string,
     uuid: string,
     payload: UpdateQuizQuestionPayload,
   ): Promise<void> {
-    await api.patch(`/quizzes/${quiz_uuid}/questions/${uuid}`, payload)
+    await api.patch(`/quizzes/${quizUuid}/questions/${uuid}`, payload)
   },
 
-  async deleteQuizQuestion(quiz_uuid: string, uuid: string): Promise<void> {
-    await api.delete(`/quizzes/${quiz_uuid}/questions/${uuid}`)
+  async deleteQuizQuestion(quizUuid: string, uuid: string): Promise<void> {
+    await api.delete(`/quizzes/${quizUuid}/questions/${uuid}`)
   },
 
   async createQuizQuestionOption(
-    quiz_uuid: string,
-    quiz_question_uuid: string,
+    quizUuid: string,
+    quizQuestionUuid: string,
     payload: CreateQuizQuestionOptionPayload,
   ): Promise<CreateQuizQuestionOptionResponse> {
     const response = await api.post<CreateQuizQuestionOptionResponse>(
-      `/quizzes/${quiz_uuid}/questions/${quiz_question_uuid}/options`,
+      `/quizzes/${quizUuid}/questions/${quizQuestionUuid}/options`,
       payload,
     )
 
@@ -83,22 +83,19 @@ export const quizzesAPI = {
   },
 
   async updateQuizQuestionOption(
-    quiz_uuid: string,
-    quiz_question_uuid: string,
+    quizUuid: string,
+    quizQuestionUuid: string,
     uuid: string,
     payload: UpdateQuizQuestionOptionPayload,
   ): Promise<void> {
-    await api.patch(
-      `/quizzes/${quiz_uuid}/questions/${quiz_question_uuid}/options/${uuid}`,
-      payload,
-    )
+    await api.patch(`/quizzes/${quizUuid}/questions/${quizQuestionUuid}/options/${uuid}`, payload)
   },
 
   async deleteQuizQuestionOption(
-    quiz_uuid: string,
-    quiz_question_uuid: string,
+    quizUuid: string,
+    quizQuestionUuid: string,
     uuid: string,
   ): Promise<void> {
-    await api.delete(`/quizzes/${quiz_uuid}/questions/${quiz_question_uuid}/options/${uuid}`)
+    await api.delete(`/quizzes/${quizUuid}/questions/${quizQuestionUuid}/options/${uuid}`)
   },
 }

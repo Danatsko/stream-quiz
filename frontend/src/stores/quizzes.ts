@@ -5,7 +5,6 @@ import type {
   CreateQuizQuestionOptionPayload,
   CreateQuizQuestionPayload,
   DetailedQuiz,
-  GetQuizResponse,
   SummaryQuiz,
   UpdateQuizPayload,
   UpdateQuizQuestionOptionPayload,
@@ -17,10 +16,10 @@ import { quizzesAPI } from '@/api/quizzes'
 export const useQuizzesStore = defineStore('quizzes', () => {
   const quizzes = ref<Array<SummaryQuiz>>([])
   const quiz = ref<DetailedQuiz | null>(null)
-  const total_quizzes = ref<number | null>(null)
+  const totalQuizzes = ref<number | null>(null)
   const page = ref<number | null>(null)
   const size = 10
-  const total_pages = ref<number | null>(null)
+  const totalPages = ref<number | null>(null)
   const isLoading = ref<boolean>(false)
   const error = ref<string | null>(null)
 
@@ -30,9 +29,9 @@ export const useQuizzesStore = defineStore('quizzes', () => {
 
   const clearQuizzes = (): void => {
     quizzes.value = []
-    total_quizzes.value = null
+    totalQuizzes.value = null
     page.value = null
-    total_pages.value = null
+    totalPages.value = null
     resetError()
   }
 
@@ -61,7 +60,7 @@ export const useQuizzesStore = defineStore('quizzes', () => {
   }
 
   const getQuizzes = async (): Promise<void> => {
-    if (page.value !== null && total_pages.value !== null && page.value >= total_pages.value) {
+    if (page.value !== null && totalPages.value !== null && page.value >= totalPages.value) {
       return
     }
 
@@ -72,9 +71,9 @@ export const useQuizzesStore = defineStore('quizzes', () => {
       const nextPage = page.value === null ? 1 : page.value + 1
       const response = await quizzesAPI.getQuizzes(nextPage, size)
       quizzes.value.push(...response.quizzes)
-      total_quizzes.value = response.total_quizzes
+      totalQuizzes.value = response.total_quizzes
       page.value = response.page
-      total_pages.value = response.total_pages
+      totalPages.value = response.total_pages
     } catch (getQuizzesError) {
       if (getQuizzesError instanceof AxiosError) {
         error.value = getQuizzesError.response?.data?.detail || 'Error during get quizzes'
@@ -144,14 +143,14 @@ export const useQuizzesStore = defineStore('quizzes', () => {
   }
 
   const createQuizQuestion = async (
-    quiz_uuid: string,
+    quizUuid: string,
     payload: CreateQuizQuestionPayload,
   ): Promise<string> => {
     isLoading.value = true
     resetError()
 
     try {
-      const response = await quizzesAPI.createQuizQuestion(quiz_uuid, payload)
+      const response = await quizzesAPI.createQuizQuestion(quizUuid, payload)
 
       return response.uuid
     } catch (createQuizQuestionError) {
@@ -167,7 +166,7 @@ export const useQuizzesStore = defineStore('quizzes', () => {
   }
 
   const updateQuizQuestion = async (
-    quiz_uuid: string,
+    quizUuid: string,
     uuid: string,
     payload: UpdateQuizQuestionPayload,
   ): Promise<void> => {
@@ -175,7 +174,7 @@ export const useQuizzesStore = defineStore('quizzes', () => {
     resetError()
 
     try {
-      await quizzesAPI.updateQuizQuestion(quiz_uuid, uuid, payload)
+      await quizzesAPI.updateQuizQuestion(quizUuid, uuid, payload)
     } catch (updateQuizQuestionError) {
       if (updateQuizQuestionError instanceof AxiosError) {
         error.value =
@@ -188,12 +187,12 @@ export const useQuizzesStore = defineStore('quizzes', () => {
     }
   }
 
-  const deleteQuizQuestion = async (quiz_uuid: string, uuid: string): Promise<void> => {
+  const deleteQuizQuestion = async (quizUuid: string, uuid: string): Promise<void> => {
     isLoading.value = true
     resetError()
 
     try {
-      await quizzesAPI.deleteQuizQuestion(quiz_uuid, uuid)
+      await quizzesAPI.deleteQuizQuestion(quizUuid, uuid)
     } catch (deleteQuizQuestionError) {
       if (deleteQuizQuestionError instanceof AxiosError) {
         error.value =
@@ -207,8 +206,8 @@ export const useQuizzesStore = defineStore('quizzes', () => {
   }
 
   const createQuizQuestionOption = async (
-    quiz_uuid: string,
-    quiz_question_uuid: string,
+    quizUuid: string,
+    quizQuestionUuid: string,
     payload: CreateQuizQuestionOptionPayload,
   ): Promise<string> => {
     isLoading.value = true
@@ -216,8 +215,8 @@ export const useQuizzesStore = defineStore('quizzes', () => {
 
     try {
       const response = await quizzesAPI.createQuizQuestionOption(
-        quiz_uuid,
-        quiz_question_uuid,
+        quizUuid,
+        quizQuestionUuid,
         payload,
       )
 
@@ -236,8 +235,8 @@ export const useQuizzesStore = defineStore('quizzes', () => {
   }
 
   const updateQuizQuestionOption = async (
-    quiz_uuid: string,
-    quiz_question_uuid: string,
+    quizUuid: string,
+    quizQuestionUuid: string,
     uuid: string,
     payload: UpdateQuizQuestionOptionPayload,
   ): Promise<void> => {
@@ -245,7 +244,7 @@ export const useQuizzesStore = defineStore('quizzes', () => {
     resetError()
 
     try {
-      await quizzesAPI.updateQuizQuestionOption(quiz_uuid, quiz_question_uuid, uuid, payload)
+      await quizzesAPI.updateQuizQuestionOption(quizUuid, quizQuestionUuid, uuid, payload)
     } catch (updateQuizQuestionOptionError) {
       if (updateQuizQuestionOptionError instanceof AxiosError) {
         error.value =
@@ -260,15 +259,15 @@ export const useQuizzesStore = defineStore('quizzes', () => {
   }
 
   const deleteQuizQuestionOption = async (
-    quiz_uuid: string,
-    quiz_question_uuid: string,
+    quizUuid: string,
+    quizQuestionUuid: string,
     uuid: string,
   ): Promise<void> => {
     isLoading.value = true
     resetError()
 
     try {
-      await quizzesAPI.deleteQuizQuestionOption(quiz_uuid, quiz_question_uuid, uuid)
+      await quizzesAPI.deleteQuizQuestionOption(quizUuid, quizQuestionUuid, uuid)
     } catch (deleteQuizQuestionOptionError) {
       if (deleteQuizQuestionOptionError instanceof AxiosError) {
         error.value =
@@ -285,10 +284,10 @@ export const useQuizzesStore = defineStore('quizzes', () => {
   return {
     quizzes,
     quiz,
-    total_quizzes,
+    totalQuizzes,
     page,
     size,
-    total_pages,
+    totalPages,
     isLoading,
     error,
     clearQuizzes,
