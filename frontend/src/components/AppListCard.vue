@@ -1,7 +1,16 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+const props = withDefaults(
+  defineProps<{
+    alignItems?: string
+  }>(),
+  {
+    alignItems: 'center',
+  },
+)
+</script>
 
 <template>
-  <div class="data-card">
+  <div class="data-card" :style="{ alignItems: props.alignItems }">
     <div class="card-icon-wrapper" v-if="$slots.icon">
       <slot name="icon"></slot>
     </div>
@@ -19,7 +28,6 @@
 <style scoped>
 .data-card {
   display: flex;
-  align-items: center;
   gap: 1.5rem;
   border: 1px solid var(--color-border);
   border-radius: 12px;

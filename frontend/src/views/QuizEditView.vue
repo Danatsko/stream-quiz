@@ -13,6 +13,7 @@ import type {
   UpdateQuizQuestionPayload,
 } from '@/types/quizzes'
 import AppErrorMessage from '@/components/AppErrorMessage.vue'
+import AppListCard from '@/components/AppListCard.vue'
 
 interface EditOption {
   uiUuid: string
@@ -343,8 +344,33 @@ const isFormValid = computed((): boolean => {
   return true
 })
 
+const hasChanges = computed((): boolean => {
+  if (!editableQuiz.value || !quiz.value) {
+    return false
+  }
+
+  const normalizeData = (data: any) => ({
+    title: data.title,
+    description: data.description,
+    is_public: data.is_public,
+    questions: data.questions.map((question: any) => ({
+      text: question.text,
+      is_multiple_answers: question.is_multiple_answers,
+      options: question.options.map((option: any) => ({
+        text: option.text,
+        is_correct: option.is_correct || false,
+      })),
+    })),
+  })
+
+  const originalStr = JSON.stringify(normalizeData(quiz.value))
+  const editedStr = JSON.stringify(normalizeData(editableQuiz.value))
+
+  return originalStr !== editedStr
+})
+
 const saveChanges = async (): Promise<void> => {
-  if (!editableQuiz.value || !quiz.value || !isFormValid.value) {
+  if (!editableQuiz.value || !quiz.value || !isFormValid.value || !hasChanges.value) {
     return
   }
 
@@ -483,7 +509,10 @@ const saveChanges = async (): Promise<void> => {
         </AppButton>
 
         <div class="header-actions">
-          <AppButton @click="saveChanges" :disabled="isSaving || !isFormValid || isLoading">
+          <AppButton
+            @click="saveChanges"
+            :disabled="isSaving || !isFormValid || isLoading || !hasChanges"
+          >
             {{ isSaving ? 'Processing' : 'Save' }}
           </AppButton>
           <AppButton class="btn-delete" @click="openDeleteQuizDialog">Delete</AppButton>
@@ -500,148 +529,162 @@ const saveChanges = async (): Promise<void> => {
 
     <main class="main" v-else-if="editableQuiz">
       <div class="quiz-content-wrapper">
-        <div class="quiz-hero-card">
-          <div class="hero-top-row">
-            <div class="form-group flex-1">
-              <label for="quiz-title">Title</label>
-              <input
-                id="quiz-title"
-                class="edit-input"
-                :class="{ 'input-error': editableQuiz.title && !isQuizTitleValid }"
-                type="text"
-                placeholder="Title"
-                v-model="editableQuiz.title"
-                :minlength="MIN_QUIZ_TITLE_LENGTH"
-                :maxLength="MAX_QUIZ_TITLE_LENGTH"
-              />
-              <AppErrorMessage v-if="editableQuiz.title && !isQuizTitleValid">
-                Minimum {{ MIN_QUIZ_TITLE_LENGTH }} characters
-              </AppErrorMessage>
-            </div>
+        <AppListCard>
+          <template v-slot:icon>
+            <Icon icon="mdi:book-open-variant-outline" />
+          </template>
 
-            <div class="clickable-badge" @click="toggleIsPublic">
-              <AppBadge :class="{ 'badge-public': editableQuiz.is_public }">
-                {{ editableQuiz.is_public ? 'Public' : 'Private' }}
-              </AppBadge>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="quiz-description">Description</label>
-            <textarea
-              id="quiz-description"
-              class="edit-input textarea"
-              :class="{ 'input-error': editableQuiz.description && !isQuizDescriptionValid }"
-              placeholder="Description"
-              v-model="editableQuiz.description"
-              :minlength="MIN_QUIZ_DESCRIPTION_LENGTH"
-              :maxLength="MAX_QUIZ_DESCRIPTION_LENGTH"
-              rows="5"
-            ></textarea>
-            <AppErrorMessage v-if="editableQuiz.description && !isQuizDescriptionValid">
-              Minimum {{ MIN_QUIZ_DESCRIPTION_LENGTH }} characters
-            </AppErrorMessage>
-          </div>
-        </div>
-
-        <div class="questions-list">
-          <div
-            class="question-card"
-            v-for="question in editableQuiz.questions"
-            :key="question.uiUuid"
-          >
-            <div class="question-header-actions">
-              <AppButton class="btn-delete" @click="removeQuestion(question.uiUuid)">
-                <span>Delete</span>
-              </AppButton>
-            </div>
-            <div class="question-header">
+          <template v-slot:content>
+            <div class="hero-top-row">
               <div class="form-group flex-1">
-                <label :for="'question-' + question.uiUuid">Question text</label>
-                <textarea
-                  :id="'question-' + question.uiUuid"
-                  class="edit-input textarea"
-                  :class="{ 'input-error': question.text && !isQuestionTextValid(question) }"
+                <label for="quiz-title">Title</label>
+                <input
+                  id="quiz-title"
+                  class="edit-input"
+                  :class="{ 'input-error': editableQuiz.title && !isQuizTitleValid }"
                   type="text"
-                  placeholder="Question text"
-                  v-model="question.text"
-                  :minlength="MIN_QUESTION_TEXT_LENGTH"
-                  :maxLength="MAX_QUESTION_TEXT_LENGTH"
-                  rows="5"
-                ></textarea>
-                <AppErrorMessage v-if="question.text && !isQuestionTextValid(question)">
-                  Minimum {{ MIN_QUESTION_TEXT_LENGTH }} characters
+                  placeholder="Title"
+                  v-model="editableQuiz.title"
+                  :minlength="MIN_QUIZ_TITLE_LENGTH"
+                  :maxLength="MAX_QUIZ_TITLE_LENGTH"
+                />
+                <AppErrorMessage v-if="editableQuiz.title && !isQuizTitleValid">
+                  Minimum {{ MIN_QUIZ_TITLE_LENGTH }} characters
                 </AppErrorMessage>
               </div>
-              <div class="clickable-badge" @click="toggleMultipleAnswers(question.uiUuid)">
-                <AppBadge>
-                  {{ question.is_multiple_answers ? 'Multiple choice' : 'Single choice' }}
+
+              <div class="clickable-badge" @click="toggleIsPublic">
+                <AppBadge :class="{ 'badge-public': editableQuiz.is_public }">
+                  {{ editableQuiz.is_public ? 'Public' : 'Private' }}
                 </AppBadge>
               </div>
             </div>
 
-            <div class="options-list">
-              <div
-                v-for="option in question.options"
-                :key="option.uiUuid"
-                :class="['option-item', { 'is-correct': option.is_correct }]"
-              >
-                <div
-                  class="option-icon-wrapper pointer"
-                  @click="toggleOptionCorrectness(question.uiUuid, option.uiUuid)"
-                >
-                  <Icon
-                    v-if="option.is_correct"
-                    icon="mdi:check-circle"
-                    class="option-icon correct"
-                  />
-                  <Icon
-                    v-else-if="question.is_multiple_answers"
-                    icon="mdi:checkbox-blank-outline"
-                    class="option-icon neutral"
-                  />
-                  <Icon v-else icon="mdi:circle-outline" class="option-icon neutral" />
-                </div>
+            <div class="form-group">
+              <label for="quiz-description">Description</label>
+              <textarea
+                id="quiz-description"
+                class="edit-input textarea"
+                :class="{ 'input-error': editableQuiz.description && !isQuizDescriptionValid }"
+                placeholder="Description"
+                v-model="editableQuiz.description"
+                :minlength="MIN_QUIZ_DESCRIPTION_LENGTH"
+                :maxLength="MAX_QUIZ_DESCRIPTION_LENGTH"
+                rows="5"
+              ></textarea>
+              <AppErrorMessage v-if="editableQuiz.description && !isQuizDescriptionValid">
+                Minimum {{ MIN_QUIZ_DESCRIPTION_LENGTH }} characters
+              </AppErrorMessage>
+            </div>
+          </template>
+        </AppListCard>
 
-                <div class="form-group">
-                  <div class="option-header-actions">
+        <div class="questions-list">
+          <AppListCard v-for="question in editableQuiz.questions" :key="question.uiUuid">
+            <template v-slot:icon>
+              <Icon icon="mdi:help-circle-outline" />
+            </template>
+
+            <template v-slot:content>
+              <div class="question-header">
+                <div class="form-group flex-1">
+                  <label :for="'question-' + question.uiUuid">Question text</label>
+                  <textarea
+                    :id="'question-' + question.uiUuid"
+                    class="edit-input textarea"
+                    :class="{ 'input-error': question.text && !isQuestionTextValid(question) }"
+                    type="text"
+                    placeholder="Question text"
+                    v-model="question.text"
+                    :minlength="MIN_QUESTION_TEXT_LENGTH"
+                    :maxLength="MAX_QUESTION_TEXT_LENGTH"
+                    rows="5"
+                  ></textarea>
+                  <AppErrorMessage v-if="question.text && !isQuestionTextValid(question)">
+                    Minimum {{ MIN_QUESTION_TEXT_LENGTH }} characters
+                  </AppErrorMessage>
+                </div>
+                <div class="clickable-badge" @click="toggleMultipleAnswers(question.uiUuid)">
+                  <AppBadge>
+                    {{ question.is_multiple_answers ? 'Multiple choice' : 'Single choice' }}
+                  </AppBadge>
+                </div>
+              </div>
+
+              <div class="options-list">
+                <AppListCard
+                  v-for="option in question.options"
+                  :key="option.uiUuid"
+                  :class="['option-item', { 'is-correct': option.is_correct }]"
+                >
+                  <template v-slot:icon>
+                    <div
+                      :style="{ cursor: 'pointer' }"
+                      @click="toggleOptionCorrectness(question.uiUuid, option.uiUuid)"
+                    >
+                      <Icon
+                        v-if="option.is_correct"
+                        icon="mdi:check-circle"
+                        class="option-icon correct"
+                      />
+                      <Icon
+                        v-else-if="question.is_multiple_answers"
+                        icon="mdi:checkbox-blank-outline"
+                        class="option-icon neutral"
+                      />
+                      <Icon v-else icon="mdi:circle-outline" class="option-icon neutral" />
+                    </div>
+                  </template>
+
+                  <template v-slot:content>
+                    <div class="form-group">
+                      <label :for="'option-' + option.uiUuid">Option text</label>
+                      <textarea
+                        :id="'option-' + option.uiUuid"
+                        class="edit-input textarea"
+                        :class="{ 'input-error': option.text && !isOptionTextValid(option) }"
+                        type="text"
+                        placeholder="Option text"
+                        v-model="option.text"
+                        :minlength="MIN_OPTION_TEXT_LENGTH"
+                        :maxLength="MAX_OPTION_TEXT_LENGTH"
+                        rows="5"
+                      ></textarea>
+                      <AppErrorMessage v-if="option.text && !isOptionTextValid(option)">
+                        Minimum {{ MIN_OPTION_TEXT_LENGTH }} characters
+                      </AppErrorMessage>
+                    </div>
+                  </template>
+
+                  <template v-slot:actions>
                     <AppButton
                       class="btn-delete"
                       @click="removeOption(question.uiUuid, option.uiUuid)"
                     >
                       <span>Delete</span>
                     </AppButton>
-                  </div>
-                  <label :for="'option-' + option.uiUuid">Option text</label>
-                  <textarea
-                    :id="'option-' + option.uiUuid"
-                    class="edit-input textarea"
-                    :class="{ 'input-error': option.text && !isOptionTextValid(option) }"
-                    type="text"
-                    placeholder="Option text"
-                    v-model="option.text"
-                    :minlength="MIN_OPTION_TEXT_LENGTH"
-                    :maxLength="MAX_OPTION_TEXT_LENGTH"
-                    rows="5"
-                  ></textarea>
-                  <AppErrorMessage v-if="option.text && !isOptionTextValid(option)">
-                    Minimum {{ MIN_OPTION_TEXT_LENGTH }} characters
-                  </AppErrorMessage>
-                </div>
+                  </template>
+                </AppListCard>
+
+                <AppButton @click="addOption(question.uiUuid)">
+                  <span>Add option</span>
+                </AppButton>
               </div>
 
-              <AppButton @click="addOption(question.uiUuid)">
-                <span>Add option</span>
-              </AppButton>
-            </div>
+              <AppErrorMessage v-if="question.options && !isQuestionOptionsCountValid(question)">
+                Minimum {{ MIN_QUESTION_OPTIONS }} option
+              </AppErrorMessage>
+              <AppErrorMessage v-if="question.options && !isQuestionOptionsCorrectValid(question)">
+                Minimum 1 correct option
+              </AppErrorMessage>
+            </template>
 
-            <AppErrorMessage v-if="question.options && !isQuestionOptionsCountValid(question)">
-              Minimum {{ MIN_QUESTION_OPTIONS }} option
-            </AppErrorMessage>
-            <AppErrorMessage v-if="question.options && !isQuestionOptionsCorrectValid(question)">
-              Minimum 1 correct option
-            </AppErrorMessage>
-          </div>
+            <template v-slot:actions>
+              <AppButton class="btn-delete" @click="removeQuestion(question.uiUuid)">
+                <span>Delete</span>
+              </AppButton>
+            </template>
+          </AppListCard>
 
           <AppButton @click="addQuestion">
             <span>Add question</span>
@@ -672,12 +715,12 @@ const saveChanges = async (): Promise<void> => {
 
 <style scoped>
 .layout {
-  height: 100%;
   width: 90vw;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   overflow: hidden;
+  padding-bottom: 1rem;
 }
 
 .header {
@@ -697,43 +740,14 @@ const saveChanges = async (): Promise<void> => {
 }
 
 .main {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  min-height: 0;
 }
 .quiz-content-wrapper {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
   gap: 1.5rem;
-  padding: 0.25rem 0.5rem 0.25rem 0.5rem;
-  min-height: 0;
-  scrollbar-gutter: stable;
-}
-.quiz-content-wrapper::-webkit-scrollbar {
-  width: 8px;
-  cursor: pointer;
-}
-.quiz-content-wrapper::-webkit-scrollbar-track {
-  background: transparent;
-}
-.quiz-content-wrapper::-webkit-scrollbar-thumb {
-  background-color: var(--color-border);
-  border-radius: 10px;
-}
-.quiz-hero-card {
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  flex-shrink: 0;
-  width: 100%;
-  box-sizing: border-box;
+  padding: 0.25rem 1rem 0.25rem 0.5rem;
 }
 .hero-top-row {
   display: flex;
@@ -751,22 +765,6 @@ const saveChanges = async (): Promise<void> => {
   flex-direction: column;
   gap: 1rem;
 }
-.question-header-actions {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-}
-.question-card {
-  background-color: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  width: 100%;
-  box-sizing: border-box;
-}
 .question-header {
   display: flex;
   justify-content: space-between;
@@ -779,39 +777,15 @@ const saveChanges = async (): Promise<void> => {
   flex-direction: column;
   gap: 0.75rem;
 }
-.option-header-actions {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-}
 .option-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
   background-color: var(--color-background-secondary);
   transition:
     border-color 0.2s,
     background-color 0.2s;
-  width: 100%;
-  box-sizing: border-box;
 }
 .option-item.is-correct {
   border-color: #10b981;
   background-color: rgba(16, 185, 129, 0.05);
-}
-.option-icon-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-}
-.option-icon-wrapper.pointer {
-  cursor: pointer;
 }
 .option-icon {
   font-size: 1.25rem;
@@ -902,10 +876,6 @@ const saveChanges = async (): Promise<void> => {
 }
 .clickable-badge:hover {
   opacity: 0.8;
-}
-
-.option-item:hover {
-  opacity: 1;
 }
 
 .input-error {

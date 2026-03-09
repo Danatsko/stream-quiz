@@ -1,5 +1,6 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, RouterView } from 'vue-router'
 import useAuthStore from '@/stores/auth.ts'
+import { h } from 'vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -42,21 +43,27 @@ const router = createRouter({
         },
         {
           path: '/quizzes',
-          name: 'Quizzes',
-          component: () => import('@/views/QuizzesView.vue'),
-          meta: { requiresAuth: true },
-        },
-        {
-          path: '/quizzes/:uuid',
-          name: 'Quiz',
-          component: () => import('@/views/QuizView.vue'),
-          meta: { requiresAuth: true },
-        },
-        {
-          path: '/quizzes/:uuid/edit',
-          name: 'EditQuiz',
-          component: () => import('@/views/QuizEditView.vue'),
-          meta: { requiresAuth: true },
+          component: { render: () => h(RouterView) },
+          children: [
+            {
+              path: '',
+              name: 'Quizzes',
+              component: () => import('@/views/QuizzesView.vue'),
+              meta: { requiresAuth: true },
+            },
+            {
+              path: ':uuid',
+              name: 'Quiz',
+              component: () => import('@/views/QuizView.vue'),
+              meta: { requiresAuth: true, nativeScroll: true },
+            },
+            {
+              path: ':uuid/edit',
+              name: 'EditQuiz',
+              component: () => import('@/views/QuizEditView.vue'),
+              meta: { requiresAuth: true, nativeScroll: true },
+            },
+          ],
         },
         {
           path: '/rooms',

@@ -7,6 +7,7 @@ import useQuizzesStore from '@/stores/quizzes'
 import AppButton from '@/components/AppButton.vue'
 import AppModal from '@/components/AppModal.vue'
 import AppBadge from '@/components/AppBadge.vue'
+import AppListCard from '@/components/AppListCard.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -117,27 +118,33 @@ const confirmDeleteQuiz = async (): Promise<void> => {
 
     <main class="main" v-else-if="quiz">
       <div class="quiz-content-wrapper">
-        <div class="quiz-hero-card">
-          <div class="hero-top-row">
-            <h1 class="hero-title">{{ quiz.title }}</h1>
-            <AppBadge :class="{ 'badge-public': quiz.is_public }">
-              {{ quiz.is_public ? 'Public' : 'Private' }}
-            </AppBadge>
-          </div>
+        <AppListCard>
+          <template v-slot:icon>
+            <Icon icon="mdi:book-open-variant-outline" />
+          </template>
 
-          <p class="hero-description">{{ quiz.description }}</p>
-
-          <div class="hero-bottom-row">
-            <span class="meta-item">
-              <Icon icon="mdi:help-circle-outline" />
-              {{ quiz.questions.length }} questions
-            </span>
-            <div class="quiz-id" @click="copyToClipboard(quiz.uuid)" title="Copy uuid">
-              {{ quiz.uuid }}
-              <Icon icon="mdi:content-copy" class="copy-icon" />
+          <template v-slot:content>
+            <div class="hero-top-row">
+              <h1 class="hero-title">{{ quiz.title }}</h1>
+              <AppBadge :class="{ 'badge-public': quiz.is_public }">
+                {{ quiz.is_public ? 'Public' : 'Private' }}
+              </AppBadge>
             </div>
-          </div>
-        </div>
+
+            <p class="hero-description">{{ quiz.description }}</p>
+
+            <div class="hero-bottom-row">
+              <span class="meta-item">
+                <Icon icon="mdi:help-circle-outline" />
+                {{ quiz.questions.length }} questions
+              </span>
+              <div class="quiz-id" @click="copyToClipboard(quiz.uuid)" title="Copy uuid">
+                {{ quiz.uuid }}
+                <Icon icon="mdi:content-copy" class="copy-icon" />
+              </div>
+            </div>
+          </template>
+        </AppListCard>
 
         <div class="questions-list">
           <div v-if="quiz.questions.length === 0" class="empty-state-small">
@@ -145,39 +152,48 @@ const confirmDeleteQuiz = async (): Promise<void> => {
             <p>This quiz has no questions</p>
           </div>
 
-          <div class="question-card" v-for="question in quiz.questions" :key="question.uuid">
-            <div class="question-header">
-              <div class="question-title-wrapper">
-                <h3 class="question-text">{{ question.text }}</h3>
-              </div>
-              <AppBadge>
-                {{ question.is_multiple_answers ? 'Multiple choice' : 'Single choice' }}
-              </AppBadge>
-            </div>
+          <AppListCard v-for="question in quiz.questions" :key="question.uuid">
+            <template v-slot:icon>
+              <Icon icon="mdi:help-circle-outline" />
+            </template>
 
-            <div class="options-list">
-              <div
-                v-for="option in question.options"
-                :key="option.uuid"
-                :class="['option-item', { 'is-correct': option.is_correct }]"
-              >
-                <div class="option-icon-wrapper">
-                  <Icon
-                    v-if="option.is_correct"
-                    icon="mdi:check-circle"
-                    class="option-icon correct"
-                  />
-                  <Icon
-                    v-else-if="question.is_multiple_answers"
-                    icon="mdi:checkbox-blank-outline"
-                    class="option-icon neutral"
-                  />
-                  <Icon v-else icon="mdi:circle-outline" class="option-icon neutral" />
+            <template v-slot:content>
+              <div class="question-header">
+                <div class="question-title-wrapper">
+                  <h3 class="question-text">{{ question.text }}</h3>
                 </div>
-                <span class="option-text">{{ option.text }}</span>
+                <AppBadge>
+                  {{ question.is_multiple_answers ? 'Multiple choice' : 'Single choice' }}
+                </AppBadge>
               </div>
-            </div>
-          </div>
+
+              <div class="options-list">
+                <AppListCard
+                  v-for="option in question.options"
+                  :key="option.uuid"
+                  :class="['option-item', { 'is-correct': option.is_correct }]"
+                >
+                  <template v-slot:icon>
+                    <Icon
+                      v-if="option.is_correct"
+                      icon="mdi:check-circle"
+                      class="option-icon correct"
+                    />
+                    <Icon
+                      v-else-if="question.is_multiple_answers"
+                      icon="mdi:checkbox-blank-outline"
+                      class="option-icon neutral"
+                    />
+                    <Icon v-else icon="mdi:circle-outline" class="option-icon neutral" />
+                  </template>
+
+                  <template v-slot:content>
+                    <span class="option-text">{{ option.text }}</span>
+                  </template>
+                </AppListCard>
+              </div>
+            </template>
+          </AppListCard>
         </div>
       </div>
     </main>
@@ -204,12 +220,11 @@ const confirmDeleteQuiz = async (): Promise<void> => {
 
 <style scoped>
 .layout {
-  height: 100%;
   width: 90vw;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  overflow: hidden;
+  padding-bottom: 1rem;
 }
 
 .header {
@@ -229,43 +244,14 @@ const confirmDeleteQuiz = async (): Promise<void> => {
 }
 
 .main {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  min-height: 0;
 }
 .quiz-content-wrapper {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
   gap: 1.5rem;
-  padding: 0.25rem 0.5rem 0.25rem 0.5rem;
-  min-height: 0;
-  scrollbar-gutter: stable;
-}
-.quiz-content-wrapper::-webkit-scrollbar {
-  width: 8px;
-  cursor: pointer;
-}
-.quiz-content-wrapper::-webkit-scrollbar-track {
-  background: transparent;
-}
-.quiz-content-wrapper::-webkit-scrollbar-thumb {
-  background-color: var(--color-border);
-  border-radius: 10px;
-}
-.quiz-hero-card {
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  flex-shrink: 0;
-  width: 100%;
-  box-sizing: border-box;
+  padding: 0.25rem 1rem 0.25rem 0.5rem;
 }
 .hero-top-row {
   display: flex;
@@ -338,17 +324,6 @@ const confirmDeleteQuiz = async (): Promise<void> => {
   flex-direction: column;
   gap: 1rem;
 }
-.question-card {
-  background-color: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  width: 100%;
-  box-sizing: border-box;
-}
 .question-header {
   display: flex;
   justify-content: space-between;
@@ -377,30 +352,14 @@ const confirmDeleteQuiz = async (): Promise<void> => {
   gap: 0.75rem;
 }
 .option-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
   background-color: var(--color-background-secondary);
   transition:
     border-color 0.2s,
     background-color 0.2s;
-  width: 100%;
-  box-sizing: border-box;
 }
 .option-item.is-correct {
   border-color: #10b981;
   background-color: rgba(16, 185, 129, 0.05);
-}
-.option-icon-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
 }
 .option-icon {
   font-size: 1.25rem;

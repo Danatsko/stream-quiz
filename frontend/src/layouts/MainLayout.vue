@@ -2,6 +2,9 @@
 import AppFooter from '@/components/AppFooter.vue'
 import { Icon } from '@iconify/vue'
 import AppHeader from '@/components/AppHeader.vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
 
 const navLinks = [
   { label: 'Take', pathName: 'Take', icon: 'mdi:play-outline' },
@@ -12,7 +15,7 @@ const navLinks = [
 </script>
 
 <template>
-  <div class="layout">
+  <div class="layout" :class="{ 'is-scrollable': route.meta.nativeScroll }">
     <AppHeader>
       <div class="header-slot-inner">
         <nav class="header-center">
@@ -51,6 +54,11 @@ const navLinks = [
   height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+.layout.is-scrollable {
+  height: auto;
+  min-height: 100vh;
 }
 
 .header-slot-inner {
@@ -125,5 +133,10 @@ const navLinks = [
   align-items: stretch;
   overflow: hidden;
   min-height: 0;
+}
+
+.layout.is-scrollable .main,
+.layout.is-scrollable .main-content {
+  overflow: visible;
 }
 </style>

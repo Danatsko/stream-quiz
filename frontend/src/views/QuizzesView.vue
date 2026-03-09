@@ -8,7 +8,7 @@ import useQuizzesStore from '@/stores/quizzes'
 import { useRouter } from 'vue-router'
 import AppModal from '@/components/AppModal.vue'
 import AppAsyncList from '@/components/AppAsyncList.vue'
-import AppAsyncCard from '@/components/AppAsyncCard.vue'
+import AppListCard from '@/components/AppListCard.vue'
 import AppBadge from '@/components/AppBadge.vue'
 
 interface CreateQuizFormState {
@@ -199,7 +199,7 @@ const confirmDeleteQuiz = async (): Promise<void> => {
         empty-text="No quiz found for the selected category"
         @load-more="quizzesStore.getQuizzes"
       >
-        <AppAsyncCard v-for="quiz in filteredQuizzes" :key="quiz.uuid">
+        <AppListCard v-for="quiz in filteredQuizzes" :key="quiz.uuid">
           <template v-slot:icon>
             <Icon icon="mdi:book-open-variant-outline" />
           </template>
@@ -245,7 +245,7 @@ const confirmDeleteQuiz = async (): Promise<void> => {
               </div>
             </div>
           </template>
-        </AppAsyncCard>
+        </AppListCard>
       </AppAsyncList>
     </main>
   </div>
@@ -328,6 +328,7 @@ const confirmDeleteQuiz = async (): Promise<void> => {
   flex-direction: column;
   box-sizing: border-box;
   overflow: hidden;
+  padding-bottom: 1rem;
 }
 
 .header {
