@@ -1,6 +1,15 @@
 import { createRouter, createWebHistory, RouterView } from 'vue-router'
 import useAuthStore from '@/stores/auth.ts'
 import { h } from 'vue'
+import NProgress from 'nprogress'
+import 'nprogress/nprogress.css'
+
+NProgress.configure({
+  showSpinner: false,
+  minimum: 0.1,
+  speed: 300,
+  easing: 'ease-in-out',
+})
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -93,6 +102,8 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
+  NProgress.start()
+
   const authStore = useAuthStore()
 
   if (!authStore.user && !authStore.isAuthChecked) {
@@ -114,6 +125,14 @@ router.beforeEach(async (to, from, next) => {
   }
 
   next()
+})
+
+router.afterEach(() => {
+  NProgress.done()
+})
+
+router.onError(() => {
+  NProgress.done()
 })
 
 export default router

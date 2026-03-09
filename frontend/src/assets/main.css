@@ -26,6 +26,23 @@
   border-radius: 10px;
 }
 
+#nprogress .bar {
+  background: var(--linear-gradient-primary) !important;
+  height: 3px !important;
+}
+
+#nprogress .peg {
+  box-shadow:
+    0 0 1px var(--color-primary),
+    0 0 3px var(--color-secondary) !important;
+  opacity: 1 !important;
+}
+
+#nprogress .spinner-icon {
+  border-top-color: var(--color-primary) !important;
+  border-left-color: var(--color-primary) !important;
+}
+
 body {
   margin: 0;
   padding: 0;
