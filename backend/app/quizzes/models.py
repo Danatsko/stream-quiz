@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, String, Boolean, ForeignKey, false
+from sqlalchemy import BigInteger, String, Boolean, ForeignKey, false, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.models import Base, UUIDMixin
@@ -24,6 +24,7 @@ class Quiz(Base, UUIDMixin):
     description: Mapped[str] = mapped_column(
         String(500),
         nullable=False,
+        server_default=text("''"),
     )
     is_public: Mapped[bool] = mapped_column(
         Boolean(),
