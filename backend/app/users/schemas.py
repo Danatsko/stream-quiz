@@ -1,4 +1,4 @@
-import uuid
+from uuid import UUID
 from typing import Annotated
 
 from pydantic import StringConstraints, EmailStr
@@ -15,6 +15,6 @@ usernameAnnotated = Annotated[
 
 
 class GetMeResponse(Base):
-    uuid: uuid.UUID
+    uuid: UUID
     username: usernameAnnotated
     email: EmailStr

@@ -1,4 +1,4 @@
-import uuid
+from uuid import UUID
 from typing import Annotated, Any
 
 from fastapi import APIRouter, status, Request, Depends, Query
@@ -87,7 +87,7 @@ async def get_quizzes(
 @limiter.limit("300/minute")
 async def get_quiz(
     request: Request,
-    quiz_uuid: uuid.UUID,
+    quiz_uuid: UUID,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> GetQuizResponse:
@@ -117,7 +117,7 @@ async def get_quiz(
 @limiter.limit("300/minute")
 async def update_quiz(
     request: Request,
-    quiz_uuid: uuid.UUID,
+    quiz_uuid: UUID,
     update_quiz_data: UpdateQuizRequest,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
@@ -139,7 +139,7 @@ async def update_quiz(
 @limiter.limit("300/minute")
 async def full_update_quiz(
     request: Request,
-    quiz_uuid: uuid.UUID,
+    quiz_uuid: UUID,
     full_update_quiz_data: FullUpdateQuizRequest,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
@@ -161,7 +161,7 @@ async def full_update_quiz(
 @limiter.limit("300/minute")
 async def delete_quiz(
     request: Request,
-    quiz_uuid: uuid.UUID,
+    quiz_uuid: UUID,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> None:

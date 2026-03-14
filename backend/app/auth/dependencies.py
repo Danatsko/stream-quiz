@@ -1,4 +1,4 @@
-import uuid
+from uuid import UUID
 from typing import Annotated, Any
 
 import jwt
@@ -29,8 +29,8 @@ async def get_optional_auth_context(
         if raw_user_uuid is None or raw_jti is None:
             return None
 
-        user_uuid = uuid.UUID(raw_user_uuid)
-        jti = uuid.UUID(raw_jti)
+        user_uuid = UUID(raw_user_uuid)
+        jti = UUID(raw_jti)
     except (jwt.ExpiredSignatureError, jwt.PyJWTError, ValueError):
         return None
 

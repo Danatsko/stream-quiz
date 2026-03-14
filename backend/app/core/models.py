@@ -1,5 +1,5 @@
 from datetime import datetime
-import uuid
+from uuid import UUID
 
 from sqlalchemy import BigInteger, Uuid, DateTime, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -27,7 +27,7 @@ class Base(DeclarativeBase):
 
 
 class UUIDMixin:
-    uuid: Mapped[uuid.UUID] = mapped_column(
+    uuid: Mapped[UUID] = mapped_column(
         Uuid(),
         unique=True,
         nullable=False,

@@ -1,4 +1,4 @@
-import uuid
+from uuid import UUID
 from typing import Annotated, Any
 
 from fastapi import APIRouter, status, Request, Response, Depends
@@ -115,7 +115,7 @@ async def logout(
     access_token_exp = None
 
     if auth_context is not None:
-        access_token_jti = uuid.UUID(auth_context["payload"]["jti"])
+        access_token_jti = UUID(auth_context["payload"]["jti"])
         access_token_exp = auth_context["payload"]["exp"]
 
     await service_logout(
@@ -157,7 +157,7 @@ async def refresh(
     access_token_exp = None
 
     if auth_context is not None:
-        access_token_jti = uuid.UUID(auth_context["payload"]["jti"])
+        access_token_jti = UUID(auth_context["payload"]["jti"])
         access_token_exp = auth_context["payload"]["exp"]
 
     result = await service_refresh(

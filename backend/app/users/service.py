@@ -1,4 +1,4 @@
-import uuid
+from uuid import UUID
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -67,7 +67,7 @@ async def get_user_by_id(
 
 
 async def get_user_by_uuid(
-    uuid: uuid.UUID,
+    uuid: UUID,
     session: AsyncSession,
 ) -> User | None:
     user_db = await db_crud_get_user_by_uuid(
@@ -81,7 +81,7 @@ async def get_user_by_uuid(
 async def get_user_uuids_by_ids(
     ids: set[int],
     session: AsyncSession,
-) -> dict[int, uuid.UUID]:
+) -> dict[int, UUID]:
     user_uuids_db = await db_crud_get_user_uuids_by_ids(
         ids=ids,
         session=session,
@@ -91,7 +91,7 @@ async def get_user_uuids_by_ids(
 
 
 async def get_me(
-    uuid: uuid.UUID,
+    uuid: UUID,
     session: AsyncSession,
 ) -> dict[str, Any]:
     user_db = await db_crud_get_user_by_uuid(

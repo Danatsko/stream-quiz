@@ -1,4 +1,4 @@
-import uuid
+from uuid import UUID
 
 from redis.asyncio import Redis
 
@@ -7,7 +7,7 @@ BLACKLIST_USER_PREFIX = "blacklist:user:"
 
 
 async def blacklist_access_token(
-    jti: uuid.UUID,
+    jti: UUID,
     ttl: int,
     redis_client: Redis,
 ) -> bool:
@@ -23,7 +23,7 @@ async def blacklist_access_token(
 
 
 async def is_access_token_blacklisted(
-    jti: uuid.UUID,
+    jti: UUID,
     redis_client: Redis,
 ) -> bool:
     key = f"{BLACKLIST_ACCESS_TOKEN_PREFIX}{str(jti)}"
@@ -33,7 +33,7 @@ async def is_access_token_blacklisted(
 
 
 async def is_user_blacklisted(
-    user_uuid: uuid.UUID,
+    user_uuid: UUID,
     redis_client: Redis,
 ) -> bool:
     key = f"{BLACKLIST_USER_PREFIX}{str(user_uuid)}"

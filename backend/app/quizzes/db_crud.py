@@ -1,4 +1,4 @@
-import uuid
+from uuid import UUID
 from typing import Any
 
 from sqlalchemy import or_, select, func, update, delete, insert
@@ -77,7 +77,7 @@ async def get_available_quizzes_list(
 
 
 async def get_available_quiz_with_relations_by_uuid(
-    uuid: uuid.UUID,
+    uuid: UUID,
     user_id: int,
     session: AsyncSession,
 ) -> Quiz | None:
@@ -98,7 +98,7 @@ async def get_available_quiz_with_relations_by_uuid(
 
 
 async def get_quiz_with_relations_by_uuid(
-    uuid: uuid.UUID,
+    uuid: UUID,
     user_id: int,
     session: AsyncSession,
 ) -> Quiz | None:
@@ -116,7 +116,7 @@ async def get_quiz_with_relations_by_uuid(
 
 
 async def update_quiz_by_uuid(
-    uuid: uuid.UUID,
+    uuid: UUID,
     user_id: int,
     update_quiz_data: dict[str, Any],
     session: AsyncSession,
@@ -135,7 +135,7 @@ async def update_quiz_by_uuid(
 
 
 async def delete_quiz_by_uuid(
-    uuid: uuid.UUID,
+    uuid: UUID,
     user_id: int,
     session: AsyncSession,
 ) -> bool:

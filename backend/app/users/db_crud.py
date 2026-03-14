@@ -1,4 +1,4 @@
-import uuid
+from uuid import UUID
 
 from sqlalchemy import select, insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -53,7 +53,7 @@ async def get_user_by_id(
 
 
 async def get_user_by_uuid(
-    uuid: uuid.UUID,
+    uuid: UUID,
     session: AsyncSession,
 ) -> User | None:
     stmt = select(User).where(
@@ -68,7 +68,7 @@ async def get_user_by_uuid(
 async def get_user_uuids_by_ids(
     ids: set[int],
     session: AsyncSession,
-) -> dict[int, uuid.UUID]:
+) -> dict[int, UUID]:
     stmt = select(User.id, User.uuid).where(
         User.id.in_(ids),
         User.deleted_at.is_(None),

@@ -1,4 +1,4 @@
-import uuid
+from uuid import UUID
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -25,7 +25,7 @@ from app.users.service import get_user_by_uuid, get_user_uuids_by_ids, get_user_
 async def create_quiz(
     title: str,
     description: str,
-    user_uuid: uuid.UUID,
+    user_uuid: UUID,
     session: AsyncSession,
 ) -> dict[str, Any]:
     user_db = await get_user_by_uuid(
@@ -46,7 +46,7 @@ async def create_quiz(
 async def get_quizzes(
     page: int,
     size: int,
-    user_uuid: uuid.UUID,
+    user_uuid: UUID,
     session: AsyncSession,
 ) -> dict[str, Any]:
     offset = (page - 1) * size
@@ -112,8 +112,8 @@ async def get_quizzes(
 
 
 async def get_quiz(
-    quiz_uuid: uuid.UUID,
-    user_uuid: uuid.UUID,
+    quiz_uuid: UUID,
+    user_uuid: UUID,
     session: AsyncSession,
 ) -> dict[str, Any]:
     user_db = await get_user_by_uuid(
@@ -182,8 +182,8 @@ async def get_quiz(
 
 
 async def update_quiz(
-    quiz_uuid: uuid.UUID,
-    user_uuid: uuid.UUID,
+    quiz_uuid: UUID,
+    user_uuid: UUID,
     update_quiz_data: dict[str, Any],
     session: AsyncSession,
 ) -> None:
@@ -209,8 +209,8 @@ async def update_quiz(
 
 
 async def full_update_quiz(
-    quiz_uuid: uuid.UUID,
-    user_uuid: uuid.UUID,
+    quiz_uuid: UUID,
+    user_uuid: UUID,
     full_update_quiz_data: dict[str, Any],
     session: AsyncSession,
 ) -> None:
@@ -401,8 +401,8 @@ async def full_update_quiz(
 
 
 async def delete_quiz(
-    quiz_uuid: uuid.UUID,
-    user_uuid: uuid.UUID,
+    quiz_uuid: UUID,
+    user_uuid: UUID,
     session: AsyncSession,
 ) -> None:
     user_db = await get_user_by_uuid(

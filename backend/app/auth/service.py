@@ -1,4 +1,4 @@
-import uuid
+from uuid import UUID, uuid7
 import hashlib
 import hmac
 from datetime import datetime, timezone, timedelta
@@ -23,12 +23,12 @@ from app.users.service import create_user, get_user_by_email, get_user_by_id
 password_hash = PasswordHash.recommended()
 
 
-async def generate_access_token(user_uuid: uuid.UUID) -> str:
+async def generate_access_token(user_uuid: UUID) -> str:
     iat = datetime.now(tz=timezone.utc)
     exp = iat + timedelta(seconds=settings.auth.access_token_expire_seconds)
     data_to_encode = {
         "sub": str(user_uuid),
-        "jti": str(uuid.uuid7()),
+        "jti": str(uuid7()),
         "iat": iat,
         "exp": exp,
     }
@@ -182,7 +182,7 @@ async def login(
 
 
 async def logout(
-    access_token_jti: uuid.UUID | None,
+    access_token_jti: UUID | None,
     access_token_exp: int | None,
     refresh_token: str,
     session: AsyncSession,
@@ -208,7 +208,7 @@ async def logout(
 
 
 async def refresh(
-    access_token_jti: uuid.UUID | None,
+    access_token_jti: UUID | None,
     access_token_exp: int | None,
     refresh_token: str,
     session: AsyncSession,
