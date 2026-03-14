@@ -13,12 +13,7 @@ from app.quizzes.schemas import (
     GetQuizzesResponse,
     GetQuizResponse,
     UpdateQuizRequest,
-    CreateQuizQuestionRequest,
-    CreateQuizQuestionResponse,
-    UpdateQuizQuestionRequest,
-    CreateQuizQuestionOptionRequest,
-    CreateQuizQuestionOptionResponse,
-    UpdateQuizQuestionOptionRequest,
+    FullUpdateQuizRequest,
 )
 from app.quizzes.service import (
     create_quiz as service_create_quiz,
@@ -26,12 +21,7 @@ from app.quizzes.service import (
     get_quiz as service_get_quiz,
     update_quiz as service_update_quiz,
     delete_quiz as service_delete_quiz,
-    create_quiz_question as service_create_quiz_question,
-    update_quiz_question as service_update_quiz_question,
-    delete_quiz_question as service_delete_quiz_question,
-    create_quiz_question_option as service_create_quiz_question_option,
-    update_quiz_question_option as service_update_quiz_question_option,
-    delete_quiz_question_option as service_delete_quiz_question_option,
+    full_update_quiz as service_full_update_quiz,
 )
 
 quizzes_router = APIRouter()
@@ -116,6 +106,7 @@ async def get_quiz(
         is_public=result["is_public"],
         questions=result["questions"],
         total_questions=result["total_questions"],
+        created_at=result["created_at"],
     )
 
 
@@ -141,6 +132,28 @@ async def update_quiz(
     )
 
 
+@quizzes_router.put(
+    path="/{quiz_uuid}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+@limiter.limit("300/minute")
+async def full_update_quiz(
+    request: Request,
+    quiz_uuid: uuid.UUID,
+    full_update_quiz_data: FullUpdateQuizRequest,
+    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> None:
+    user_uuid = auth_context["user_uuid"]
+
+    await service_full_update_quiz(
+        quiz_uuid=quiz_uuid,
+        user_uuid=user_uuid,
+        full_update_quiz_data=full_update_quiz_data.model_dump(),
+        session=session,
+    )
+
+
 @quizzes_router.delete(
     path="/{quiz_uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -156,156 +169,6 @@ async def delete_quiz(
 
     await service_delete_quiz(
         quiz_uuid=quiz_uuid,
-        user_uuid=user_uuid,
-        session=session,
-    )
-
-
-@quizzes_router.post(
-    path="/{quiz_uuid}/questions",
-    status_code=status.HTTP_201_CREATED,
-    response_model=CreateQuizQuestionResponse,
-)
-@limiter.limit("300/minute")
-async def create_quiz_question(
-    request: Request,
-    quiz_uuid: uuid.UUID,
-    create_quiz_question_data: CreateQuizQuestionRequest,
-    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
-) -> CreateQuizQuestionResponse:
-    user_uuid = auth_context["user_uuid"]
-    result = await service_create_quiz_question(
-        **create_quiz_question_data.model_dump(),
-        quiz_uuid=quiz_uuid,
-        user_uuid=user_uuid,
-        session=session,
-    )
-
-    return CreateQuizQuestionResponse(uuid=result["uuid"])
-
-
-@quizzes_router.patch(
-    path="/{quiz_uuid}/questions/{quiz_question_uuid}",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-@limiter.limit("300/minute")
-async def update_quiz_question(
-    request: Request,
-    quiz_uuid: uuid.UUID,
-    quiz_question_uuid: uuid.UUID,
-    update_quiz_question_data: UpdateQuizQuestionRequest,
-    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
-) -> None:
-    user_uuid = auth_context["user_uuid"]
-
-    await service_update_quiz_question(
-        quiz_uuid=quiz_uuid,
-        quiz_question_uuid=quiz_question_uuid,
-        user_uuid=user_uuid,
-        update_quiz_question_data=update_quiz_question_data.model_dump(
-            exclude_unset=True
-        ),
-        session=session,
-    )
-
-
-@quizzes_router.delete(
-    path="/{quiz_uuid}/questions/{quiz_question_uuid}",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-@limiter.limit("300/minute")
-async def delete_quiz_question(
-    request: Request,
-    quiz_uuid: uuid.UUID,
-    quiz_question_uuid: uuid.UUID,
-    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
-) -> None:
-    user_uuid = auth_context["user_uuid"]
-
-    await service_delete_quiz_question(
-        quiz_uuid=quiz_uuid,
-        quiz_question_uuid=quiz_question_uuid,
-        user_uuid=user_uuid,
-        session=session,
-    )
-
-
-@quizzes_router.post(
-    path="/{quiz_uuid}/questions/{quiz_question_uuid}/options",
-    status_code=status.HTTP_201_CREATED,
-    response_model=CreateQuizQuestionOptionResponse,
-)
-@limiter.limit("300/minute")
-async def create_quiz_question_option(
-    request: Request,
-    quiz_uuid: uuid.UUID,
-    quiz_question_uuid: uuid.UUID,
-    create_quiz_question_option_data: CreateQuizQuestionOptionRequest,
-    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
-) -> CreateQuizQuestionOptionResponse:
-    user_uuid = auth_context["user_uuid"]
-    result = await service_create_quiz_question_option(
-        **create_quiz_question_option_data.model_dump(),
-        quiz_uuid=quiz_uuid,
-        quiz_question_uuid=quiz_question_uuid,
-        user_uuid=user_uuid,
-        session=session,
-    )
-
-    return CreateQuizQuestionOptionResponse(uuid=result["uuid"])
-
-
-@quizzes_router.patch(
-    path="/{quiz_uuid}/questions/{quiz_question_uuid}/options/{quiz_question_option_uuid}",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-@limiter.limit("300/minute")
-async def update_quiz_question_option(
-    request: Request,
-    quiz_uuid: uuid.UUID,
-    quiz_question_uuid: uuid.UUID,
-    quiz_question_option_uuid: uuid.UUID,
-    update_quiz_question_option_data: UpdateQuizQuestionOptionRequest,
-    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
-) -> None:
-    user_uuid = auth_context["user_uuid"]
-
-    await service_update_quiz_question_option(
-        quiz_uuid=quiz_uuid,
-        quiz_question_uuid=quiz_question_uuid,
-        quiz_question_option_uuid=quiz_question_option_uuid,
-        update_quiz_question_option_data=update_quiz_question_option_data.model_dump(
-            exclude_unset=True
-        ),
-        user_uuid=user_uuid,
-        session=session,
-    )
-
-
-@quizzes_router.delete(
-    path="/{quiz_uuid}/questions/{quiz_question_uuid}/options/{quiz_question_option_uuid}",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-@limiter.limit("300/minute")
-async def delete_quiz_question_option(
-    request: Request,
-    quiz_uuid: uuid.UUID,
-    quiz_question_uuid: uuid.UUID,
-    quiz_question_option_uuid: uuid.UUID,
-    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
-) -> None:
-    user_uuid = auth_context["user_uuid"]
-
-    await service_delete_quiz_question_option(
-        quiz_uuid=quiz_uuid,
-        quiz_question_uuid=quiz_question_uuid,
-        quiz_question_option_uuid=quiz_question_option_uuid,
         user_uuid=user_uuid,
         session=session,
     )

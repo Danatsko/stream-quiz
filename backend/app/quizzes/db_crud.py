@@ -97,14 +97,18 @@ async def get_available_quiz_with_relations_by_uuid(
     return result
 
 
-async def get_quiz_by_uuid(
+async def get_quiz_with_relations_by_uuid(
     uuid: uuid.UUID,
     user_id: int,
     session: AsyncSession,
 ) -> Quiz | None:
-    stmt = select(Quiz).where(
-        Quiz.uuid == uuid,
-        Quiz.creator_id == user_id,
+    stmt = (
+        select(Quiz)
+        .where(
+            Quiz.uuid == uuid,
+            Quiz.creator_id == user_id,
+        )
+        .options(selectinload(Quiz.questions).selectinload(QuizQuestion.options))
     )
     result = await session.scalar(stmt)
 
@@ -144,133 +148,87 @@ async def delete_quiz_by_uuid(
     return result.rowcount == 1
 
 
-async def create_quiz_question(
+async def bulk_create_quiz_questions(
     quiz_id: int,
-    text: str,
-    is_multiple_answers: bool,
+    create_quiz_questions_data: list[dict[str, Any]],
+    session: AsyncSession,
+) -> None:
+    question_rows = [
+        {
+            "quiz_id": quiz_id,
+            "text": question["text"],
+            "is_multiple_answers": question["is_multiple_answers"],
+        }
+        for question in create_quiz_questions_data
+    ]
+    stmt = insert(QuizQuestion).values(question_rows).returning(QuizQuestion)
+    created_questions = list(await session.scalars(stmt))
+    option_rows = []
+
+    for question_db, question_data in zip(
+        created_questions, create_quiz_questions_data
+    ):
+        for option in question_data["options"]:
+            option_rows.append(
+                {
+                    "quiz_question_id": question_db.id,
+                    "text": option["text"],
+                    "is_correct": option["is_correct"],
+                }
+            )
+
+    stmt = insert(QuizQuestionOption).values(option_rows)
+
+    await session.execute(stmt)
+
+
+async def bulk_update_quiz_questions(
+    update_quiz_questions_data: list[dict[str, Any]],
+    session: AsyncSession,
+) -> None:
+    await session.execute(update(QuizQuestion), update_quiz_questions_data)
+
+
+async def bulk_delete_quiz_questions_by_ids(
+    quiz_questions_ids: list[int],
+    session: AsyncSession,
+) -> None:
+    stmt = delete(QuizQuestion).where(QuizQuestion.id.in_(quiz_questions_ids))
+
+    await session.execute(stmt)
+
+
+async def bulk_create_quiz_question_options(
+    quiz_question_id: int,
     options: list[dict[str, Any]],
     session: AsyncSession,
-) -> QuizQuestion:
-    stmt_question = (
-        insert(QuizQuestion)
-        .values(
-            quiz_id=quiz_id,
-            text=text,
-            is_multiple_answers=is_multiple_answers,
-        )
-        .returning(QuizQuestion)
-    )
-    result_question = await session.scalar(stmt_question)
+) -> None:
+    option_rows = [
+        {
+            "quiz_question_id": quiz_question_id,
+            "text": option["text"],
+            "is_correct": option["is_correct"],
+        }
+        for option in options
+    ]
+    stmt = insert(QuizQuestionOption).values(option_rows)
 
-    for option in options:
-        option.update({"quiz_question_id": result_question.id})
-
-    stmt_options = insert(QuizQuestionOption).values(options)
-
-    await session.execute(stmt_options)
-
-    return result_question
+    await session.execute(stmt)
 
 
-async def get_quiz_question_with_relations_by_uuid(
-    uuid: uuid.UUID,
-    quiz_id: int,
+async def bulk_update_quiz_question_options(
+    update_quiz_question_options_data: list[dict[str, Any]],
     session: AsyncSession,
-) -> QuizQuestion | None:
-    stmt = (
-        select(QuizQuestion)
-        .where(
-            QuizQuestion.uuid == uuid,
-            QuizQuestion.quiz_id == quiz_id,
-        )
-        .options(selectinload(QuizQuestion.options))
-    )
-    result = await session.scalar(stmt)
-
-    return result
+) -> None:
+    await session.execute(update(QuizQuestionOption), update_quiz_question_options_data)
 
 
-async def update_quiz_question_by_uuid(
-    uuid: uuid.UUID,
-    quiz_id: int,
-    update_quiz_question_data: dict[str, Any],
+async def bulk_delete_quiz_question_options_by_ids(
+    quiz_question_option_ids: list[int],
     session: AsyncSession,
-) -> bool:
-    stmt = (
-        update(QuizQuestion)
-        .where(
-            QuizQuestion.uuid == uuid,
-            QuizQuestion.quiz_id == quiz_id,
-        )
-        .values(**update_quiz_question_data)
-    )
-    result = await session.execute(stmt)
-
-    return result.rowcount == 1
-
-
-async def delete_quiz_question_by_uuid(
-    uuid: uuid.UUID,
-    quiz_id: int,
-    session: AsyncSession,
-) -> bool:
-    stmt = delete(QuizQuestion).where(
-        QuizQuestion.uuid == uuid,
-        QuizQuestion.quiz_id == quiz_id,
-    )
-    result = await session.execute(stmt)
-
-    return result.rowcount == 1
-
-
-async def create_quiz_question_option(
-    quiz_question_id: int,
-    text: str,
-    is_correct: bool,
-    session: AsyncSession,
-) -> QuizQuestionOption:
-    stmt = (
-        insert(QuizQuestionOption)
-        .values(
-            quiz_question_id=quiz_question_id,
-            text=text,
-            is_correct=is_correct,
-        )
-        .returning(QuizQuestionOption)
-    )
-    result = await session.scalar(stmt)
-
-    return result
-
-
-async def update_quiz_question_option_by_uuid(
-    uuid: uuid.UUID,
-    quiz_question_id: int,
-    update_quiz_question_option_data: dict[str, Any],
-    session: AsyncSession,
-) -> bool:
-    stmt = (
-        update(QuizQuestionOption)
-        .where(
-            QuizQuestionOption.uuid == uuid,
-            QuizQuestionOption.quiz_question_id == quiz_question_id,
-        )
-        .values(**update_quiz_question_option_data)
-    )
-    result = await session.execute(stmt)
-
-    return result.rowcount == 1
-
-
-async def delete_quiz_question_option_by_uuid(
-    uuid: uuid.UUID,
-    quiz_question_id: int,
-    session: AsyncSession,
-) -> bool:
+) -> None:
     stmt = delete(QuizQuestionOption).where(
-        QuizQuestionOption.uuid == uuid,
-        QuizQuestionOption.quiz_question_id == quiz_question_id,
+        QuizQuestionOption.id.in_(quiz_question_option_ids)
     )
-    result = await session.execute(stmt)
 
-    return result.rowcount == 1
+    await session.execute(stmt)
