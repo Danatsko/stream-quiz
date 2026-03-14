@@ -9,7 +9,6 @@ from fastapi import HTTPException, status
 import jwt
 from pwdlib import PasswordHash
 from redis.asyncio import Redis
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.db_crud import (
