@@ -97,6 +97,7 @@ async def get_quizzes(
                 "creator_uuid": creator_uuid_mapped,
                 "total_questions": total_questions,
                 "created_at": quiz_db.created_at,
+                "updated_at": quiz_db.updated_at,
             }
         )
 
@@ -176,6 +177,7 @@ async def get_quiz(
         "questions": questions_data,
         "total_questions": total_questions,
         "created_at": quiz_db.created_at,
+        "updated_at": quiz_db.updated_at,
     }
 
     return result

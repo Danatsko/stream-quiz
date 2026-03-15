@@ -107,6 +107,7 @@ async def get_quiz(
         questions=result["questions"],
         total_questions=result["total_questions"],
         created_at=result["created_at"],
+        updated_at=result["updated_at"],
     )
 
 

@@ -56,6 +56,7 @@ class GetSummaryQuiz(QuizBase):
     is_public: bool
     total_questions: int
     created_at: datetime
+    updated_at: datetime
 
 
 class GetQuizzesResponse(Base):
