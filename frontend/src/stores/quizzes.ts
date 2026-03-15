@@ -2,13 +2,10 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type {
   CreateQuizPayload,
-  CreateQuizQuestionOptionPayload,
-  CreateQuizQuestionPayload,
   DetailedQuiz,
+  FullUpdateQuizPayload,
   SummaryQuiz,
   UpdateQuizPayload,
-  UpdateQuizQuestionOptionPayload,
-  UpdateQuizQuestionPayload,
 } from '@/types/quizzes'
 import { AxiosError } from 'axios'
 import { quizzesAPI } from '@/api/quizzes'
@@ -119,6 +116,23 @@ export const useQuizzesStore = defineStore('quizzes', () => {
     }
   }
 
+  const fullUpdateQuiz = async (uuid: string, payload: FullUpdateQuizPayload): Promise<void> => {
+    isLoading.value = true
+    resetError()
+
+    try {
+      await quizzesAPI.fullUpdateQuiz(uuid, payload)
+    } catch (fullUpdateQuizError) {
+      if (fullUpdateQuizError instanceof AxiosError) {
+        error.value = fullUpdateQuizError.response?.data?.detail || 'Error during full update quiz'
+      }
+
+      throw fullUpdateQuizError
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   const deleteQuiz = async (uuid: string): Promise<void> => {
     isLoading.value = true
     resetError()
@@ -142,145 +156,6 @@ export const useQuizzesStore = defineStore('quizzes', () => {
     }
   }
 
-  const createQuizQuestion = async (
-    quizUuid: string,
-    payload: CreateQuizQuestionPayload,
-  ): Promise<string> => {
-    isLoading.value = true
-    resetError()
-
-    try {
-      const response = await quizzesAPI.createQuizQuestion(quizUuid, payload)
-
-      return response.uuid
-    } catch (createQuizQuestionError) {
-      if (createQuizQuestionError instanceof AxiosError) {
-        error.value =
-          createQuizQuestionError.response?.data?.detail || 'Error during create quiz question'
-      }
-
-      throw createQuizQuestionError
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const updateQuizQuestion = async (
-    quizUuid: string,
-    uuid: string,
-    payload: UpdateQuizQuestionPayload,
-  ): Promise<void> => {
-    isLoading.value = true
-    resetError()
-
-    try {
-      await quizzesAPI.updateQuizQuestion(quizUuid, uuid, payload)
-    } catch (updateQuizQuestionError) {
-      if (updateQuizQuestionError instanceof AxiosError) {
-        error.value =
-          updateQuizQuestionError.response?.data?.detail || 'Error during update quiz question'
-      }
-
-      throw updateQuizQuestionError
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const deleteQuizQuestion = async (quizUuid: string, uuid: string): Promise<void> => {
-    isLoading.value = true
-    resetError()
-
-    try {
-      await quizzesAPI.deleteQuizQuestion(quizUuid, uuid)
-    } catch (deleteQuizQuestionError) {
-      if (deleteQuizQuestionError instanceof AxiosError) {
-        error.value =
-          deleteQuizQuestionError.response?.data?.detail || 'Error during delete quiz question'
-      }
-
-      throw deleteQuizQuestionError
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const createQuizQuestionOption = async (
-    quizUuid: string,
-    quizQuestionUuid: string,
-    payload: CreateQuizQuestionOptionPayload,
-  ): Promise<string> => {
-    isLoading.value = true
-    resetError()
-
-    try {
-      const response = await quizzesAPI.createQuizQuestionOption(
-        quizUuid,
-        quizQuestionUuid,
-        payload,
-      )
-
-      return response.uuid
-    } catch (createQuizQuestionOptionError) {
-      if (createQuizQuestionOptionError instanceof AxiosError) {
-        error.value =
-          createQuizQuestionOptionError.response?.data?.detail ||
-          'Error during create quiz question option'
-      }
-
-      throw createQuizQuestionOptionError
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const updateQuizQuestionOption = async (
-    quizUuid: string,
-    quizQuestionUuid: string,
-    uuid: string,
-    payload: UpdateQuizQuestionOptionPayload,
-  ): Promise<void> => {
-    isLoading.value = true
-    resetError()
-
-    try {
-      await quizzesAPI.updateQuizQuestionOption(quizUuid, quizQuestionUuid, uuid, payload)
-    } catch (updateQuizQuestionOptionError) {
-      if (updateQuizQuestionOptionError instanceof AxiosError) {
-        error.value =
-          updateQuizQuestionOptionError.response?.data?.detail ||
-          'Error during update quiz question option'
-      }
-
-      throw updateQuizQuestionOptionError
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const deleteQuizQuestionOption = async (
-    quizUuid: string,
-    quizQuestionUuid: string,
-    uuid: string,
-  ): Promise<void> => {
-    isLoading.value = true
-    resetError()
-
-    try {
-      await quizzesAPI.deleteQuizQuestionOption(quizUuid, quizQuestionUuid, uuid)
-    } catch (deleteQuizQuestionOptionError) {
-      if (deleteQuizQuestionOptionError instanceof AxiosError) {
-        error.value =
-          deleteQuizQuestionOptionError.response?.data?.detail ||
-          'Error during delete quiz question option'
-      }
-
-      throw deleteQuizQuestionOptionError
-    } finally {
-      isLoading.value = false
-    }
-  }
-
   return {
     quizzes,
     quiz,
@@ -296,13 +171,8 @@ export const useQuizzesStore = defineStore('quizzes', () => {
     getQuizzes,
     getQuiz,
     updateQuiz,
+    fullUpdateQuiz,
     deleteQuiz,
-    createQuizQuestion,
-    updateQuizQuestion,
-    deleteQuizQuestion,
-    createQuizQuestionOption,
-    updateQuizQuestionOption,
-    deleteQuizQuestionOption,
   }
 })
 

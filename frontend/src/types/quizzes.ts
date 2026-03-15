@@ -1,42 +1,25 @@
-export interface QuizQuestionOption {
+export interface QuizQuestionOptionBase {
   text: string
 }
 
-export interface QuizQuestion {
+export interface QuizQuestionBase {
   text: string
   is_multiple_answers: boolean
 }
 
-export interface Quiz {
+export interface QuizBase {
   title: string
   description: string
+}
+
+export interface SummaryQuiz extends QuizBase {
+  uuid: string
+  creator_uuid: string | null
   is_public: boolean
-}
-
-export interface SummaryQuiz extends Quiz {
-  uuid: string
-  creator_uuid: string | null
   total_questions: number
+  created_at: string
+  updated_at: string
 }
-
-export interface DetailedQuizQuestionOption extends QuizQuestionOption {
-  uuid: string
-  is_correct: boolean | null
-}
-
-export interface DetailedQuizQuestion extends QuizQuestion {
-  uuid: string
-  options: Array<DetailedQuizQuestionOption>
-}
-
-export interface DetailedQuiz extends Quiz {
-  uuid: string
-  creator_uuid: string | null
-  questions: Array<DetailedQuizQuestion>
-  total_questions: number
-}
-
-export interface GetQuizResponse extends DetailedQuiz {}
 
 export interface GetQuizzesResponse {
   quizzes: Array<SummaryQuiz>
@@ -46,10 +29,23 @@ export interface GetQuizzesResponse {
   total_pages: number
 }
 
-export interface CreateQuizPayload {
-  title: string
-  description: string
+export interface DetailedQuizQuestionOption extends QuizQuestionOptionBase {
+  uuid: string
+  is_correct: boolean | null
 }
+
+export interface DetailedQuizQuestion extends QuizQuestionBase {
+  uuid: string
+  options: Array<DetailedQuizQuestionOption>
+}
+
+export interface DetailedQuiz extends SummaryQuiz {
+  questions: Array<DetailedQuizQuestion>
+}
+
+export interface GetQuizResponse extends DetailedQuiz {}
+
+export interface CreateQuizPayload extends QuizBase {}
 
 export interface CreateQuizResponse {
   uuid: string
@@ -61,31 +57,17 @@ export interface UpdateQuizPayload {
   is_public?: boolean
 }
 
-export interface CreateQuizQuestionOptionPayload {
-  text: string
+export interface FullUpdateQuizQuestionOption extends QuizQuestionOptionBase {
+  uuid?: string | null
   is_correct: boolean
 }
 
-export interface CreateQuizQuestionOptionResponse {
-  uuid: string
+export interface FullUpdateQuizQuestion extends QuizQuestionBase {
+  uuid?: string | null
+  options: Array<FullUpdateQuizQuestionOption>
 }
 
-export interface UpdateQuizQuestionOptionPayload {
-  text?: string
-  is_correct?: boolean
-}
-
-export interface CreateQuizQuestionPayload {
-  text: string
-  is_multiple_answers: boolean
-  options: Array<CreateQuizQuestionOptionPayload>
-}
-
-export interface CreateQuizQuestionResponse {
-  uuid: string
-}
-
-export interface UpdateQuizQuestionPayload {
-  text?: string
-  is_multiple_answers?: boolean
+export interface FullUpdateQuizPayload extends QuizBase {
+  is_public: boolean
+  questions: Array<FullUpdateQuizQuestion>
 }

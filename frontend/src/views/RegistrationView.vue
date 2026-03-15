@@ -30,7 +30,9 @@ const registrationForm = ref<RegistrationFormState>({
 const isUsernameValid = computed((): boolean => {
   const { username } = registrationForm.value
 
-  return !!username && username.length >= MIN_USERNAME_LENGTH
+  return (
+    !!username && username.length >= MIN_USERNAME_LENGTH && username.length <= MAX_USERNAME_LENGTH
+  )
 })
 
 const isEmailValid = computed((): boolean => {

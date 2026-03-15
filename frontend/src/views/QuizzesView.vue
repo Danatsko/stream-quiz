@@ -10,6 +10,7 @@ import AppModal from '@/components/AppModal.vue'
 import AppAsyncList from '@/components/AppAsyncList.vue'
 import AppListCard from '@/components/AppListCard.vue'
 import AppBadge from '@/components/AppBadge.vue'
+import { formatDateTime } from '@/utils/formatters'
 
 interface CreateQuizFormState {
   title: string
@@ -18,7 +19,6 @@ interface CreateQuizFormState {
 
 const MIN_TITLE_LENGTH = 3
 const MAX_TITLE_LENGTH = 100
-const MIN_DESCRIPTION_LENGTH = 3
 const MAX_DESCRIPTION_LENGTH = 500
 
 const authStore = useAuthStore()
@@ -113,20 +113,17 @@ onBeforeUnmount(() => {
 const isTitleValid = computed((): boolean => {
   const { title } = createQuizForm.value
 
-  return !!title && title.length >= MIN_TITLE_LENGTH
+  return !!title && title.length >= MIN_TITLE_LENGTH && title.length <= MAX_TITLE_LENGTH
 })
 
 const isDescriptionValid = computed((): boolean => {
   const { description } = createQuizForm.value
 
-  return !!description && description.length >= MIN_DESCRIPTION_LENGTH
+  return !description || description.length <= MAX_DESCRIPTION_LENGTH
 })
 
 const isFormValid = computed((): boolean => {
-  const f = createQuizForm.value
-  const isNotEmpty = !!f.title && !!f.description
-
-  return isNotEmpty && isTitleValid.value && isDescriptionValid.value
+  return isTitleValid.value && isDescriptionValid.value
 })
 
 const handleCreateQuiz = async (): Promise<void> => {
@@ -205,18 +202,29 @@ const confirmDeleteQuiz = async (): Promise<void> => {
           </template>
 
           <template v-slot:content>
-            <div class="info-top-row">
+            <div class="info-top">
               <h3 class="quiz-title">{{ quiz.title }}</h3>
               <AppBadge :class="{ 'badge-public': quiz.is_public }">
                 {{ quiz.is_public ? 'Public' : 'Private' }}
               </AppBadge>
             </div>
             <p class="quiz-description">{{ quiz.description }}</p>
-            <div class="info-bottom-row">
+            <div class="info-bottom">
               <span class="meta-item">
                 <Icon icon="mdi:help-circle-outline" />
                 {{ quiz.total_questions }} questions
               </span>
+
+              <span class="meta-item" v-if="quiz.created_at">
+                <Icon icon="mdi:calendar-plus" />
+                {{ formatDateTime(quiz.created_at) }}
+              </span>
+
+              <span class="meta-item" v-if="quiz.updated_at">
+                <Icon icon="mdi:calendar-edit" />
+                {{ formatDateTime(quiz.updated_at) }}
+              </span>
+
               <div class="quiz-id" @click="copyToClipboard(quiz.uuid)">
                 {{ quiz.uuid }}
                 <Icon icon="mdi:content-copy" class="copy-icon" />
@@ -278,18 +286,12 @@ const confirmDeleteQuiz = async (): Promise<void> => {
         <label for="quiz-description">Description</label>
         <textarea
           class="modal-input textarea"
-          :class="{ 'input-error': createQuizForm.description && !isDescriptionValid }"
           id="quiz-description"
           placeholder="Description"
           v-model="createQuizForm.description"
-          :minlength="MIN_DESCRIPTION_LENGTH"
           :maxLength="MAX_DESCRIPTION_LENGTH"
           rows="5"
-          required
         ></textarea>
-        <AppErrorMessage v-if="createQuizForm.description && !isDescriptionValid">
-          Minimum {{ MIN_DESCRIPTION_LENGTH }} characters
-        </AppErrorMessage>
       </div>
     </template>
 
@@ -385,7 +387,7 @@ const confirmDeleteQuiz = async (): Promise<void> => {
   -webkit-text-fill-color: transparent;
 }
 
-.info-top-row {
+.info-top {
   display: flex;
   align-items: flex-start;
   gap: 0.8rem;
@@ -438,13 +440,14 @@ const confirmDeleteQuiz = async (): Promise<void> => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.info-bottom-row {
+.info-bottom {
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
   font-size: 0.8rem;
   color: var(--color-text-secondary);
-  margin-top: 0.2rem;
+  margin-top: 0.5rem;
   flex-wrap: wrap;
 }
 .meta-item {

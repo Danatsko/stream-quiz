@@ -7,11 +7,7 @@ import useQuizzesStore from '@/stores/quizzes'
 import AppButton from '@/components/AppButton.vue'
 import AppModal from '@/components/AppModal.vue'
 import AppBadge from '@/components/AppBadge.vue'
-import type {
-  UpdateQuizPayload,
-  UpdateQuizQuestionOptionPayload,
-  UpdateQuizQuestionPayload,
-} from '@/types/quizzes'
+import type { FullUpdateQuizPayload } from '@/types/quizzes'
 import AppErrorMessage from '@/components/AppErrorMessage.vue'
 import AppListCard from '@/components/AppListCard.vue'
 
@@ -40,7 +36,6 @@ interface EditQuiz {
 
 const MIN_QUIZ_TITLE_LENGTH = 3
 const MAX_QUIZ_TITLE_LENGTH = 100
-const MIN_QUIZ_DESCRIPTION_LENGTH = 3
 const MAX_QUIZ_DESCRIPTION_LENGTH = 500
 const MIN_QUESTION_TEXT_LENGTH = 3
 const MAX_QUESTION_TEXT_LENGTH = 500
@@ -283,7 +278,7 @@ const isQuizTitleValid = computed((): boolean => {
 
   const { title } = editableQuiz.value
 
-  return !!title && title.length >= MIN_QUIZ_TITLE_LENGTH
+  return !!title && title.length >= MIN_QUIZ_TITLE_LENGTH && title.length <= MAX_QUIZ_TITLE_LENGTH
 })
 
 const isQuizDescriptionValid = computed((): boolean => {
@@ -293,13 +288,15 @@ const isQuizDescriptionValid = computed((): boolean => {
 
   const { description } = editableQuiz.value
 
-  return !!description && description.length >= MIN_QUIZ_DESCRIPTION_LENGTH
+  return !description || description.length <= MAX_QUIZ_DESCRIPTION_LENGTH
 })
 
 const isQuestionTextValid = (question: EditQuestion): boolean => {
   const { text } = question
 
-  return !!text && text.length >= MIN_QUESTION_TEXT_LENGTH
+  return (
+    !!text && text.length >= MIN_QUESTION_TEXT_LENGTH && text.length <= MAX_QUESTION_TEXT_LENGTH
+  )
 }
 
 const isQuestionOptionsCountValid = (question: EditQuestion): boolean => {
@@ -313,7 +310,7 @@ const isQuestionOptionsCorrectValid = (question: EditQuestion): boolean => {
 const isOptionTextValid = (option: EditOption): boolean => {
   const { text } = option
 
-  return !!text && text.length >= MIN_OPTION_TEXT_LENGTH
+  return !!text && text.length >= MIN_OPTION_TEXT_LENGTH && text.length <= MAX_OPTION_TEXT_LENGTH
 }
 
 const isFormValid = computed((): boolean => {
@@ -379,118 +376,23 @@ const saveChanges = async (): Promise<void> => {
   try {
     const quizUuid = quiz.value.uuid
 
-    const updateQuizPayload: UpdateQuizPayload = {}
-
-    if (quiz.value.title !== editableQuiz.value.title) {
-      updateQuizPayload.title = editableQuiz.value.title
-    }
-    if (quiz.value.description !== editableQuiz.value.description) {
-      updateQuizPayload.description = editableQuiz.value.description
-    }
-    if (quiz.value.is_public !== editableQuiz.value.is_public) {
-      updateQuizPayload.is_public = editableQuiz.value.is_public
-    }
-
-    if (Object.keys(updateQuizPayload).length > 0) {
-      await quizzesStore.updateQuiz(quizUuid, updateQuizPayload)
-    }
-
-    const originalQuestions = quiz.value.questions
-    const newQuestions = editableQuiz.value.questions
-
-    for (const newQuestion of newQuestions) {
-      if (!newQuestion.uuid) {
-        await quizzesStore.createQuizQuestion(quizUuid, {
-          text: newQuestion.text,
-          is_multiple_answers: newQuestion.is_multiple_answers,
-          options: newQuestion.options.map((option) => ({
-            text: option.text,
-            is_correct: option.is_correct,
-          })),
-        })
-      } else {
-        const originalQuestion = originalQuestions.find(
-          (originalQuestion) => originalQuestion.uuid === newQuestion.uuid,
-        )
-
-        if (originalQuestion) {
-          const updateQuizQuestionPayload: UpdateQuizQuestionPayload = {}
-
-          if (originalQuestion.text !== newQuestion.text) {
-            updateQuizQuestionPayload.text = newQuestion.text
-          }
-          if (originalQuestion.is_multiple_answers !== newQuestion.is_multiple_answers) {
-            updateQuizQuestionPayload.is_multiple_answers = newQuestion.is_multiple_answers
-          }
-
-          if (Object.keys(updateQuizQuestionPayload).length > 0) {
-            await quizzesStore.updateQuizQuestion(
-              quizUuid,
-              originalQuestion.uuid,
-              updateQuizQuestionPayload,
-            )
-          }
-
-          for (const newOption of newQuestion.options) {
-            if (!newOption.uuid) {
-              await quizzesStore.createQuizQuestionOption(quizUuid, newQuestion.uuid, {
-                text: newOption.text,
-                is_correct: newOption.is_correct,
-              })
-            } else {
-              const originalOption = originalQuestion.options.find(
-                (originalOption) => originalOption.uuid === newOption.uuid,
-              )
-              if (originalOption) {
-                const updateQuizQuestionOptionPayload: UpdateQuizQuestionOptionPayload = {}
-
-                if (originalOption.text !== newOption.text) {
-                  updateQuizQuestionOptionPayload.text = newOption.text
-                }
-                if (originalOption.is_correct !== newOption.is_correct) {
-                  updateQuizQuestionOptionPayload.is_correct = newOption.is_correct
-                }
-
-                if (Object.keys(updateQuizQuestionOptionPayload).length > 0) {
-                  await quizzesStore.updateQuizQuestionOption(
-                    quizUuid,
-                    originalQuestion.uuid,
-                    originalOption.uuid,
-                    updateQuizQuestionOptionPayload,
-                  )
-                }
-              }
-            }
-          }
-
-          const currentOptionUuids = newQuestion.options
-            .map((newOption) => newOption.uuid)
-            .filter(Boolean)
-          const optionsToDelete = originalQuestion.options.filter(
-            (originalOption) => !currentOptionUuids.includes(originalOption.uuid),
-          )
-          const deleteOptionPromises = optionsToDelete.map((optionToDelete) =>
-            quizzesStore.deleteQuizQuestionOption(
-              quizUuid,
-              originalQuestion.uuid,
-              optionToDelete.uuid,
-            ),
-          )
-
-          await Promise.all(deleteOptionPromises)
-        }
-      }
+    const payload: FullUpdateQuizPayload = {
+      title: editableQuiz.value.title,
+      description: editableQuiz.value.description,
+      is_public: editableQuiz.value.is_public,
+      questions: editableQuiz.value.questions.map((question) => ({
+        uuid: question.uuid || null,
+        text: question.text,
+        is_multiple_answers: question.is_multiple_answers,
+        options: question.options.map((option) => ({
+          uuid: option.uuid || null,
+          text: option.text,
+          is_correct: option.is_correct,
+        })),
+      })),
     }
 
-    const currentQuestionUuids = newQuestions.map((newQuestion) => newQuestion.uuid).filter(Boolean)
-    const questionsToDelete = originalQuestions.filter(
-      (originalQuestion) => !currentQuestionUuids.includes(originalQuestion.uuid),
-    )
-    const deletePromises = questionsToDelete.map((questionToDelete) =>
-      quizzesStore.deleteQuizQuestion(quizUuid, questionToDelete.uuid),
-    )
-
-    await Promise.all(deletePromises)
+    await quizzesStore.fullUpdateQuiz(quiz.value.uuid, payload)
     await quizzesStore.getQuiz(quizUuid)
     goBack()
   } catch (error) {
@@ -535,7 +437,7 @@ const saveChanges = async (): Promise<void> => {
           </template>
 
           <template v-slot:content>
-            <div class="hero-top-row">
+            <div class="hero-top">
               <div class="form-group flex-1">
                 <label for="quiz-title">Title</label>
                 <input
@@ -565,16 +467,11 @@ const saveChanges = async (): Promise<void> => {
               <textarea
                 id="quiz-description"
                 class="edit-input textarea"
-                :class="{ 'input-error': editableQuiz.description && !isQuizDescriptionValid }"
                 placeholder="Description"
                 v-model="editableQuiz.description"
-                :minlength="MIN_QUIZ_DESCRIPTION_LENGTH"
                 :maxLength="MAX_QUIZ_DESCRIPTION_LENGTH"
                 rows="5"
               ></textarea>
-              <AppErrorMessage v-if="editableQuiz.description && !isQuizDescriptionValid">
-                Minimum {{ MIN_QUIZ_DESCRIPTION_LENGTH }} characters
-              </AppErrorMessage>
             </div>
           </template>
         </AppListCard>
@@ -749,7 +646,7 @@ const saveChanges = async (): Promise<void> => {
   gap: 1.5rem;
   padding: 0.25rem 1rem 0.25rem 0.5rem;
 }
-.hero-top-row {
+.hero-top {
   display: flex;
   align-items: flex-start;
   gap: 1rem;

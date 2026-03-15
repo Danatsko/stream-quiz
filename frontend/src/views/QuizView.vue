@@ -8,6 +8,7 @@ import AppButton from '@/components/AppButton.vue'
 import AppModal from '@/components/AppModal.vue'
 import AppBadge from '@/components/AppBadge.vue'
 import AppListCard from '@/components/AppListCard.vue'
+import { formatDateTime } from '@/utils/formatters'
 
 const route = useRoute()
 const router = useRouter()
@@ -124,7 +125,7 @@ const confirmDeleteQuiz = async (): Promise<void> => {
           </template>
 
           <template v-slot:content>
-            <div class="hero-top-row">
+            <div class="hero-top">
               <h1 class="hero-title">{{ quiz.title }}</h1>
               <AppBadge :class="{ 'badge-public': quiz.is_public }">
                 {{ quiz.is_public ? 'Public' : 'Private' }}
@@ -133,11 +134,22 @@ const confirmDeleteQuiz = async (): Promise<void> => {
 
             <p class="hero-description">{{ quiz.description }}</p>
 
-            <div class="hero-bottom-row">
+            <div class="hero-bottom">
               <span class="meta-item">
                 <Icon icon="mdi:help-circle-outline" />
                 {{ quiz.questions.length }} questions
               </span>
+
+              <span class="meta-item" v-if="quiz.created_at">
+                <Icon icon="mdi:calendar-plus" />
+                {{ formatDateTime(quiz.created_at) }}
+              </span>
+
+              <span class="meta-item" v-if="quiz.updated_at">
+                <Icon icon="mdi:calendar-edit" />
+                {{ formatDateTime(quiz.updated_at) }}
+              </span>
+
               <div class="quiz-id" @click="copyToClipboard(quiz.uuid)" title="Copy uuid">
                 {{ quiz.uuid }}
                 <Icon icon="mdi:content-copy" class="copy-icon" />
@@ -253,7 +265,7 @@ const confirmDeleteQuiz = async (): Promise<void> => {
   gap: 1.5rem;
   padding: 0.25rem 1rem 0.25rem 0.5rem;
 }
-.hero-top-row {
+.hero-top {
   display: flex;
   align-items: flex-start;
   gap: 1rem;
@@ -276,11 +288,12 @@ const confirmDeleteQuiz = async (): Promise<void> => {
   word-wrap: break-word;
   overflow-wrap: anywhere;
 }
-.hero-bottom-row {
+.hero-bottom {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  font-size: 0.85rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.8rem;
   color: var(--color-text-secondary);
   margin-top: 0.5rem;
   flex-wrap: wrap;
