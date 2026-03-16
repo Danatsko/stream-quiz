@@ -9,6 +9,7 @@ from app.rooms.db_crud import (
     get_rooms_total_count,
     get_rooms_list,
     update_room_by_uuid,
+    soft_delete_room_by_uuid,
 )
 from app.users.service import get_user_by_uuid
 
@@ -114,6 +115,28 @@ async def update_room(
     )
 
     if not is_updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Room not found",
+        )
+
+
+async def delete_room(
+    room_uuid: UUID,
+    user_uuid: UUID,
+    session: AsyncSession,
+) -> None:
+    user_db = await get_user_by_uuid(
+        uuid=user_uuid,
+        session=session,
+    )
+    is_deleted = await soft_delete_room_by_uuid(
+        uuid=room_uuid,
+        user_id=user_db.id,
+        session=session,
+    )
+
+    if not is_deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Room not found",

@@ -82,3 +82,22 @@ async def update_room_by_uuid(
     result = await session.execute(stmt)
 
     return result.rowcount == 1
+
+
+async def soft_delete_room_by_uuid(
+    uuid: UUID,
+    user_id: int,
+    session: AsyncSession,
+) -> bool:
+    stmt = (
+        update(Room)
+        .where(
+            Room.uuid == uuid,
+            Room.creator_id == user_id,
+            Room.deleted_at.is_(None),
+        )
+        .values(deleted_at=func.now())
+    )
+    result = await session.execute(stmt)
+
+    return result.rowcount == 1
