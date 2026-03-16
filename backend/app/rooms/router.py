@@ -1,13 +1,16 @@
 from typing import Annotated, Any
 
-from fastapi import APIRouter, status, Request, Depends
+from fastapi import APIRouter, status, Request, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_auth_context
 from app.core.db import get_db_session
 from app.core.limiter import limiter
-from app.rooms.schemas import CreateRoomRequest, CreateRoomResponse
-from app.rooms.service import create_room as service_create_room
+from app.rooms.schemas import CreateRoomRequest, CreateRoomResponse, GetRoomsResponse
+from app.rooms.service import (
+    create_room as service_create_room,
+    get_rooms as service_get_rooms,
+)
 
 rooms_router = APIRouter()
 
@@ -32,3 +35,33 @@ async def create_room(
     )
 
     return CreateRoomResponse(uuid=result["uuid"])
+
+
+@rooms_router.get(
+    path="/",
+    status_code=status.HTTP_200_OK,
+    response_model=GetRoomsResponse,
+)
+@limiter.limit("300/minute")
+async def get_rooms(
+    request: Request,
+    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query(ge=1, le=100)] = 10,
+) -> GetRoomsResponse:
+    user_uuid = auth_context["user_uuid"]
+    result = await service_get_rooms(
+        page=page,
+        size=size,
+        user_uuid=user_uuid,
+        session=session,
+    )
+
+    return GetRoomsResponse(
+        rooms=result["rooms"],
+        total_rooms=result["total_rooms"],
+        page=result["page"],
+        size=result["size"],
+        total_pages=result["total_pages"],
+    )
