@@ -1,12 +1,14 @@
 from uuid import UUID
 from typing import Any
 
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.rooms.db_crud import (
     create_room as db_crud_create_room,
     get_rooms_total_count,
     get_rooms_list,
+    update_room_by_uuid,
 )
 from app.users.service import get_user_by_uuid
 
@@ -89,3 +91,30 @@ async def get_rooms(
     }
 
     return result
+
+
+async def update_room(
+    room_uuid: UUID,
+    user_uuid: UUID,
+    update_room_data: dict[str, Any],
+    session: AsyncSession,
+) -> None:
+    if not update_room_data:
+        return
+
+    user_db = await get_user_by_uuid(
+        uuid=user_uuid,
+        session=session,
+    )
+    is_updated = await update_room_by_uuid(
+        uuid=room_uuid,
+        user_id=user_db.id,
+        update_room_data=update_room_data,
+        session=session,
+    )
+
+    if not is_updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Room not found",
+        )

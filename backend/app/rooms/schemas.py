@@ -2,7 +2,7 @@ from uuid import UUID
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import StringConstraints
+from pydantic import StringConstraints, field_validator
 
 from app.core.schemas import Base
 
@@ -42,3 +42,31 @@ class GetRoomsResponse(Base):
     page: int
     size: int
     total_pages: int
+
+
+class UpdateRoomRequest(Base):
+    title: (
+        Annotated[
+            str,
+            StringConstraints(
+                min_length=3,
+                max_length=100,
+            ),
+        ]
+        | None
+    ) = None
+    description: (
+        Annotated[
+            str,
+            StringConstraints(max_length=500),
+        ]
+        | None
+    ) = None
+
+    @field_validator("title", "description")
+    @classmethod
+    def prevent_explicit_null(cls, value):
+        if value is None:
+            raise ValueError("Null is not allowed for this field")
+
+        return value
