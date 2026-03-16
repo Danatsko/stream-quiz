@@ -71,9 +71,8 @@ async def get_available_quizzes_list(
         .offset(offset)
     )
     result = await session.execute(stmt)
-    result = result.all()
 
-    return result
+    return [(quiz, total) for quiz, total in result.all()]
 
 
 async def get_available_quiz_with_relations_by_uuid(
