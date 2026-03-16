@@ -22,6 +22,7 @@ from app.core.redis import get_redis_client, close_redis_connection
 from app.core.schemas import HealthResponse
 from app.users.router import users_router
 from app.quizzes.router import quizzes_router
+from app.rooms.router import rooms_router
 
 
 @asynccontextmanager
@@ -65,6 +66,11 @@ api_router_v1.include_router(
     router=quizzes_router,
     prefix="/quizzes",
     tags=["quizzes"],
+)
+api_router_v1.include_router(
+    router=rooms_router,
+    prefix="/rooms",
+    tags=["rooms"],
 )
 app.include_router(
     router=api_router_v1,
