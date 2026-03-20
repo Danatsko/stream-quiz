@@ -44,6 +44,10 @@ class GetRoomsResponse(Base):
     total_pages: int
 
 
+class GetRoomResponse(GetSummaryRoom):
+    pass
+
+
 class UpdateRoomRequest(Base):
     title: (
         Annotated[

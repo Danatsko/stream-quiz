@@ -10,6 +10,7 @@ from app.rooms.db_crud import (
     get_rooms_list,
     update_room_by_uuid,
     soft_delete_room_by_uuid,
+    get_room_by_uuid,
 )
 from app.users.service import get_user_by_uuid
 
@@ -89,6 +90,39 @@ async def get_rooms(
         "page": page,
         "size": size,
         "total_pages": total_pages,
+    }
+
+    return result
+
+
+async def get_room(
+    room_uuid: UUID,
+    user_uuid: UUID,
+    session: AsyncSession,
+) -> dict[str, Any]:
+    user_db = await get_user_by_uuid(
+        uuid=user_uuid,
+        session=session,
+    )
+    room_db = await get_room_by_uuid(
+        uuid=room_uuid,
+        user_id=user_db.id,
+        session=session,
+    )
+
+    if room_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Room not found",
+        )
+
+    result = {
+        "creator_uuid": user_db.uuid,
+        "uuid": room_db.uuid,
+        "title": room_db.title,
+        "description": room_db.description,
+        "created_at": room_db.created_at,
+        "updated_at": room_db.updated_at,
     }
 
     return result

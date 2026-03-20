@@ -12,10 +12,12 @@ from app.rooms.schemas import (
     CreateRoomResponse,
     GetRoomsResponse,
     UpdateRoomRequest,
+    GetRoomResponse,
 )
 from app.rooms.service import (
     create_room as service_create_room,
     get_rooms as service_get_rooms,
+    get_room as service_get_room,
     update_room as service_update_room,
     delete_room as service_delete_room,
 )
@@ -72,6 +74,35 @@ async def get_rooms(
         page=result["page"],
         size=result["size"],
         total_pages=result["total_pages"],
+    )
+
+
+@rooms_router.get(
+    path="/{room_uuid}",
+    status_code=status.HTTP_200_OK,
+    response_model=GetRoomResponse,
+)
+@limiter.limit("300/minute")
+async def get_room(
+    request: Request,
+    room_uuid: UUID,
+    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> GetRoomResponse:
+    user_uuid = auth_context["user_uuid"]
+    result = await service_get_room(
+        room_uuid=room_uuid,
+        user_uuid=user_uuid,
+        session=session,
+    )
+
+    return GetRoomResponse(
+        creator_uuid=result["creator_uuid"],
+        uuid=result["uuid"],
+        title=result["title"],
+        description=result["description"],
+        created_at=result["created_at"],
+        updated_at=result["updated_at"],
     )
 
 

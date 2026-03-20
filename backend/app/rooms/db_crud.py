@@ -64,6 +64,21 @@ async def get_rooms_list(
     return list(result.all())
 
 
+async def get_room_by_uuid(
+    uuid: UUID,
+    user_id: int,
+    session: AsyncSession,
+) -> Room | None:
+    stmt = select(Room).where(
+        Room.uuid == uuid,
+        Room.creator_id == user_id,
+        Room.deleted_at.is_(None),
+    )
+    result = await session.scalar(stmt)
+
+    return result
+
+
 async def update_room_by_uuid(
     uuid: UUID,
     user_id: int,
