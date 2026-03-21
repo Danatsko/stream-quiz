@@ -25,6 +25,7 @@ from app.rooms.service import (
     delete_room as service_delete_room,
     create_session as service_create_session,
     update_session as service_update_session,
+    delete_session as service_delete_session,
 )
 
 rooms_router = APIRouter()
@@ -197,5 +198,27 @@ async def update_session(
         session_uuid=session_uuid,
         user_uuid=user_uuid,
         update_session_data=update_session_data.model_dump(exclude_unset=True),
+        db_session=db_session,
+    )
+
+
+@rooms_router.delete(
+    path="/{room_uuid}/sessions/{session_uuid}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+@limiter.limit("300/minute")
+async def delete_session(
+    request: Request,
+    room_uuid: UUID,
+    session_uuid: UUID,
+    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> None:
+    user_uuid = auth_context["user_uuid"]
+
+    await service_delete_session(
+        room_uuid=room_uuid,
+        session_uuid=session_uuid,
+        user_uuid=user_uuid,
         db_session=db_session,
     )

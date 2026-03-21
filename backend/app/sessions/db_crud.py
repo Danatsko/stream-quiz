@@ -1,7 +1,7 @@
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import insert, update
+from sqlalchemy import insert, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.sessions.models import Session, SessionStatus
@@ -46,6 +46,26 @@ async def update_session_by_uuid(
             Session.status == SessionStatus.waiting,
         )
         .values(**update_session_data)
+    )
+    result = await db_session.execute(stmt)
+
+    return result.rowcount == 1
+
+
+async def soft_delete_session_by_uuid(
+    uuid: UUID,
+    room_id: int,
+    db_session: AsyncSession,
+) -> bool:
+    stmt = (
+        update(Session)
+        .where(
+            Session.uuid == uuid,
+            Session.room_id == room_id,
+            Session.deleted_at.is_(None),
+            Session.status == SessionStatus.waiting,
+        )
+        .values(deleted_at=func.now())
     )
     result = await db_session.execute(stmt)
 

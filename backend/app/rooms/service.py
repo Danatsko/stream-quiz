@@ -16,6 +16,7 @@ from app.rooms.db_crud import (
 from app.sessions.service import (
     create_session as session_service_create_session,
     update_session_by_uuid,
+    soft_delete_session_by_uuid,
 )
 from app.users.service import get_user_by_uuid
 
@@ -285,6 +286,41 @@ async def update_session(
     )
 
     if not is_updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found",
+        )
+
+
+async def delete_session(
+    room_uuid: UUID,
+    session_uuid: UUID,
+    user_uuid: UUID,
+    db_session: AsyncSession,
+) -> None:
+    user_db = await get_user_by_uuid(
+        uuid=user_uuid,
+        db_session=db_session,
+    )
+    room_db = await get_room_by_uuid(
+        uuid=room_uuid,
+        user_id=user_db.id,
+        db_session=db_session,
+    )
+
+    if room_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Room not found",
+        )
+
+    is_deleted = await soft_delete_session_by_uuid(
+        uuid=session_uuid,
+        room_id=room_db.id,
+        db_session=db_session,
+    )
+
+    if not is_deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Session not found",
