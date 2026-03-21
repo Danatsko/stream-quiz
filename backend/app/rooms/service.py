@@ -13,7 +13,10 @@ from app.rooms.db_crud import (
     soft_delete_room_by_uuid,
     get_room_by_uuid,
 )
-from app.sessions.service import create_session as session_service_create_session
+from app.sessions.service import (
+    create_session as session_service_create_session,
+    update_session_by_uuid,
+)
 from app.users.service import get_user_by_uuid
 
 
@@ -230,3 +233,59 @@ async def create_session(
     }
 
     return result
+
+
+async def update_session(
+    room_uuid: UUID,
+    session_uuid: UUID,
+    user_uuid: UUID,
+    update_session_data: dict[str, Any],
+    db_session: AsyncSession,
+) -> None:
+    if not update_session_data:
+        return
+
+    user_db = await get_user_by_uuid(
+        uuid=user_uuid,
+        db_session=db_session,
+    )
+    room_db = await get_room_by_uuid(
+        uuid=room_uuid,
+        user_id=user_db.id,
+        db_session=db_session,
+    )
+
+    if room_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Room not found",
+        )
+
+    if "quiz_uuid" in update_session_data:
+        quiz_uuid = update_session_data.pop("quiz_uuid")
+        quiz_db = await get_available_quiz_by_uuid(
+            uuid=quiz_uuid,
+            user_id=user_db.id,
+            db_session=db_session,
+        )
+
+        if quiz_db is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Quiz not found",
+            )
+
+        update_session_data["quiz_id"] = quiz_db.id
+
+    is_updated = await update_session_by_uuid(
+        uuid=session_uuid,
+        room_id=room_db.id,
+        update_session_data=update_session_data,
+        db_session=db_session,
+    )
+
+    if not is_updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found",
+        )

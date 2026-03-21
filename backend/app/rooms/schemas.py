@@ -104,3 +104,42 @@ class CreateSessionRequest(SessionBase):
 
 class CreateSessionResponse(Base):
     uuid: UUID
+
+
+class UpdateSessionRequest(Base):
+    quiz_uuid: UUID | None = None
+    title: (
+        Annotated[
+            str,
+            StringConstraints(
+                min_length=3,
+                max_length=100,
+            ),
+        ]
+        | None
+    ) = None
+    description: (
+        Annotated[
+            str,
+            StringConstraints(max_length=500),
+        ]
+        | None
+    ) = None
+    time_seconds: (
+        Annotated[
+            int,
+            Field(
+                gt=0,
+                le=604800,
+            ),
+        ]
+        | None
+    ) = None
+
+    @field_validator("quiz_uuid", "title", "description", "time_seconds")
+    @classmethod
+    def prevent_explicit_null(cls, value):
+        if value is None:
+            raise ValueError("Null is not allowed for this field")
+
+        return value
