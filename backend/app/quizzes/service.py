@@ -18,8 +18,24 @@ from app.quizzes.db_crud import (
     bulk_update_quiz_question_options,
     bulk_delete_quiz_question_options_by_ids,
     get_quiz_with_relations_by_uuid,
+    get_available_quiz_by_uuid as db_crud_get_available_quiz_by_uuid,
 )
+from app.quizzes.models import Quiz
 from app.users.service import get_user_by_uuid, get_user_uuids_by_ids, get_user_by_id
+
+
+async def get_available_quiz_by_uuid(
+    uuid: UUID,
+    user_id: int,
+    session: AsyncSession,
+) -> Quiz | None:
+    quiz_db = await db_crud_get_available_quiz_by_uuid(
+        uuid=uuid,
+        user_id=user_id,
+        session=session,
+    )
+
+    return quiz_db
 
 
 async def create_quiz(

@@ -75,6 +75,23 @@ async def get_available_quizzes_list(
     return [(quiz, total) for quiz, total in result.all()]
 
 
+async def get_available_quiz_by_uuid(
+    uuid: UUID,
+    user_id: int,
+    session: AsyncSession,
+) -> Quiz | None:
+    stmt = select(Quiz).where(
+        Quiz.uuid == uuid,
+        or_(
+            Quiz.is_public.is_(True),
+            Quiz.creator_id == user_id,
+        ),
+    )
+    result = await session.scalar(stmt)
+
+    return result
+
+
 async def get_available_quiz_with_relations_by_uuid(
     uuid: UUID,
     user_id: int,

@@ -4,6 +4,7 @@ from typing import Any
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.quizzes.service import get_available_quiz_by_uuid
 from app.rooms.db_crud import (
     create_room as db_crud_create_room,
     get_rooms_total_count,
@@ -12,6 +13,7 @@ from app.rooms.db_crud import (
     soft_delete_room_by_uuid,
     get_room_by_uuid,
 )
+from app.sessions.service import create_session as session_service_create_session
 from app.users.service import get_user_by_uuid
 
 
@@ -175,3 +177,56 @@ async def delete_room(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Room not found",
         )
+
+
+async def create_session(
+    title: str,
+    description: str,
+    time_seconds: int,
+    quiz_uuid: UUID,
+    room_uuid: UUID,
+    user_uuid: UUID,
+    session: AsyncSession,
+) -> dict[str, Any]:
+    user_db = await get_user_by_uuid(
+        uuid=user_uuid,
+        session=session,
+    )
+    room_db = await get_room_by_uuid(
+        uuid=room_uuid,
+        user_id=user_db.id,
+        session=session,
+    )
+
+    if room_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Room not found",
+        )
+
+    quiz_db = await get_available_quiz_by_uuid(
+        uuid=quiz_uuid,
+        user_id=user_db.id,
+        session=session,
+    )
+
+    if quiz_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quiz not found",
+        )
+
+    session_db = await session_service_create_session(
+        title=title,
+        description=description,
+        time_seconds=time_seconds,
+        room_id=room_db.id,
+        quiz_id=quiz_db.id,
+        session=session,
+    )
+
+    result = {
+        "uuid": session_db.uuid,
+    }
+
+    return result

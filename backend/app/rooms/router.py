@@ -13,6 +13,8 @@ from app.rooms.schemas import (
     GetRoomsResponse,
     UpdateRoomRequest,
     GetRoomResponse,
+    CreateSessionResponse,
+    CreateSessionRequest,
 )
 from app.rooms.service import (
     create_room as service_create_room,
@@ -20,6 +22,7 @@ from app.rooms.service import (
     get_room as service_get_room,
     update_room as service_update_room,
     delete_room as service_delete_room,
+    create_session as service_create_session,
 )
 
 rooms_router = APIRouter()
@@ -146,3 +149,27 @@ async def delete_room(
         user_uuid=user_uuid,
         session=session,
     )
+
+
+@rooms_router.post(
+    path="/{room_uuid}/sessions",
+    status_code=status.HTTP_201_CREATED,
+    response_model=CreateSessionResponse,
+)
+@limiter.limit("300/minute")
+async def create_session(
+    request: Request,
+    room_uuid: UUID,
+    create_session_data: CreateSessionRequest,
+    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> CreateSessionResponse:
+    user_uuid = auth_context["user_uuid"]
+    result = await service_create_session(
+        **create_session_data.model_dump(),
+        room_uuid=room_uuid,
+        user_uuid=user_uuid,
+        session=session,
+    )
+
+    return CreateSessionResponse(uuid=result["uuid"])

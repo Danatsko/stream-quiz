@@ -2,7 +2,7 @@ from uuid import UUID
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import StringConstraints, field_validator
+from pydantic import StringConstraints, field_validator, Field
 
 from app.core.schemas import Base
 
@@ -18,6 +18,28 @@ class RoomBase(Base):
     description: Annotated[
         str,
         StringConstraints(max_length=500),
+    ]
+
+
+class SessionBase(Base):
+    quiz_uuid: UUID
+    title: Annotated[
+        str,
+        StringConstraints(
+            min_length=3,
+            max_length=100,
+        ),
+    ]
+    description: Annotated[
+        str,
+        StringConstraints(max_length=500),
+    ]
+    time_seconds: Annotated[
+        int,
+        Field(
+            gt=0,
+            le=604800,
+        ),
     ]
 
 
@@ -74,3 +96,11 @@ class UpdateRoomRequest(Base):
             raise ValueError("Null is not allowed for this field")
 
         return value
+
+
+class CreateSessionRequest(SessionBase):
+    pass
+
+
+class CreateSessionResponse(Base):
+    uuid: UUID
