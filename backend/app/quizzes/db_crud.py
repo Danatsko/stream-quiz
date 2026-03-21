@@ -12,7 +12,7 @@ async def create_quiz(
     title: str,
     description: str,
     creator_id: int,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> Quiz:
     stmt = (
         insert(Quiz)
@@ -23,14 +23,14 @@ async def create_quiz(
         )
         .returning(Quiz)
     )
-    result = await session.scalar(stmt)
+    result = await db_session.scalar(stmt)
 
     return result
 
 
 async def get_quizzes_total_count(
     user_id: int,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> int:
     stmt = (
         select(func.count())
@@ -42,7 +42,7 @@ async def get_quizzes_total_count(
             )
         )
     )
-    result = await session.scalar(stmt)
+    result = await db_session.scalar(stmt)
 
     return result or 0
 
@@ -51,7 +51,7 @@ async def get_available_quizzes_list(
     user_id: int,
     limit: int,
     offset: int,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> list[tuple[Quiz, int]]:
     stmt = (
         select(
@@ -70,7 +70,7 @@ async def get_available_quizzes_list(
         .limit(limit)
         .offset(offset)
     )
-    result = await session.execute(stmt)
+    result = await db_session.execute(stmt)
 
     return [(quiz, total) for quiz, total in result.all()]
 
@@ -78,7 +78,7 @@ async def get_available_quizzes_list(
 async def get_available_quiz_by_uuid(
     uuid: UUID,
     user_id: int,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> Quiz | None:
     stmt = select(Quiz).where(
         Quiz.uuid == uuid,
@@ -87,7 +87,7 @@ async def get_available_quiz_by_uuid(
             Quiz.creator_id == user_id,
         ),
     )
-    result = await session.scalar(stmt)
+    result = await db_session.scalar(stmt)
 
     return result
 
@@ -95,7 +95,7 @@ async def get_available_quiz_by_uuid(
 async def get_available_quiz_with_relations_by_uuid(
     uuid: UUID,
     user_id: int,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> Quiz | None:
     stmt = (
         select(Quiz)
@@ -108,7 +108,7 @@ async def get_available_quiz_with_relations_by_uuid(
         )
         .options(selectinload(Quiz.questions).selectinload(QuizQuestion.options))
     )
-    result = await session.scalar(stmt)
+    result = await db_session.scalar(stmt)
 
     return result
 
@@ -116,7 +116,7 @@ async def get_available_quiz_with_relations_by_uuid(
 async def get_quiz_with_relations_by_uuid(
     uuid: UUID,
     user_id: int,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> Quiz | None:
     stmt = (
         select(Quiz)
@@ -126,7 +126,7 @@ async def get_quiz_with_relations_by_uuid(
         )
         .options(selectinload(Quiz.questions).selectinload(QuizQuestion.options))
     )
-    result = await session.scalar(stmt)
+    result = await db_session.scalar(stmt)
 
     return result
 
@@ -135,7 +135,7 @@ async def update_quiz_by_uuid(
     uuid: UUID,
     user_id: int,
     update_quiz_data: dict[str, Any],
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> bool:
     stmt = (
         update(Quiz)
@@ -145,7 +145,7 @@ async def update_quiz_by_uuid(
         )
         .values(**update_quiz_data)
     )
-    result = await session.execute(stmt)
+    result = await db_session.execute(stmt)
 
     return result.rowcount == 1
 
@@ -153,13 +153,13 @@ async def update_quiz_by_uuid(
 async def delete_quiz_by_uuid(
     uuid: UUID,
     user_id: int,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> bool:
     stmt = delete(Quiz).where(
         Quiz.uuid == uuid,
         Quiz.creator_id == user_id,
     )
-    result = await session.execute(stmt)
+    result = await db_session.execute(stmt)
 
     return result.rowcount == 1
 
@@ -167,7 +167,7 @@ async def delete_quiz_by_uuid(
 async def bulk_create_quiz_questions(
     quiz_id: int,
     create_quiz_questions_data: list[dict[str, Any]],
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> None:
     question_rows = [
         {
@@ -178,7 +178,7 @@ async def bulk_create_quiz_questions(
         for question in create_quiz_questions_data
     ]
     stmt = insert(QuizQuestion).values(question_rows).returning(QuizQuestion)
-    created_questions = list(await session.scalars(stmt))
+    created_questions = list(await db_session.scalars(stmt))
     option_rows = []
 
     for question_db, question_data in zip(
@@ -195,29 +195,29 @@ async def bulk_create_quiz_questions(
 
     stmt = insert(QuizQuestionOption).values(option_rows)
 
-    await session.execute(stmt)
+    await db_session.execute(stmt)
 
 
 async def bulk_update_quiz_questions(
     update_quiz_questions_data: list[dict[str, Any]],
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> None:
-    await session.execute(update(QuizQuestion), update_quiz_questions_data)
+    await db_session.execute(update(QuizQuestion), update_quiz_questions_data)
 
 
 async def bulk_delete_quiz_questions_by_ids(
     quiz_questions_ids: list[int],
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> None:
     stmt = delete(QuizQuestion).where(QuizQuestion.id.in_(quiz_questions_ids))
 
-    await session.execute(stmt)
+    await db_session.execute(stmt)
 
 
 async def bulk_create_quiz_question_options(
     quiz_question_id: int,
     options: list[dict[str, Any]],
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> None:
     option_rows = [
         {
@@ -229,22 +229,24 @@ async def bulk_create_quiz_question_options(
     ]
     stmt = insert(QuizQuestionOption).values(option_rows)
 
-    await session.execute(stmt)
+    await db_session.execute(stmt)
 
 
 async def bulk_update_quiz_question_options(
     update_quiz_question_options_data: list[dict[str, Any]],
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> None:
-    await session.execute(update(QuizQuestionOption), update_quiz_question_options_data)
+    await db_session.execute(
+        update(QuizQuestionOption), update_quiz_question_options_data
+    )
 
 
 async def bulk_delete_quiz_question_options_by_ids(
     quiz_question_option_ids: list[int],
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> None:
     stmt = delete(QuizQuestionOption).where(
         QuizQuestionOption.id.in_(quiz_question_option_ids)
     )
 
-    await session.execute(stmt)
+    await db_session.execute(stmt)

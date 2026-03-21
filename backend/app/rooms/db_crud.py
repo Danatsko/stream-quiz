@@ -11,7 +11,7 @@ async def create_room(
     title: str,
     description: str,
     creator_id: int,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> Room:
     stmt = (
         insert(Room)
@@ -22,14 +22,14 @@ async def create_room(
         )
         .returning(Room)
     )
-    result = await session.scalar(stmt)
+    result = await db_session.scalar(stmt)
 
     return result
 
 
 async def get_rooms_total_count(
     user_id: int,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> int:
     stmt = (
         select(func.count())
@@ -39,7 +39,7 @@ async def get_rooms_total_count(
             Room.deleted_at.is_(None),
         )
     )
-    result = await session.scalar(stmt)
+    result = await db_session.scalar(stmt)
 
     return result or 0
 
@@ -48,7 +48,7 @@ async def get_rooms_list(
     user_id: int,
     limit: int,
     offset: int,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> list[Room]:
     stmt = (
         select(Room)
@@ -59,7 +59,7 @@ async def get_rooms_list(
         .limit(limit)
         .offset(offset)
     )
-    result = await session.scalars(stmt)
+    result = await db_session.scalars(stmt)
 
     return list(result.all())
 
@@ -67,14 +67,14 @@ async def get_rooms_list(
 async def get_room_by_uuid(
     uuid: UUID,
     user_id: int,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> Room | None:
     stmt = select(Room).where(
         Room.uuid == uuid,
         Room.creator_id == user_id,
         Room.deleted_at.is_(None),
     )
-    result = await session.scalar(stmt)
+    result = await db_session.scalar(stmt)
 
     return result
 
@@ -83,7 +83,7 @@ async def update_room_by_uuid(
     uuid: UUID,
     user_id: int,
     update_room_data: dict[str, Any],
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> bool:
     stmt = (
         update(Room)
@@ -94,7 +94,7 @@ async def update_room_by_uuid(
         )
         .values(**update_room_data)
     )
-    result = await session.execute(stmt)
+    result = await db_session.execute(stmt)
 
     return result.rowcount == 1
 
@@ -102,7 +102,7 @@ async def update_room_by_uuid(
 async def soft_delete_room_by_uuid(
     uuid: UUID,
     user_id: int,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> bool:
     stmt = (
         update(Room)
@@ -113,6 +113,6 @@ async def soft_delete_room_by_uuid(
         )
         .values(deleted_at=func.now())
     )
-    result = await session.execute(stmt)
+    result = await db_session.execute(stmt)
 
     return result.rowcount == 1

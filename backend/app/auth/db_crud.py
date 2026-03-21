@@ -10,7 +10,7 @@ async def create_refresh_token(
     user_id: int,
     token: str,
     expires_at: datetime,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> RefreshToken:
     stmt = (
         insert(RefreshToken)
@@ -21,27 +21,27 @@ async def create_refresh_token(
         )
         .returning(RefreshToken)
     )
-    result = await session.scalar(stmt)
+    result = await db_session.scalar(stmt)
 
     return result
 
 
 async def get_refresh_token_by_token(
     token: str,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> RefreshToken | None:
     stmt = select(RefreshToken).where(
         RefreshToken.token == token,
         RefreshToken.is_revoked.is_(False),
     )
-    result = await session.scalar(stmt)
+    result = await db_session.scalar(stmt)
 
     return result
 
 
 async def revoke_refresh_token_by_token(
     token: str,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> bool:
     stmt = (
         update(RefreshToken)
@@ -51,6 +51,6 @@ async def revoke_refresh_token_by_token(
         )
         .values(is_revoked=True)
     )
-    result = await session.execute(stmt)
+    result = await db_session.execute(stmt)
 
     return result.rowcount == 1

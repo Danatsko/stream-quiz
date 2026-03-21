@@ -21,12 +21,12 @@ users_router = APIRouter()
 async def get_me(
     request: Request,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> GetMeResponse:
     user_uuid = auth_context["user_uuid"]
     result = await service_get_me(
         uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
 
     return GetMeResponse(

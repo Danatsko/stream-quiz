@@ -21,17 +21,17 @@ async def create_room(
     title: str,
     description: str,
     user_uuid: UUID,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> dict[str, Any]:
     user_db = await get_user_by_uuid(
         uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
     room_db = await db_crud_create_room(
         title=title,
         description=description,
         creator_id=user_db.id,
-        session=session,
+        db_session=db_session,
     )
     result = {"uuid": room_db.uuid}
 
@@ -42,16 +42,16 @@ async def get_rooms(
     page: int,
     size: int,
     user_uuid: UUID,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> dict[str, Any]:
     offset = (page - 1) * size
     user_db = await get_user_by_uuid(
         uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
     total_rooms_db = await get_rooms_total_count(
         user_id=user_db.id,
-        session=session,
+        db_session=db_session,
     )
 
     if total_rooms_db == 0:
@@ -69,7 +69,7 @@ async def get_rooms(
         user_id=user_db.id,
         limit=size,
         offset=offset,
-        session=session,
+        db_session=db_session,
     )
     total_pages = (total_rooms_db + size - 1) // size
     rooms = []
@@ -100,16 +100,16 @@ async def get_rooms(
 async def get_room(
     room_uuid: UUID,
     user_uuid: UUID,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> dict[str, Any]:
     user_db = await get_user_by_uuid(
         uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
     room_db = await get_room_by_uuid(
         uuid=room_uuid,
         user_id=user_db.id,
-        session=session,
+        db_session=db_session,
     )
 
     if room_db is None:
@@ -134,20 +134,20 @@ async def update_room(
     room_uuid: UUID,
     user_uuid: UUID,
     update_room_data: dict[str, Any],
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> None:
     if not update_room_data:
         return
 
     user_db = await get_user_by_uuid(
         uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
     is_updated = await update_room_by_uuid(
         uuid=room_uuid,
         user_id=user_db.id,
         update_room_data=update_room_data,
-        session=session,
+        db_session=db_session,
     )
 
     if not is_updated:
@@ -160,16 +160,16 @@ async def update_room(
 async def delete_room(
     room_uuid: UUID,
     user_uuid: UUID,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> None:
     user_db = await get_user_by_uuid(
         uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
     is_deleted = await soft_delete_room_by_uuid(
         uuid=room_uuid,
         user_id=user_db.id,
-        session=session,
+        db_session=db_session,
     )
 
     if not is_deleted:
@@ -186,16 +186,16 @@ async def create_session(
     quiz_uuid: UUID,
     room_uuid: UUID,
     user_uuid: UUID,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> dict[str, Any]:
     user_db = await get_user_by_uuid(
         uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
     room_db = await get_room_by_uuid(
         uuid=room_uuid,
         user_id=user_db.id,
-        session=session,
+        db_session=db_session,
     )
 
     if room_db is None:
@@ -207,7 +207,7 @@ async def create_session(
     quiz_db = await get_available_quiz_by_uuid(
         uuid=quiz_uuid,
         user_id=user_db.id,
-        session=session,
+        db_session=db_session,
     )
 
     if quiz_db is None:
@@ -222,7 +222,7 @@ async def create_session(
         time_seconds=time_seconds,
         room_id=room_db.id,
         quiz_id=quiz_db.id,
-        session=session,
+        db_session=db_session,
     )
 
     result = {

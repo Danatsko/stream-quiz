@@ -37,13 +37,13 @@ async def create_quiz(
     request: Request,
     create_quiz_data: CreateQuizRequest,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> CreateQuizResponse:
     user_uuid = auth_context["user_uuid"]
     result = await service_create_quiz(
         **create_quiz_data.model_dump(),
         user_uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
 
     return CreateQuizResponse(uuid=result["uuid"])
@@ -58,7 +58,7 @@ async def create_quiz(
 async def get_quizzes(
     request: Request,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 10,
 ) -> GetQuizzesResponse:
@@ -67,7 +67,7 @@ async def get_quizzes(
         page=page,
         size=size,
         user_uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
 
     return GetQuizzesResponse(
@@ -89,13 +89,13 @@ async def get_quiz(
     request: Request,
     quiz_uuid: UUID,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> GetQuizResponse:
     user_uuid = auth_context["user_uuid"]
     result = await service_get_quiz(
         quiz_uuid=quiz_uuid,
         user_uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
 
     return GetQuizResponse(
@@ -121,7 +121,7 @@ async def update_quiz(
     quiz_uuid: UUID,
     update_quiz_data: UpdateQuizRequest,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> None:
     user_uuid = auth_context["user_uuid"]
 
@@ -129,7 +129,7 @@ async def update_quiz(
         quiz_uuid=quiz_uuid,
         user_uuid=user_uuid,
         update_quiz_data=update_quiz_data.model_dump(exclude_unset=True),
-        session=session,
+        db_session=db_session,
     )
 
 
@@ -143,7 +143,7 @@ async def full_update_quiz(
     quiz_uuid: UUID,
     full_update_quiz_data: FullUpdateQuizRequest,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> None:
     user_uuid = auth_context["user_uuid"]
 
@@ -151,7 +151,7 @@ async def full_update_quiz(
         quiz_uuid=quiz_uuid,
         user_uuid=user_uuid,
         full_update_quiz_data=full_update_quiz_data.model_dump(),
-        session=session,
+        db_session=db_session,
     )
 
 
@@ -164,12 +164,12 @@ async def delete_quiz(
     request: Request,
     quiz_uuid: UUID,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> None:
     user_uuid = auth_context["user_uuid"]
 
     await service_delete_quiz(
         quiz_uuid=quiz_uuid,
         user_uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )

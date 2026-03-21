@@ -38,11 +38,11 @@ async def registration(
     request: Request,
     response: Response,
     registration_data: RegistrationRequest,
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> None:
     result = await service_registration(
         **registration_data.model_dump(),
-        session=session,
+        db_session=db_session,
     )
 
     response.set_cookie(
@@ -73,11 +73,11 @@ async def login(
     request: Request,
     response: Response,
     login_data: LoginRequest,
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> None:
     result = await service_login(
         **login_data.model_dump(),
-        session=session,
+        db_session=db_session,
     )
 
     response.set_cookie(
@@ -108,7 +108,7 @@ async def logout(
     response: Response,
     auth_context: Annotated[dict[str, Any] | None, Depends(get_optional_auth_context)],
     refresh_token: Annotated[str, Depends(get_current_refresh_token)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
     redis_client: Annotated[Redis, Depends(get_redis_client)],
 ) -> None:
     access_token_jti = None
@@ -122,7 +122,7 @@ async def logout(
         access_token_jti=access_token_jti,
         access_token_exp=access_token_exp,
         refresh_token=refresh_token,
-        session=session,
+        db_session=db_session,
         redis_client=redis_client,
     )
 
@@ -150,7 +150,7 @@ async def refresh(
     response: Response,
     auth_context: Annotated[dict[str, Any] | None, Depends(get_optional_auth_context)],
     refresh_token: Annotated[str, Depends(get_current_refresh_token)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
     redis_client: Annotated[Redis, Depends(get_redis_client)],
 ) -> None:
     access_token_jti = None
@@ -164,7 +164,7 @@ async def refresh(
         access_token_jti=access_token_jti,
         access_token_exp=access_token_exp,
         refresh_token=refresh_token,
-        session=session,
+        db_session=db_session,
         redis_client=redis_client,
     )
 

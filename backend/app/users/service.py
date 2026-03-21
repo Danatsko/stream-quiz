@@ -19,14 +19,14 @@ async def create_user(
     username: str,
     email: str,
     password: str,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> User:
     try:
         user_db = await db_crud_create_user(
             username=username,
             email=email,
             password=password,
-            session=session,
+            db_session=db_session,
         )
 
         return user_db
@@ -44,11 +44,11 @@ async def create_user(
 
 async def get_user_by_email(
     email: str,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> User | None:
     user_db = await db_crud_get_user_by_email(
         email=email,
-        session=session,
+        db_session=db_session,
     )
 
     return user_db
@@ -56,11 +56,11 @@ async def get_user_by_email(
 
 async def get_user_by_id(
     id: int,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> User | None:
     user_db = await db_crud_get_user_by_id(
         id=id,
-        session=session,
+        db_session=db_session,
     )
 
     return user_db
@@ -68,11 +68,11 @@ async def get_user_by_id(
 
 async def get_user_by_uuid(
     uuid: UUID,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> User | None:
     user_db = await db_crud_get_user_by_uuid(
         uuid=uuid,
-        session=session,
+        db_session=db_session,
     )
 
     return user_db
@@ -80,11 +80,11 @@ async def get_user_by_uuid(
 
 async def get_user_uuids_by_ids(
     ids: set[int],
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> dict[int, UUID]:
     user_uuids_db = await db_crud_get_user_uuids_by_ids(
         ids=ids,
-        session=session,
+        db_session=db_session,
     )
 
     return user_uuids_db
@@ -92,11 +92,11 @@ async def get_user_uuids_by_ids(
 
 async def get_me(
     uuid: UUID,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> dict[str, Any]:
     user_db = await db_crud_get_user_by_uuid(
         uuid=uuid,
-        session=session,
+        db_session=db_session,
     )
 
     result = {

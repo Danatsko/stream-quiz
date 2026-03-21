@@ -27,12 +27,12 @@ from app.users.service import get_user_by_uuid, get_user_uuids_by_ids, get_user_
 async def get_available_quiz_by_uuid(
     uuid: UUID,
     user_id: int,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> Quiz | None:
     quiz_db = await db_crud_get_available_quiz_by_uuid(
         uuid=uuid,
         user_id=user_id,
-        session=session,
+        db_session=db_session,
     )
 
     return quiz_db
@@ -42,17 +42,17 @@ async def create_quiz(
     title: str,
     description: str,
     user_uuid: UUID,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> dict[str, Any]:
     user_db = await get_user_by_uuid(
         uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
     quiz_db = await db_crud_create_quiz(
         title=title,
         description=description,
         creator_id=user_db.id,
-        session=session,
+        db_session=db_session,
     )
     result = {"uuid": quiz_db.uuid}
 
@@ -63,16 +63,16 @@ async def get_quizzes(
     page: int,
     size: int,
     user_uuid: UUID,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> dict[str, Any]:
     offset = (page - 1) * size
     user_db = await get_user_by_uuid(
         uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
     total_quizzes_db = await get_quizzes_total_count(
         user_id=user_db.id,
-        session=session,
+        db_session=db_session,
     )
 
     if total_quizzes_db == 0:
@@ -90,12 +90,12 @@ async def get_quizzes(
         user_id=user_db.id,
         limit=size,
         offset=offset,
-        session=session,
+        db_session=db_session,
     )
     creator_ids = {quiz.creator_id for quiz, _ in quizzes_db}
     creators_mapping = await get_user_uuids_by_ids(
         ids=creator_ids,
-        session=session,
+        db_session=db_session,
     )
 
     total_pages = (total_quizzes_db + size - 1) // size
@@ -131,16 +131,16 @@ async def get_quizzes(
 async def get_quiz(
     quiz_uuid: UUID,
     user_uuid: UUID,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> dict[str, Any]:
     user_db = await get_user_by_uuid(
         uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
     quiz_db = await get_available_quiz_with_relations_by_uuid(
         uuid=quiz_uuid,
         user_id=user_db.id,
-        session=session,
+        db_session=db_session,
     )
 
     if quiz_db is None:
@@ -156,7 +156,7 @@ async def get_quiz(
     else:
         creator_db = await get_user_by_id(
             id=quiz_db.creator_id,
-            session=session,
+            db_session=db_session,
         )
 
     questions_data = []
@@ -203,20 +203,20 @@ async def update_quiz(
     quiz_uuid: UUID,
     user_uuid: UUID,
     update_quiz_data: dict[str, Any],
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> None:
     if not update_quiz_data:
         return
 
     user_db = await get_user_by_uuid(
         uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
     is_updated = await update_quiz_by_uuid(
         uuid=quiz_uuid,
         user_id=user_db.id,
         update_quiz_data=update_quiz_data,
-        session=session,
+        db_session=db_session,
     )
 
     if not is_updated:
@@ -230,16 +230,16 @@ async def full_update_quiz(
     quiz_uuid: UUID,
     user_uuid: UUID,
     full_update_quiz_data: dict[str, Any],
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> None:
     user_db = await get_user_by_uuid(
         uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
     quiz_db = await get_quiz_with_relations_by_uuid(
         uuid=quiz_uuid,
         user_id=user_db.id,
-        session=session,
+        db_session=db_session,
     )
 
     if quiz_db is None:
@@ -381,56 +381,56 @@ async def full_update_quiz(
             uuid=quiz_uuid,
             user_id=user_db.id,
             update_quiz_data=update_quiz_data,
-            session=session,
+            db_session=db_session,
         )
     if questions_to_create:
         await bulk_create_quiz_questions(
             quiz_id=quiz_db.id,
             create_quiz_questions_data=questions_to_create,
-            session=session,
+            db_session=db_session,
         )
     if questions_to_update:
         await bulk_update_quiz_questions(
             update_quiz_questions_data=questions_to_update,
-            session=session,
+            db_session=db_session,
         )
     if questions_to_delete_ids:
         await bulk_delete_quiz_questions_by_ids(
             quiz_questions_ids=questions_to_delete_ids,
-            session=session,
+            db_session=db_session,
         )
     if options_to_create_by_question:
         for question_id, options in options_to_create_by_question.items():
             await bulk_create_quiz_question_options(
                 quiz_question_id=question_id,
                 options=options,
-                session=session,
+                db_session=db_session,
             )
     if options_to_update:
         await bulk_update_quiz_question_options(
             update_quiz_question_options_data=options_to_update,
-            session=session,
+            db_session=db_session,
         )
     if options_to_delete_ids:
         await bulk_delete_quiz_question_options_by_ids(
             quiz_question_option_ids=options_to_delete_ids,
-            session=session,
+            db_session=db_session,
         )
 
 
 async def delete_quiz(
     quiz_uuid: UUID,
     user_uuid: UUID,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> None:
     user_db = await get_user_by_uuid(
         uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
     is_deleted = await delete_quiz_by_uuid(
         uuid=quiz_uuid,
         user_id=user_db.id,
-        session=session,
+        db_session=db_session,
     )
 
     if not is_deleted:

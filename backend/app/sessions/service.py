@@ -10,7 +10,7 @@ async def create_session(
     time_seconds: int,
     room_id: int,
     quiz_id: int,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> Session:
     session_db = await db_crud_create_session(
         title=title,
@@ -18,7 +18,7 @@ async def create_session(
         time_seconds=time_seconds,
         room_id=room_id,
         quiz_id=quiz_id,
-        session=session,
+        db_session=db_session,
     )
 
     return session_db

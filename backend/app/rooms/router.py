@@ -38,13 +38,13 @@ async def create_room(
     request: Request,
     create_room_data: CreateRoomRequest,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> CreateRoomResponse:
     user_uuid = auth_context["user_uuid"]
     result = await service_create_room(
         **create_room_data.model_dump(),
         user_uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
 
     return CreateRoomResponse(uuid=result["uuid"])
@@ -59,7 +59,7 @@ async def create_room(
 async def get_rooms(
     request: Request,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 10,
 ) -> GetRoomsResponse:
@@ -68,7 +68,7 @@ async def get_rooms(
         page=page,
         size=size,
         user_uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
 
     return GetRoomsResponse(
@@ -90,13 +90,13 @@ async def get_room(
     request: Request,
     room_uuid: UUID,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> GetRoomResponse:
     user_uuid = auth_context["user_uuid"]
     result = await service_get_room(
         room_uuid=room_uuid,
         user_uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
 
     return GetRoomResponse(
@@ -119,7 +119,7 @@ async def update_room(
     room_uuid: UUID,
     update_room_data: UpdateRoomRequest,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> None:
     user_uuid = auth_context["user_uuid"]
 
@@ -127,7 +127,7 @@ async def update_room(
         room_uuid=room_uuid,
         user_uuid=user_uuid,
         update_room_data=update_room_data.model_dump(exclude_unset=True),
-        session=session,
+        db_session=db_session,
     )
 
 
@@ -140,14 +140,14 @@ async def delete_room(
     request: Request,
     room_uuid: UUID,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> None:
     user_uuid = auth_context["user_uuid"]
 
     await service_delete_room(
         room_uuid=room_uuid,
         user_uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
 
 
@@ -162,14 +162,14 @@ async def create_session(
     room_uuid: UUID,
     create_session_data: CreateSessionRequest,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> CreateSessionResponse:
     user_uuid = auth_context["user_uuid"]
     result = await service_create_session(
         **create_session_data.model_dump(),
         room_uuid=room_uuid,
         user_uuid=user_uuid,
-        session=session,
+        db_session=db_session,
     )
 
     return CreateSessionResponse(uuid=result["uuid"])

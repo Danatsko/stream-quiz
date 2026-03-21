@@ -101,14 +101,14 @@ async def registration(
     username: str,
     email: str,
     password: str,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> dict[str, Any]:
     hashed_password = await hash_password(password=password)
     user_db = await create_user(
         username=username,
         email=email,
         password=hashed_password,
-        session=session,
+        db_session=db_session,
     )
     access_token = await generate_access_token(user_uuid=user_db.uuid)
     refresh_token = await generate_refresh_token()
@@ -121,7 +121,7 @@ async def registration(
         user_id=user_db.id,
         token=peppered_refresh_token,
         expires_at=refresh_token_expires_at,
-        session=session,
+        db_session=db_session,
     )
 
     result = {
@@ -135,11 +135,11 @@ async def registration(
 async def login(
     email: str,
     password: str,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> dict[str, Any]:
     user_db = await get_user_by_email(
         email=email,
-        session=session,
+        db_session=db_session,
     )
 
     if user_db is None:
@@ -170,7 +170,7 @@ async def login(
         user_id=user_db.id,
         token=peppered_refresh_token,
         expires_at=refresh_token_expires_at,
-        session=session,
+        db_session=db_session,
     )
 
     result = {
@@ -185,14 +185,14 @@ async def logout(
     access_token_jti: UUID | None,
     access_token_exp: int | None,
     refresh_token: str,
-    session: AsyncSession,
+    db_session: AsyncSession,
     redis_client: Redis,
 ) -> None:
     peppered_refresh_token = await pepper_refresh_token(token=refresh_token)
 
     await revoke_refresh_token_by_token(
         token=peppered_refresh_token,
-        session=session,
+        db_session=db_session,
     )
 
     if access_token_jti is not None:
@@ -211,7 +211,7 @@ async def refresh(
     access_token_jti: UUID | None,
     access_token_exp: int | None,
     refresh_token: str,
-    session: AsyncSession,
+    db_session: AsyncSession,
     redis_client: Redis,
 ) -> dict[str, Any]:
     if access_token_jti is not None:
@@ -228,7 +228,7 @@ async def refresh(
     peppered_refresh_token = await pepper_refresh_token(token=refresh_token)
     refresh_token_db = await get_refresh_token_by_token(
         token=peppered_refresh_token,
-        session=session,
+        db_session=db_session,
     )
 
     if refresh_token_db is None:
@@ -240,7 +240,7 @@ async def refresh(
     if refresh_token_db.expires_at < datetime.now(tz=timezone.utc):
         await revoke_refresh_token_by_token(
             token=peppered_refresh_token,
-            session=session,
+            db_session=db_session,
         )
 
         raise HTTPException(
@@ -250,13 +250,13 @@ async def refresh(
 
     user_db = await get_user_by_id(
         id=refresh_token_db.user_id,
-        session=session,
+        db_session=db_session,
     )
 
     if user_db is None:
         await revoke_refresh_token_by_token(
             token=peppered_refresh_token,
-            session=session,
+            db_session=db_session,
         )
 
         raise HTTPException(

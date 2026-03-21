@@ -10,7 +10,7 @@ async def create_session(
     time_seconds: int,
     room_id: int,
     quiz_id: int,
-    session: AsyncSession,
+    db_session: AsyncSession,
 ) -> Session:
     stmt = (
         insert(Session)
@@ -23,6 +23,6 @@ async def create_session(
         )
         .returning(Session)
     )
-    result = await session.scalar(stmt)
+    result = await db_session.scalar(stmt)
 
     return result

@@ -86,11 +86,11 @@ app.include_router(
 @limiter.limit("300/minute")
 async def health(
     request: Request,
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
     redis_client: Annotated[Redis, Depends(get_redis_client)],
 ) -> HealthResponse:
     checks_registry = {
-        "database": lambda: session.execute(text("SELECT 1")),
+        "database": lambda: db_session.execute(text("SELECT 1")),
         "redis": lambda: redis_client.ping(),
     }
     start_time = time.perf_counter()
