@@ -1,7 +1,7 @@
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import insert, update, func
+from sqlalchemy import insert, update, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.sessions.models import Session, SessionStatus
@@ -29,6 +29,44 @@ async def create_session(
     result = await db_session.scalar(stmt)
 
     return result
+
+
+async def get_sessions_total_count(
+    room_id: int,
+    db_session: AsyncSession,
+) -> int:
+    stmt = (
+        select(func.count())
+        .select_from(Session)
+        .where(
+            Session.room_id == room_id,
+            Session.deleted_at.is_(None),
+        )
+    )
+    result = await db_session.scalar(stmt)
+
+    return result or 0
+
+
+async def get_sessions_list(
+    room_id: int,
+    limit: int,
+    offset: int,
+    db_session: AsyncSession,
+) -> list[Session]:
+    stmt = (
+        select(Session)
+        .where(
+            Session.room_id == room_id,
+            Session.deleted_at.is_(None),
+        )
+        .order_by(Session.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    result = await db_session.scalars(stmt)
+
+    return list(result.all())
 
 
 async def update_session_by_uuid(

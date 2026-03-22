@@ -56,6 +56,7 @@ async def get_rooms_list(
             Room.creator_id == user_id,
             Room.deleted_at.is_(None),
         )
+        .order_by(Room.created_at.desc())
         .limit(limit)
         .offset(offset)
     )

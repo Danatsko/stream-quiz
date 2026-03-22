@@ -5,6 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.sessions.db_crud import (
     create_session as db_crud_create_session,
+    get_sessions_total_count as db_crud_get_sessions_total_count,
+    get_sessions_list as db_crud_get_sessions_list,
     update_session_by_uuid as db_crud_update_session_by_uuid,
     soft_delete_session_by_uuid as db_crud_soft_delete_session_by_uuid,
 )
@@ -29,6 +31,34 @@ async def create_session(
     )
 
     return session_db
+
+
+async def get_sessions_total_count(
+    room_id: int,
+    db_session: AsyncSession,
+) -> int:
+    sessions_total_count = await db_crud_get_sessions_total_count(
+        room_id=room_id,
+        db_session=db_session,
+    )
+
+    return sessions_total_count
+
+
+async def get_sessions_list(
+    room_id: int,
+    limit: int,
+    offset: int,
+    db_session: AsyncSession,
+) -> list[Session]:
+    sessions = await db_crud_get_sessions_list(
+        room_id=room_id,
+        limit=limit,
+        offset=offset,
+        db_session=db_session,
+    )
+
+    return sessions
 
 
 async def update_session_by_uuid(

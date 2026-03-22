@@ -4,7 +4,10 @@ from typing import Any
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.quizzes.service import get_available_quiz_by_uuid
+from app.quizzes.service import (
+    get_available_quiz_by_uuid,
+    get_available_quiz_uuids_by_ids,
+)
 from app.rooms.db_crud import (
     create_room as db_crud_create_room,
     get_rooms_total_count,
@@ -17,6 +20,8 @@ from app.sessions.service import (
     create_session as session_service_create_session,
     update_session_by_uuid,
     soft_delete_session_by_uuid,
+    get_sessions_total_count,
+    get_sessions_list,
 )
 from app.users.service import get_user_by_uuid
 
@@ -231,6 +236,89 @@ async def create_session(
 
     result = {
         "uuid": session_db.uuid,
+    }
+
+    return result
+
+
+async def get_sessions(
+    page: int,
+    size: int,
+    room_uuid: UUID,
+    user_uuid: UUID,
+    db_session: AsyncSession,
+) -> dict[str, Any]:
+    offset = (page - 1) * size
+    user_db = await get_user_by_uuid(
+        uuid=user_uuid,
+        db_session=db_session,
+    )
+    room_db = await get_room_by_uuid(
+        uuid=room_uuid,
+        user_id=user_db.id,
+        db_session=db_session,
+    )
+
+    if room_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Room not found",
+        )
+
+    total_sessions_db = await get_sessions_total_count(
+        room_id=room_db.id,
+        db_session=db_session,
+    )
+
+    if total_sessions_db == 0:
+        result = {
+            "sessions": [],
+            "total_sessions": total_sessions_db,
+            "page": page,
+            "size": size,
+            "total_pages": 0,
+        }
+
+        return result
+
+    sessions_db = await get_sessions_list(
+        room_id=room_db.id,
+        limit=size,
+        offset=offset,
+        db_session=db_session,
+    )
+    quizzes_ids = {session_db.quiz_id for session_db in sessions_db}
+    quizzes_mapping = await get_available_quiz_uuids_by_ids(
+        ids=quizzes_ids,
+        user_id=user_db.id,
+        db_session=db_session,
+    )
+    total_pages = (total_sessions_db + size - 1) // size
+    sessions = []
+
+    for session_db in sessions_db:
+        quiz_uuid_mapped = quizzes_mapping.get(session_db.quiz_id)
+
+        sessions.append(
+            {
+                "uuid": session_db.uuid,
+                "room_uuid": room_db.uuid,
+                "quiz_uuid": quiz_uuid_mapped,
+                "title": session_db.title,
+                "description": session_db.description,
+                "time_seconds": session_db.time_seconds,
+                "status": session_db.status,
+                "created_at": session_db.created_at,
+                "updated_at": session_db.updated_at,
+            }
+        )
+
+    result = {
+        "sessions": sessions,
+        "total_sessions": total_sessions_db,
+        "page": page,
+        "size": size,
+        "total_pages": total_pages,
     }
 
     return result

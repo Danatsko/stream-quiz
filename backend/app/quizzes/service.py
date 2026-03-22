@@ -6,9 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.quizzes.db_crud import (
     create_quiz as db_crud_create_quiz,
-    get_quizzes_total_count,
+    get_available_quizzes_total_count,
     get_available_quizzes_list,
     get_available_quiz_with_relations_by_uuid,
+    get_available_quiz_by_uuid as db_crud_get_available_quiz_by_uuid,
+    get_available_quiz_uuids_by_ids as db_crud_get_available_quiz_uuids_by_ids,
+    get_quiz_with_relations_by_uuid,
     update_quiz_by_uuid,
     delete_quiz_by_uuid,
     bulk_create_quiz_questions,
@@ -17,8 +20,6 @@ from app.quizzes.db_crud import (
     bulk_create_quiz_question_options,
     bulk_update_quiz_question_options,
     bulk_delete_quiz_question_options_by_ids,
-    get_quiz_with_relations_by_uuid,
-    get_available_quiz_by_uuid as db_crud_get_available_quiz_by_uuid,
 )
 from app.quizzes.models import Quiz
 from app.users.service import get_user_by_uuid, get_user_uuids_by_ids, get_user_by_id
@@ -36,6 +37,20 @@ async def get_available_quiz_by_uuid(
     )
 
     return quiz_db
+
+
+async def get_available_quiz_uuids_by_ids(
+    ids: set[int],
+    user_id: int,
+    db_session: AsyncSession,
+) -> dict[int, UUID]:
+    uuids_mapping = await db_crud_get_available_quiz_uuids_by_ids(
+        ids=ids,
+        user_id=user_id,
+        db_session=db_session,
+    )
+
+    return uuids_mapping
 
 
 async def create_quiz(
@@ -70,7 +85,7 @@ async def get_quizzes(
         uuid=user_uuid,
         db_session=db_session,
     )
-    total_quizzes_db = await get_quizzes_total_count(
+    total_quizzes_db = await get_available_quizzes_total_count(
         user_id=user_db.id,
         db_session=db_session,
     )
@@ -92,12 +107,11 @@ async def get_quizzes(
         offset=offset,
         db_session=db_session,
     )
-    creator_ids = {quiz.creator_id for quiz, _ in quizzes_db}
+    creator_ids = {quiz_db.creator_id for quiz_db, _ in quizzes_db}
     creators_mapping = await get_user_uuids_by_ids(
         ids=creator_ids,
         db_session=db_session,
     )
-
     total_pages = (total_quizzes_db + size - 1) // size
     quizzes = []
 

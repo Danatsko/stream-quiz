@@ -16,6 +16,7 @@ from app.rooms.schemas import (
     CreateSessionResponse,
     CreateSessionRequest,
     UpdateSessionRequest,
+    GetSessionsResponse,
 )
 from app.rooms.service import (
     create_room as service_create_room,
@@ -24,6 +25,7 @@ from app.rooms.service import (
     update_room as service_update_room,
     delete_room as service_delete_room,
     create_session as service_create_session,
+    get_sessions as service_get_sessions,
     update_session as service_update_session,
     delete_session as service_delete_session,
 )
@@ -176,6 +178,38 @@ async def create_session(
     )
 
     return CreateSessionResponse(uuid=result["uuid"])
+
+
+@rooms_router.get(
+    path="/{room_uuid}/sessions",
+    status_code=status.HTTP_200_OK,
+    response_model=GetSessionsResponse,
+)
+@limiter.limit("300/minute")
+async def get_sessions(
+    request: Request,
+    room_uuid: UUID,
+    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query(ge=1, le=100)] = 10,
+) -> GetSessionsResponse:
+    user_uuid = auth_context["user_uuid"]
+    result = await service_get_sessions(
+        page=page,
+        size=size,
+        room_uuid=room_uuid,
+        user_uuid=user_uuid,
+        db_session=db_session,
+    )
+
+    return GetSessionsResponse(
+        sessions=result["sessions"],
+        total_sessions=result["total_sessions"],
+        page=page,
+        size=size,
+        total_pages=result["total_pages"],
+    )
 
 
 @rooms_router.patch(

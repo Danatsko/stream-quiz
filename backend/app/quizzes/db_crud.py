@@ -28,7 +28,7 @@ async def create_quiz(
     return result
 
 
-async def get_quizzes_total_count(
+async def get_available_quizzes_total_count(
     user_id: int,
     db_session: AsyncSession,
 ) -> int:
@@ -109,6 +109,24 @@ async def get_available_quiz_with_relations_by_uuid(
         .options(selectinload(Quiz.questions).selectinload(QuizQuestion.options))
     )
     result = await db_session.scalar(stmt)
+
+    return result
+
+
+async def get_available_quiz_uuids_by_ids(
+    ids: set[int],
+    user_id: int,
+    db_session: AsyncSession,
+) -> dict[int, UUID]:
+    stmt = select(Quiz.id, Quiz.uuid).where(
+        Quiz.id.in_(ids),
+        or_(
+            Quiz.is_public.is_(True),
+            Quiz.creator_id == user_id,
+        ),
+    )
+    result = await db_session.execute(stmt)
+    result = dict(result.all())
 
     return result
 

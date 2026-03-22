@@ -22,7 +22,6 @@ class RoomBase(Base):
 
 
 class SessionBase(Base):
-    quiz_uuid: UUID
     title: Annotated[
         str,
         StringConstraints(
@@ -99,11 +98,28 @@ class UpdateRoomRequest(Base):
 
 
 class CreateSessionRequest(SessionBase):
-    pass
+    quiz_uuid: UUID
 
 
 class CreateSessionResponse(Base):
     uuid: UUID
+
+
+class GetSummarySession(SessionBase):
+    uuid: UUID
+    room_uuid: UUID
+    quiz_uuid: UUID | None
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class GetSessionsResponse(Base):
+    sessions: list[GetSummarySession]
+    total_sessions: int
+    page: int
+    size: int
+    total_pages: int
 
 
 class UpdateSessionRequest(Base):
