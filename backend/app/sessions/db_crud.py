@@ -3,8 +3,9 @@ from uuid import UUID
 
 from sqlalchemy import insert, update, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from app.sessions.models import Session, SessionStatus
+from app.sessions.models import Session, SessionStatus, SessionQuestion, SessionMember
 
 
 async def create_session(
@@ -67,6 +68,26 @@ async def get_sessions_list(
     result = await db_session.scalars(stmt)
 
     return list(result.all())
+
+
+async def get_session_with_relations_by_uuid(
+    uuid: UUID,
+    room_id: int,
+    db_session: AsyncSession,
+) -> Session:
+    stmt = (
+        select(Session)
+        .where(
+            Session.uuid == uuid,
+            Session.room_id == room_id,
+            Session.deleted_at.is_(None),
+        )
+        .options(selectinload(Session.questions).selectinload(SessionQuestion.options))
+        .options(selectinload(Session.members).selectinload(SessionMember.answers))
+    )
+    result = await db_session.scalar(stmt)
+
+    return result
 
 
 async def update_session_by_uuid(

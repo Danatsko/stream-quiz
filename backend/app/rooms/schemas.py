@@ -21,6 +21,44 @@ class RoomBase(Base):
     ]
 
 
+class SessionQuestionOptionBase(Base):
+    uuid: UUID
+    text: Annotated[
+        str,
+        StringConstraints(
+            min_length=3,
+            max_length=500,
+        ),
+    ]
+    is_correct: bool
+
+
+class SessionQuestionBase(Base):
+    uuid: UUID
+    text: Annotated[
+        str,
+        StringConstraints(
+            min_length=3,
+            max_length=500,
+        ),
+    ]
+    is_multiple_answers: bool
+    options: list[SessionQuestionOptionBase]
+
+
+class SessionMemberAnswerBase(Base):
+    question_uuid: UUID
+    selected_option_uuids: list[UUID]
+    score: float
+
+
+class SessionMemberBase(Base):
+    user_uuid: UUID | None
+    answers: list[SessionMemberAnswerBase]
+    total_answers: int
+    score: float
+
+
 class SessionBase(Base):
     title: Annotated[
         str,
@@ -120,6 +158,14 @@ class GetSessionsResponse(Base):
     page: int
     size: int
     total_pages: int
+
+
+class GetSessionResponse(GetSummarySession):
+    members: list[SessionMemberBase]
+    total_members: int
+    questions: list[SessionQuestionBase]
+    total_questions: int
+    total_score: float
 
 
 class UpdateSessionRequest(Base):

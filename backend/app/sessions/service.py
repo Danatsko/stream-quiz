@@ -7,6 +7,7 @@ from app.sessions.db_crud import (
     create_session as db_crud_create_session,
     get_sessions_total_count as db_crud_get_sessions_total_count,
     get_sessions_list as db_crud_get_sessions_list,
+    get_session_with_relations_by_uuid as db_crud_get_session_with_relations_by_uuid,
     update_session_by_uuid as db_crud_update_session_by_uuid,
     soft_delete_session_by_uuid as db_crud_soft_delete_session_by_uuid,
 )
@@ -51,14 +52,28 @@ async def get_sessions_list(
     offset: int,
     db_session: AsyncSession,
 ) -> list[Session]:
-    sessions = await db_crud_get_sessions_list(
+    sessions_db = await db_crud_get_sessions_list(
         room_id=room_id,
         limit=limit,
         offset=offset,
         db_session=db_session,
     )
 
-    return sessions
+    return sessions_db
+
+
+async def get_session_with_relations_by_uuid(
+    uuid: UUID,
+    room_id: int,
+    db_session: AsyncSession,
+) -> Session:
+    session_db = await db_crud_get_session_with_relations_by_uuid(
+        uuid=uuid,
+        room_id=room_id,
+        db_session=db_session,
+    )
+
+    return session_db
 
 
 async def update_session_by_uuid(

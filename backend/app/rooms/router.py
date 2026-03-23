@@ -17,6 +17,7 @@ from app.rooms.schemas import (
     CreateSessionRequest,
     UpdateSessionRequest,
     GetSessionsResponse,
+    GetSessionResponse,
 )
 from app.rooms.service import (
     create_room as service_create_room,
@@ -26,6 +27,7 @@ from app.rooms.service import (
     delete_room as service_delete_room,
     create_session as service_create_session,
     get_sessions as service_get_sessions,
+    get_session as service_get_session,
     update_session as service_update_session,
     delete_session as service_delete_session,
 )
@@ -209,6 +211,45 @@ async def get_sessions(
         page=page,
         size=size,
         total_pages=result["total_pages"],
+    )
+
+
+@rooms_router.get(
+    path="/{room_uuid}/sessions/{session_uuid}",
+    status_code=status.HTTP_200_OK,
+    response_model=GetSessionResponse,
+)
+@limiter.limit("300/minute")
+async def get_session(
+    request: Request,
+    room_uuid: UUID,
+    session_uuid: UUID,
+    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> GetSessionResponse:
+    user_uuid = auth_context["user_uuid"]
+    result = await service_get_session(
+        room_uuid=room_uuid,
+        session_uuid=session_uuid,
+        user_uuid=user_uuid,
+        db_session=db_session,
+    )
+
+    return GetSessionResponse(
+        uuid=result["uuid"],
+        room_uuid=result["room_uuid"],
+        quiz_uuid=result["quiz_uuid"],
+        title=result["title"],
+        description=result["description"],
+        time_seconds=result["time_seconds"],
+        status=result["status"],
+        members=result["members"],
+        total_members=result["total_members"],
+        questions=result["questions"],
+        total_questions=result["total_questions"],
+        total_score=result["total_score"],
+        created_at=result["created_at"],
+        updated_at=result["updated_at"],
     )
 
 

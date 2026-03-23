@@ -10,6 +10,7 @@ from app.quizzes.db_crud import (
     get_available_quizzes_list,
     get_available_quiz_with_relations_by_uuid,
     get_available_quiz_by_uuid as db_crud_get_available_quiz_by_uuid,
+    get_available_quiz_by_id as db_crud_get_available_quiz_by_id,
     get_available_quiz_uuids_by_ids as db_crud_get_available_quiz_uuids_by_ids,
     get_quiz_with_relations_by_uuid,
     update_quiz_by_uuid,
@@ -32,6 +33,20 @@ async def get_available_quiz_by_uuid(
 ) -> Quiz | None:
     quiz_db = await db_crud_get_available_quiz_by_uuid(
         uuid=uuid,
+        user_id=user_id,
+        db_session=db_session,
+    )
+
+    return quiz_db
+
+
+async def get_available_quiz_by_id(
+    id: int,
+    user_id: int,
+    db_session: AsyncSession,
+) -> Quiz | None:
+    quiz_db = await db_crud_get_available_quiz_by_id(
+        id=id,
         user_id=user_id,
         db_session=db_session,
     )
