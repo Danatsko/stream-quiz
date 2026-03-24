@@ -39,7 +39,8 @@ async def get_available_quizzes_total_count(
             or_(
                 Quiz.is_public.is_(True),
                 Quiz.creator_id == user_id,
-            )
+            ),
+            Quiz.deleted_at.is_(None),
         )
     )
     result = await db_session.scalar(stmt)
@@ -63,7 +64,8 @@ async def get_available_quizzes_list(
             or_(
                 Quiz.is_public.is_(True),
                 Quiz.creator_id == user_id,
-            )
+            ),
+            Quiz.deleted_at.is_(None),
         )
         .group_by(Quiz.id)
         .order_by(Quiz.created_at.desc())
@@ -86,6 +88,7 @@ async def get_available_quiz_by_uuid(
             Quiz.is_public.is_(True),
             Quiz.creator_id == user_id,
         ),
+        Quiz.deleted_at.is_(None),
     )
     result = await db_session.scalar(stmt)
 
@@ -103,6 +106,7 @@ async def get_available_quiz_by_id(
             Quiz.is_public.is_(True),
             Quiz.creator_id == user_id,
         ),
+        Quiz.deleted_at.is_(None),
     )
     result = await db_session.scalar(stmt)
 
@@ -122,6 +126,7 @@ async def get_available_quiz_with_relations_by_uuid(
                 Quiz.is_public.is_(True),
                 Quiz.creator_id == user_id,
             ),
+            Quiz.deleted_at.is_(None),
         )
         .options(selectinload(Quiz.questions).selectinload(QuizQuestion.options))
     )
@@ -141,6 +146,7 @@ async def get_available_quiz_uuids_by_ids(
             Quiz.is_public.is_(True),
             Quiz.creator_id == user_id,
         ),
+        Quiz.deleted_at.is_(None),
     )
     result = await db_session.execute(stmt)
     result = dict(result.all())
@@ -158,6 +164,7 @@ async def get_quiz_with_relations_by_uuid(
         .where(
             Quiz.uuid == uuid,
             Quiz.creator_id == user_id,
+            Quiz.deleted_at.is_(None),
         )
         .options(selectinload(Quiz.questions).selectinload(QuizQuestion.options))
     )
@@ -177,6 +184,7 @@ async def update_quiz_by_uuid(
         .where(
             Quiz.uuid == uuid,
             Quiz.creator_id == user_id,
+            Quiz.deleted_at.is_(None),
         )
         .values(**update_quiz_data)
     )
@@ -185,14 +193,19 @@ async def update_quiz_by_uuid(
     return result.rowcount == 1
 
 
-async def delete_quiz_by_uuid(
+async def soft_delete_quiz_by_uuid(
     uuid: UUID,
     user_id: int,
     db_session: AsyncSession,
 ) -> bool:
-    stmt = delete(Quiz).where(
-        Quiz.uuid == uuid,
-        Quiz.creator_id == user_id,
+    stmt = (
+        update(Quiz)
+        .where(
+            Quiz.uuid == uuid,
+            Quiz.creator_id == user_id,
+            Quiz.deleted_at.is_(None),
+        )
+        .values(deleted_at=func.now())
     )
     result = await db_session.execute(stmt)
 

@@ -14,7 +14,7 @@ from app.quizzes.db_crud import (
     get_available_quiz_uuids_by_ids as db_crud_get_available_quiz_uuids_by_ids,
     get_quiz_with_relations_by_uuid,
     update_quiz_by_uuid,
-    delete_quiz_by_uuid,
+    soft_delete_quiz_by_uuid,
     bulk_create_quiz_questions,
     bulk_update_quiz_questions,
     bulk_delete_quiz_questions_by_ids,
@@ -456,7 +456,7 @@ async def delete_quiz(
         uuid=user_uuid,
         db_session=db_session,
     )
-    is_deleted = await delete_quiz_by_uuid(
+    is_deleted = await soft_delete_quiz_by_uuid(
         uuid=quiz_uuid,
         user_id=user_db.id,
         db_session=db_session,
