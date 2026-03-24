@@ -12,7 +12,7 @@ class Room(Base, UUIDMixin, SoftDeleteMixin):
         ForeignKey(
             "user.id",
             onupdate="CASCADE",
-            ondelete="CASCADE",
+            ondelete="RESTRICT",
         ),
         nullable=False,
         index=True,

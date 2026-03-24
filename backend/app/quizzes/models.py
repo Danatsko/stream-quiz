@@ -1,10 +1,10 @@
 from sqlalchemy import BigInteger, String, Boolean, ForeignKey, false, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.models import Base, UUIDMixin
+from app.core.models import Base, UUIDMixin, SoftDeleteMixin
 
 
-class Quiz(Base, UUIDMixin):
+class Quiz(Base, UUIDMixin, SoftDeleteMixin):
     __tablename__ = "quiz"
 
     creator_id: Mapped[int] = mapped_column(
@@ -12,7 +12,7 @@ class Quiz(Base, UUIDMixin):
         ForeignKey(
             "user.id",
             onupdate="CASCADE",
-            ondelete="CASCADE",
+            ondelete="RESTRICT",
         ),
         nullable=False,
         index=True,

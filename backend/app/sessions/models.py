@@ -29,7 +29,7 @@ class Session(Base, UUIDMixin, SoftDeleteMixin):
         ForeignKey(
             "room.id",
             onupdate="CASCADE",
-            ondelete="CASCADE",
+            ondelete="RESTRICT",
         ),
         nullable=False,
         index=True,
@@ -39,7 +39,7 @@ class Session(Base, UUIDMixin, SoftDeleteMixin):
         ForeignKey(
             "quiz.id",
             onupdate="CASCADE",
-            ondelete="NO ACTION",
+            ondelete="RESTRICT",
         ),
         nullable=False,
         index=True,
@@ -175,7 +175,7 @@ class SessionMember(Base, UUIDMixin):
         ForeignKey(
             "user.id",
             onupdate="CASCADE",
-            ondelete="CASCADE",
+            ondelete="RESTRICT",
         ),
         nullable=False,
         index=True,
