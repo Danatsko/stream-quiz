@@ -1,11 +1,17 @@
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from sqlalchemy import insert, update, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.sessions.models import Session, SessionStatus, SessionQuestion, SessionMember
+from app.sessions.models import (
+    Session,
+    SessionStatus,
+    SessionQuestion,
+    SessionMember,
+    SessionQuestionOption,
+)
 
 
 async def create_session(
@@ -129,3 +135,105 @@ async def soft_delete_session_by_uuid(
     result = await db_session.execute(stmt)
 
     return result.rowcount == 1
+
+
+async def activate_session_by_id(
+    id: int,
+    room_id: int,
+    db_session: AsyncSession,
+) -> bool:
+    stmt = (
+        update(Session)
+        .where(
+            Session.id == id,
+            Session.room_id == room_id,
+            Session.deleted_at.is_(None),
+            Session.status == SessionStatus.waiting,
+        )
+        .values(status=SessionStatus.active)
+    )
+    result = await db_session.execute(stmt)
+
+    return result.rowcount == 1
+
+
+async def complete_session_by_id(
+    id: int,
+    room_id: int,
+    db_session: AsyncSession,
+) -> bool:
+    stmt = (
+        update(Session)
+        .where(
+            Session.id == id,
+            Session.room_id == room_id,
+            Session.deleted_at.is_(None),
+            Session.status == SessionStatus.active,
+        )
+        .values(status=SessionStatus.completed)
+    )
+    result = await db_session.execute(stmt)
+
+    return result.rowcount == 1
+
+
+async def bulk_create_and_return_session_questions(
+    session_id: int,
+    create_session_questions_data: list[dict[str, Any]],
+    db_session: AsyncSession,
+    mode: Literal["python", "json"] = "python",
+) -> list[dict[str, Any]]:
+    question_rows = [
+        {
+            "session_id": session_id,
+            "text": question["text"],
+            "is_multiple_answers": question["is_multiple_answers"],
+        }
+        for question in create_session_questions_data
+    ]
+    stmt = insert(SessionQuestion).values(question_rows).returning(SessionQuestion)
+    created_questions = list(await db_session.scalars(stmt))
+    option_rows = []
+
+    for question_db, question_data in zip(
+        created_questions, create_session_questions_data
+    ):
+        for option_db in question_data["options"]:
+            option_rows.append(
+                {
+                    "session_question_id": question_db.id,
+                    "text": option_db["text"],
+                    "is_correct": option_db["is_correct"],
+                }
+            )
+
+    stmt = (
+        insert(SessionQuestionOption)
+        .values(option_rows)
+        .returning(SessionQuestionOption)
+    )
+    created_options = list(await db_session.scalars(stmt))
+    options_by_question_id = {}
+
+    for option_db in created_options:
+        option_uuid = str(option_db.uuid) if mode == "json" else option_db.uuid
+
+        options_by_question_id.setdefault(option_db.session_question_id, []).append(
+            {
+                "uuid": option_uuid,
+                "text": option_db.text,
+                "is_correct": option_db.is_correct,
+            }
+        )
+
+    result = [
+        {
+            "uuid": str(question_db.uuid) if mode == "json" else question_db.uuid,
+            "text": question_db.text,
+            "is_multiple_answers": question_db.is_multiple_answers,
+            "options": options_by_question_id.get[question_db.id],
+        }
+        for question_db in created_questions
+    ]
+
+    return result

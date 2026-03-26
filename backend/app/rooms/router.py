@@ -1,12 +1,16 @@
 from typing import Annotated, Any
 from uuid import UUID
 
+from arq import ArqRedis
 from fastapi import APIRouter, status, Request, Depends, Query
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_auth_context
+from app.core.arq import get_arq_pool
 from app.core.db import get_db_session
 from app.core.limiter import limiter
+from app.core.redis import get_redis_client
 from app.rooms.schemas import (
     CreateRoomRequest,
     CreateRoomResponse,
@@ -30,6 +34,7 @@ from app.rooms.service import (
     get_session as service_get_session,
     update_session as service_update_session,
     delete_session as service_delete_session,
+    start_session as service_start_session,
 )
 
 rooms_router = APIRouter()
@@ -296,4 +301,30 @@ async def delete_session(
         session_uuid=session_uuid,
         user_uuid=user_uuid,
         db_session=db_session,
+    )
+
+
+@rooms_router.post(
+    path="/{room_uuid}/sessions/{session_uuid}/start",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+@limiter.limit("300/minute")
+async def start_session(
+    request: Request,
+    room_uuid: UUID,
+    session_uuid: UUID,
+    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
+    redis_client: Annotated[Redis, Depends(get_redis_client)],
+    arq_pool: Annotated[ArqRedis, Depends(get_arq_pool)],
+) -> None:
+    user_uuid = auth_context["user_uuid"]
+
+    await service_start_session(
+        room_uuid=room_uuid,
+        session_uuid=session_uuid,
+        user_uuid=user_uuid,
+        db_session=db_session,
+        redis_client=redis_client,
+        arq_pool=arq_pool,
     )

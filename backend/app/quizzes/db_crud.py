@@ -135,6 +135,28 @@ async def get_available_quiz_with_relations_by_uuid(
     return result
 
 
+async def get_available_quiz_with_relations_by_id(
+    id: int,
+    user_id: int,
+    db_session: AsyncSession,
+) -> Quiz | None:
+    stmt = (
+        select(Quiz)
+        .where(
+            Quiz.id == id,
+            or_(
+                Quiz.is_public.is_(True),
+                Quiz.creator_id == user_id,
+            ),
+            Quiz.deleted_at.is_(None),
+        )
+        .options(selectinload(Quiz.questions).selectinload(QuizQuestion.options))
+    )
+    result = await db_session.scalar(stmt)
+
+    return result
+
+
 async def get_available_quiz_uuids_by_ids(
     ids: set[int],
     user_id: int,

@@ -1,7 +1,9 @@
 from uuid import UUID
 from typing import Any
 
+from arq import ArqRedis
 from fastapi import HTTPException, status
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.quizzes.service import (
@@ -19,12 +21,13 @@ from app.rooms.db_crud import (
 )
 from app.sessions.models import SessionStatus
 from app.sessions.service import (
-    create_session as session_service_create_session,
+    create_session as sessions_service_create_session,
     update_session_by_uuid,
     soft_delete_session_by_uuid,
     get_sessions_total_count,
     get_sessions_list,
     get_session_with_relations_by_uuid,
+    start_session as sessions_service_start_session,
 )
 from app.users.service import get_user_by_uuid, get_user_uuids_by_ids
 
@@ -228,7 +231,7 @@ async def create_session(
             detail="Quiz not found",
         )
 
-    session_db = await session_service_create_session(
+    session_db = await sessions_service_create_session(
         title=title,
         description=description,
         time_seconds=time_seconds,
@@ -676,3 +679,38 @@ async def delete_session(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Session not found",
         )
+
+
+async def start_session(
+    room_uuid: UUID,
+    session_uuid: UUID,
+    user_uuid: UUID,
+    db_session: AsyncSession,
+    redis_client: Redis,
+    arq_pool: ArqRedis,
+) -> None:
+    user_db = await get_user_by_uuid(
+        uuid=user_uuid,
+        db_session=db_session,
+    )
+    room_db = await get_room_by_uuid(
+        uuid=room_uuid,
+        user_id=user_db.id,
+        db_session=db_session,
+    )
+
+    if room_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Room not found",
+        )
+
+    await sessions_service_start_session(
+        room_id=room_db.id,
+        user_id=user_db.id,
+        room_uuid=room_db.uuid,
+        session_uuid=session_uuid,
+        db_session=db_session,
+        redis_client=redis_client,
+        arq_pool=arq_pool,
+    )

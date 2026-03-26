@@ -9,6 +9,7 @@ from app.quizzes.db_crud import (
     get_available_quizzes_total_count,
     get_available_quizzes_list,
     get_available_quiz_with_relations_by_uuid,
+    get_available_quiz_with_relations_by_id as db_crud_get_available_quiz_with_relations_by_id,
     get_available_quiz_by_uuid as db_crud_get_available_quiz_by_uuid,
     get_available_quiz_by_id as db_crud_get_available_quiz_by_id,
     get_available_quiz_uuids_by_ids as db_crud_get_available_quiz_uuids_by_ids,
@@ -46,6 +47,20 @@ async def get_available_quiz_by_id(
     db_session: AsyncSession,
 ) -> Quiz | None:
     quiz_db = await db_crud_get_available_quiz_by_id(
+        id=id,
+        user_id=user_id,
+        db_session=db_session,
+    )
+
+    return quiz_db
+
+
+async def get_available_quiz_with_relations_by_id(
+    id: int,
+    user_id: int,
+    db_session: AsyncSession,
+) -> Quiz | None:
+    quiz_db = await db_crud_get_available_quiz_with_relations_by_id(
         id=id,
         user_id=user_id,
         db_session=db_session,
@@ -323,7 +338,10 @@ async def full_update_quiz(
             "text": question["text"],
             "is_multiple_answers": question["is_multiple_answers"],
             "options": [
-                {"text": option["text"], "is_correct": option["is_correct"]}
+                {
+                    "text": option["text"],
+                    "is_correct": option["is_correct"],
+                }
                 for option in question["options"]
             ],
         }
