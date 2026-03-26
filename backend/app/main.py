@@ -18,8 +18,8 @@ from app.core.arq import init_arq_pool, close_arq_pool
 from app.core.config import settings
 from app.core.health import perform_check
 from app.core.limiter import limiter
-from app.core.db import get_db_session, close_db_connection
-from app.core.redis import get_redis_client, close_redis_connection
+from app.core.db import get_db_session, close_db_connection, init_db
+from app.core.redis import get_redis_client, close_redis_connection, init_redis
 from app.core.schemas import HealthResponse
 from app.users.router import users_router
 from app.quizzes.router import quizzes_router
@@ -28,6 +28,8 @@ from app.rooms.router import rooms_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, Any]:
+    await init_db()
+    await init_redis()
     await init_arq_pool()
 
     yield
