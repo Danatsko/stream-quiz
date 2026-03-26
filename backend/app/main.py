@@ -14,6 +14,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.router import auth_router
+from app.core.arq import init_arq_pool, close_arq_pool
 from app.core.config import settings
 from app.core.health import perform_check
 from app.core.limiter import limiter
@@ -27,8 +28,11 @@ from app.rooms.router import rooms_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, Any]:
+    await init_arq_pool()
+
     yield
 
+    await close_arq_pool()
     await close_db_connection()
     await close_redis_connection()
 
