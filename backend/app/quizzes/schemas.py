@@ -50,7 +50,7 @@ class CreateQuizResponse(Base):
     uuid: UUID
 
 
-class GetSummaryQuiz(QuizBase):
+class SummaryQuiz(QuizBase):
     creator_uuid: UUID | None
     uuid: UUID
     is_public: bool
@@ -60,25 +60,25 @@ class GetSummaryQuiz(QuizBase):
 
 
 class GetQuizzesResponse(Base):
-    quizzes: list[GetSummaryQuiz]
+    quizzes: list[SummaryQuiz]
     total_quizzes: int
     page: int
     size: int
     total_pages: int
 
 
-class GetDetailedQuizQuestionOption(QuizQuestionOptionBase):
+class DetailedQuizQuestionOption(QuizQuestionOptionBase):
     uuid: UUID
     is_correct: bool | None
 
 
-class GetDetailedQuizQuestion(QuizQuestionBase):
+class DetailedQuizQuestion(QuizQuestionBase):
     uuid: UUID
-    options: list[GetDetailedQuizQuestionOption]
+    options: list[DetailedQuizQuestionOption]
 
 
-class GetQuizResponse(GetSummaryQuiz):
-    questions: list[GetDetailedQuizQuestion]
+class GetQuizResponse(SummaryQuiz):
+    questions: list[DetailedQuizQuestion]
 
 
 class UpdateQuizRequest(Base):

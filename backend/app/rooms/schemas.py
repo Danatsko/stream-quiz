@@ -88,7 +88,7 @@ class CreateRoomResponse(Base):
     uuid: UUID
 
 
-class GetSummaryRoom(RoomBase):
+class SummaryRoom(RoomBase):
     creator_uuid: UUID
     uuid: UUID
     created_at: datetime
@@ -96,14 +96,14 @@ class GetSummaryRoom(RoomBase):
 
 
 class GetRoomsResponse(Base):
-    rooms: list[GetSummaryRoom]
+    rooms: list[SummaryRoom]
     total_rooms: int
     page: int
     size: int
     total_pages: int
 
 
-class GetRoomResponse(GetSummaryRoom):
+class GetRoomResponse(SummaryRoom):
     pass
 
 
@@ -143,7 +143,7 @@ class CreateSessionResponse(Base):
     uuid: UUID
 
 
-class GetSummarySession(SessionBase):
+class SummarySession(SessionBase):
     uuid: UUID
     room_uuid: UUID
     quiz_uuid: UUID | None
@@ -153,14 +153,14 @@ class GetSummarySession(SessionBase):
 
 
 class GetSessionsResponse(Base):
-    sessions: list[GetSummarySession]
+    sessions: list[SummarySession]
     total_sessions: int
     page: int
     size: int
     total_pages: int
 
 
-class GetSessionResponse(GetSummarySession):
+class GetSessionResponse(SummarySession):
     members: list[SessionMemberBase]
     total_members: int
     questions: list[SessionQuestionBase]
