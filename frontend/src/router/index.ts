@@ -76,9 +76,15 @@ const router = createRouter({
         },
         {
           path: '/rooms',
-          name: 'Rooms',
-          component: () => import('@/views/RoomsView.vue'),
-          meta: { requiresAuth: true },
+          component: { render: () => h(RouterView) },
+          children: [
+            {
+              path: '',
+              name: 'Rooms',
+              component: () => import('@/views/RoomsView.vue'),
+              meta: { requiresAuth: true },
+            },
+          ],
         },
         {
           path: '/history',
