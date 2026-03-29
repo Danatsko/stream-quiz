@@ -63,7 +63,7 @@ const goBack = async (): Promise<void> => {
 
 const goToEdit = async (): Promise<void> => {
   await router.push({
-    name: 'EditQuiz',
+    name: 'QuizEdit',
     params: {
       uuid: quizUuid.value,
     },

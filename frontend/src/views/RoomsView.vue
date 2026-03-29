@@ -52,7 +52,13 @@ const goToRoom = async (uuid: string): Promise<void> => {
 
 const goToEdit = async (uuid: string): Promise<void> => {
   activeMenuUuid.value = null
-  // TODO: add routing to room edit
+
+  await router.push({
+    name: 'RoomEdit',
+    params: {
+      uuid: uuid,
+    },
+  })
 }
 
 const openCreateRoomDialog = (): void => {

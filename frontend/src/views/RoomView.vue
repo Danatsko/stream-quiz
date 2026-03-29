@@ -85,7 +85,12 @@ const copyToClipboard = (text: string): void => {
 }
 
 const goToRoomEdit = async (uuid: string): Promise<void> => {
-  // TODO: add routing to room edit
+  await router.push({
+    name: 'RoomEdit',
+    params: {
+      uuid: roomUuid.value,
+    },
+  })
 }
 
 const goToSession = async (uuid: string): Promise<void> => {

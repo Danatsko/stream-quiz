@@ -73,7 +73,7 @@ const goToEdit = async (uuid: string): Promise<void> => {
   activeMenuUuid.value = null
 
   await router.push({
-    name: 'EditQuiz',
+    name: 'QuizEdit',
     params: {
       uuid: uuid,
     },

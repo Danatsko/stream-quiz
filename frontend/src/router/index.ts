@@ -68,7 +68,7 @@ const router = createRouter({
             },
             {
               path: ':uuid/edit',
-              name: 'EditQuiz',
+              name: 'QuizEdit',
               component: () => import('@/views/QuizEditView.vue'),
               meta: { requiresAuth: true, nativeScroll: true },
             },
@@ -88,6 +88,12 @@ const router = createRouter({
               path: ':uuid',
               name: 'Room',
               component: () => import('@/views/RoomView.vue'),
+              meta: { requiresAuth: true, nativeScroll: true },
+            },
+            {
+              path: ':uuid/edit',
+              name: 'RoomEdit',
+              component: () => import('@/views/RoomEditView.vue'),
               meta: { requiresAuth: true, nativeScroll: true },
             },
           ],

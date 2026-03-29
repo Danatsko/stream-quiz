@@ -118,8 +118,13 @@ onBeforeUnmount(() => {
   quizzesStore.clearQuiz()
 })
 
-const goBack = (): void => {
-  router.push({ name: 'Quiz', params: { uuid: quizUuid.value } })
+const goBack = async (): Promise<void> => {
+  await router.push({
+    name: 'Quiz',
+    params: {
+      uuid: quizUuid.value,
+    },
+  })
 }
 
 const toggleIsPublic = (): void => {
@@ -393,8 +398,7 @@ const saveChanges = async (): Promise<void> => {
     }
 
     await quizzesStore.fullUpdateQuiz(quiz.value.uuid, payload)
-    await quizzesStore.getQuiz(quizUuid)
-    goBack()
+    await goBack()
   } catch (error) {
   } finally {
     isSaving.value = false
@@ -693,6 +697,8 @@ const saveChanges = async (): Promise<void> => {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 .question-header {
   display: flex;
