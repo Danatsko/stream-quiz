@@ -150,9 +150,13 @@ const confirmDeleteQuiz = async (): Promise<void> => {
                 {{ formatDateTime(quiz.updated_at) }}
               </span>
 
-              <div class="quiz-id" @click="copyToClipboard(quiz.uuid)" title="Copy uuid">
-                {{ quiz.uuid }}
-                <Icon icon="mdi:content-copy" class="copy-icon" />
+              <div class="meta-item" v-if="quiz.uuid">
+                <Icon icon="mdi:identifier" />
+
+                <div class="quiz-id" @click="copyToClipboard(quiz.uuid)" title="Copy uuid">
+                  {{ quiz.uuid }}
+                  <Icon icon="mdi:content-copy" class="copy-icon" />
+                </div>
               </div>
             </div>
           </template>
@@ -299,9 +303,41 @@ const confirmDeleteQuiz = async (): Promise<void> => {
   flex-wrap: wrap;
 }
 .badge-public {
-  background-color: color-mix(in srgb, var(--color-primary) 15%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
-  color: var(--color-primary);
+  position: relative;
+  z-index: 0;
+  border-color: transparent;
+  background: var(--linear-gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.badge-public::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    50deg,
+    color-mix(in srgb, var(--color-primary) 15%, transparent),
+    color-mix(in srgb, var(--color-secondary) 15%, transparent)
+  );
+  z-index: -1;
+  pointer-events: none;
+}
+.badge-public::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--linear-gradient-primary);
+  opacity: 0.5;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  z-index: -1;
+  pointer-events: none;
 }
 .meta-item {
   display: flex;
@@ -336,6 +372,8 @@ const confirmDeleteQuiz = async (): Promise<void> => {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 .question-header {
   display: flex;

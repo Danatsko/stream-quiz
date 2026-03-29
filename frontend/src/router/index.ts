@@ -84,6 +84,12 @@ const router = createRouter({
               component: () => import('@/views/RoomsView.vue'),
               meta: { requiresAuth: true },
             },
+            {
+              path: ':uuid',
+              name: 'Room',
+              component: () => import('@/views/RoomView.vue'),
+              meta: { requiresAuth: true, nativeScroll: true },
+            },
           ],
         },
         {

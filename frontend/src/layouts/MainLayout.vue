@@ -10,7 +10,7 @@ const navLinks = [
   { label: 'Take', pathName: 'Take', icon: 'mdi:play-outline' },
   { label: 'Quizzes', pathName: 'Quizzes', icon: 'mdi:book-open-variant-outline' },
   { label: 'Rooms', pathName: 'Rooms', icon: 'mdi:cube-outline' },
-  { label: 'History', pathName: 'History', icon: 'mdi:clock-outline' },
+  { label: 'History', pathName: 'History', icon: 'mdi:history' },
 ]
 </script>
 

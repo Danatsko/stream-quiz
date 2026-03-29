@@ -42,7 +42,12 @@ const copyToClipboard = (text: string): void => {
 }
 
 const goToRoom = async (uuid: string): Promise<void> => {
-  // TODO: add routing to room view
+  await router.push({
+    name: 'Room',
+    params: {
+      uuid: uuid,
+    },
+  })
 }
 
 const goToEdit = async (uuid: string): Promise<void> => {
@@ -147,7 +152,7 @@ const confirmDeleteRoom = async (): Promise<void> => {
       <AppAsyncList
         :items="roomsStore.rooms"
         :is-loading="roomsStore.isLoading"
-        empty-icon="mdi:book-open-variant-outline"
+        empty-icon="mdi:cube-outline"
         empty-title="There are no rooms"
         empty-text=" "
         @load-more="roomsStore.getRooms"
