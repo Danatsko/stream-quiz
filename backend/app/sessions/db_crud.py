@@ -231,7 +231,7 @@ async def bulk_create_and_return_session_questions(
             "uuid": str(question_db.uuid) if mode == "json" else question_db.uuid,
             "text": question_db.text,
             "is_multiple_answers": question_db.is_multiple_answers,
-            "options": options_by_question_id.get[question_db.id],
+            "options": options_by_question_id[question_db.id],
         }
         for question_db in created_questions
     ]
