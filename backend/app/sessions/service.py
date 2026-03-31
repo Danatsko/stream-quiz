@@ -24,7 +24,7 @@ from app.sessions.db_crud import (
 )
 from app.sessions.models import SessionStatus
 from app.sessions.redis_crud import set_session_info
-from app.users.service import get_user_uuids_by_ids
+from app.users.service import get_users_by_ids
 
 
 async def create_session(
@@ -240,10 +240,10 @@ async def get_session(
 
     members = []
     member_user_ids = {member_db.user_id for member_db in session_db.members}
-    user_uuids_mapping = {}
+    users_mapping = {}
 
     if member_user_ids:
-        user_uuids_mapping = await get_user_uuids_by_ids(
+        users_mapping = await get_users_by_ids(
             ids=member_user_ids,
             db_session=db_session,
         )
@@ -310,9 +310,12 @@ async def get_session(
                 }
             )
 
+        user = users_mapping.get(member_db.user_id)
+
         members.append(
             {
-                "user_uuid": user_uuids_mapping.get(member_db.user_id),
+                "user_uuid": user.uuid if user else None,
+                "username": user.username if user else "Unknown",
                 "answers": member_answers_data,
                 "total_answers": member_total_answers,
                 "score": round(member_total_score, 2),

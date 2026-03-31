@@ -54,6 +54,13 @@ class SessionMemberAnswerBase(Base):
 
 class SessionMemberBase(Base):
     user_uuid: UUID | None
+    username: Annotated[
+        str,
+        StringConstraints(
+            min_length=3,
+            max_length=30,
+        ),
+    ]
     answers: list[SessionMemberAnswerBase]
     total_answers: int
     score: float
