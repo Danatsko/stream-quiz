@@ -62,7 +62,14 @@ const goToEdit = async (): Promise<void> => {
   if (!session.value?.uuid || session.value?.status !== 'waiting') {
     return
   }
-  // TODO: add routing to session edit
+
+  await router.push({
+    name: 'SessionEdit',
+    params: {
+      room_uuid: roomUuid.value,
+      uuid: sessionUuid.value,
+    },
+  })
 }
 
 const startSession = async (): Promise<void> => {
@@ -173,6 +180,15 @@ const toggleMemberExpansion = (uuid: string | null): void => {
                 <Icon icon="mdi:account-group-outline" />
                 {{ session.total_members }} members
               </span>
+
+              <div class="meta-item" v-if="session.quiz_uuid">
+                <Icon icon="mdi:book-open-variant-outline" />
+
+                <div class="item-id" @click="copyToClipboard(session.uuid)">
+                  {{ session.quiz_uuid }}
+                  <Icon icon="mdi:content-copy" class="copy-icon" />
+                </div>
+              </div>
 
               <span class="meta-item" v-if="session.created_at">
                 <Icon icon="mdi:calendar-plus" />

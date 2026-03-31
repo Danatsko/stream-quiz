@@ -102,6 +102,12 @@ const router = createRouter({
               component: () => import('@/views/SessionView.vue'),
               meta: { requiresAuth: true, nativeScroll: true },
             },
+            {
+              path: ':room_uuid/sessions/:uuid/edit',
+              name: 'SessionEdit',
+              component: () => import('@/views/SessionEditView.vue'),
+              meta: { requiresAuth: true, nativeScroll: true },
+            },
           ],
         },
         {

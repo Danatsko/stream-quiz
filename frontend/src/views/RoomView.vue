@@ -105,7 +105,14 @@ const goToSession = async (uuid: string): Promise<void> => {
 
 const goToSessionEdit = async (uuid: string): Promise<void> => {
   activeMenuUuid.value = null
-  // TODO: add routing to session edit
+
+  await router.push({
+    name: 'SessionEdit',
+    params: {
+      room_uuid: roomUuid.value,
+      uuid: uuid,
+    },
+  })
 }
 
 const goBack = async (): Promise<void> => {
