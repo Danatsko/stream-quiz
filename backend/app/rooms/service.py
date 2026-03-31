@@ -322,7 +322,6 @@ async def update_session(
     await sessions_service_update_session(
         room_id=room_db.id,
         user_id=user_db.id,
-        room_uuid=room_db.uuid,
         session_uuid=session_uuid,
         update_session_data=update_session_data,
         db_session=db_session,
