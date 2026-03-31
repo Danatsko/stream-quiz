@@ -444,7 +444,7 @@ const confirmDeleteQuiz = async (): Promise<void> => {
   z-index: -1;
   pointer-events: none;
 }
-.item-id {
+.quiz-id {
   display: flex;
   align-items: center;
   gap: 0.4rem;

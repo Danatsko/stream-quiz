@@ -24,6 +24,7 @@ export interface SessionMemberAnswerBase {
 
 export interface SessionMemberBase {
   user_uuid: string | null
+  username: string
   answers: Array<SessionMemberAnswerBase>
   total_answers: number
   score: number

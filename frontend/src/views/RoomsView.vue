@@ -184,9 +184,13 @@ const confirmDeleteRoom = async (): Promise<void> => {
                 {{ formatDateTime(room.updated_at) }}
               </span>
 
-              <div class="room-id" @click="copyToClipboard(room.uuid)">
-                {{ room.uuid }}
-                <Icon icon="mdi:content-copy" class="copy-icon" />
+              <div class="meta-item" v-if="room.uuid">
+                <Icon icon="mdi:identifier" />
+
+                <div class="room-id" @click="copyToClipboard(room.uuid)">
+                  {{ room.uuid }}
+                  <Icon icon="mdi:content-copy" class="copy-icon" />
+                </div>
               </div>
             </div>
           </template>
