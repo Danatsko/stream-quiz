@@ -24,6 +24,7 @@ from app.core.schemas import HealthResponse
 from app.users.router import users_router
 from app.quizzes.router import quizzes_router
 from app.rooms.router import rooms_router
+from app.sessions.ws_router import sessions_ws_router
 
 
 @asynccontextmanager
@@ -58,6 +59,8 @@ app.add_middleware(
 )
 
 api_router_v1 = APIRouter()
+ws_router_v1 = APIRouter()
+
 api_router_v1.include_router(
     router=auth_router,
     prefix="/auth",
@@ -78,9 +81,18 @@ api_router_v1.include_router(
     prefix="/rooms",
     tags=["rooms"],
 )
+ws_router_v1.include_router(
+    router=sessions_ws_router,
+    prefix="/sessions",
+    tags=["sessions"],
+)
 app.include_router(
     router=api_router_v1,
     prefix="/api/v1",
+)
+app.include_router(
+    router=ws_router_v1,
+    prefix="/ws/v1",
 )
 
 

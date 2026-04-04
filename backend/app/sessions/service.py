@@ -1,3 +1,4 @@
+import json
 from typing import Any
 from uuid import UUID
 
@@ -23,7 +24,12 @@ from app.sessions.db_crud import (
     bulk_create_and_return_session_questions,
 )
 from app.sessions.models import SessionStatus
-from app.sessions.redis_crud import set_session_info
+from app.sessions.redis_crud import (
+    set_session_info,
+    get_session_info,
+    get_user_answered_question_uuids,
+    save_user_answer,
+)
 from app.users.service import get_users_by_ids
 
 
@@ -521,3 +527,138 @@ async def start_session(
         room_id=room_id,
         _defer_by=session_db.time_seconds,
     )
+
+
+async def get_ws_sync_state(
+    session_uuid: UUID,
+    user_uuid: UUID,
+    redis_client: Redis,
+) -> dict[str, Any] | None:
+    session_info_raw = await get_session_info(
+        session_uuid=session_uuid,
+        redis_client=redis_client,
+    )
+
+    if not session_info_raw:
+        return None
+
+    session_info = json.loads(session_info_raw)
+    all_questions = session_info.get("questions", [])
+    answered_uuids = await get_user_answered_question_uuids(
+        session_uuid=session_uuid,
+        user_uuid=user_uuid,
+        redis_client=redis_client,
+    )
+    unanswered_questions = []
+
+    for question in all_questions:
+        if question.get("uuid") not in answered_uuids:
+            for option in question.get("options", []):
+                option.pop("is_correct", None)
+
+            unanswered_questions.append(question)
+
+    return {
+        "end_time_ts": session_info.get("end_time_ts"),
+        "questions": unanswered_questions,
+    }
+
+
+async def process_ws_event(
+    event_data: dict[str, Any],
+    session_uuid: UUID,
+    user_uuid: UUID,
+    redis_client: Redis,
+) -> dict[str, Any] | None:
+    event_type = event_data.get("event")
+
+    if event_type == "submit_answer":
+        question_uuid_raw = event_data.get("question_uuid")
+        selected_options_raw = event_data.get("selected_options")
+
+        if not question_uuid_raw or not isinstance(selected_options_raw, list):
+            return {
+                "event": "error",
+                "message": "Invalid payload format for 'submit_answer'",
+            }
+
+        try:
+            question_uuid = UUID(question_uuid_raw)
+            answer_data = [str(option) for option in selected_options_raw]
+        except ValueError:
+            return {
+                "event": "error",
+                "message": "Invalid UUID format",
+            }
+
+        session_info_raw = await get_session_info(
+            session_uuid=session_uuid,
+            redis_client=redis_client,
+        )
+
+        if not session_info_raw:
+            return {
+                "event": "error",
+                "message": "Session is not active",
+            }
+
+        session_info = json.loads(session_info_raw)
+        all_questions = session_info.get("questions", [])
+
+        target_question = next(
+            (
+                question
+                for question in all_questions
+                if question.get("uuid") == str(question_uuid)
+            ),
+            None,
+        )
+
+        if not target_question:
+            return {
+                "event": "error",
+                "message": "Question does not belong to this session",
+            }
+
+        is_multiple = target_question.get("is_multiple_answers", False)
+
+        if not is_multiple and len(answer_data) > 1:
+            return {
+                "event": "error",
+                "message": "This question allows only one answer",
+            }
+
+        if not answer_data:
+            return {
+                "event": "error",
+                "message": "At least one option must be selected",
+            }
+
+        valid_option_uuids = {
+            option.get("uuid") for option in target_question.get("options", [])
+        }
+        submitted_option_uuids = set(answer_data)
+
+        if not submitted_option_uuids.issubset(valid_option_uuids):
+            return {
+                "event": "error",
+                "message": "One or more selected options are invalid for this question",
+            }
+
+        await save_user_answer(
+            session_uuid=session_uuid,
+            user_uuid=user_uuid,
+            question_uuid=question_uuid,
+            answer_data=answer_data,
+            redis_client=redis_client,
+        )
+
+        return {
+            "event": "answer_acknowledged",
+            "question_uuid": str(question_uuid),
+        }
+
+    return {
+        "event": "error",
+        "message": f"Unknown event type: {event_type}",
+    }
