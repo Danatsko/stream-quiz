@@ -12,11 +12,18 @@ async def get_session_info_key(uuid: UUID) -> str:
     return key
 
 
+async def get_session_answers_key(uuid: UUID) -> str:
+    key = f"session:{uuid}:answers"
+
+    return key
+
+
 async def get_user_answers_key(
     session_uuid: UUID,
     user_uuid: UUID,
 ) -> str:
-    key = f"session:{session_uuid}:answers:{user_uuid}"
+    session_answers_key = await get_session_answers_key(uuid=session_uuid)
+    key = f"{session_answers_key}:{user_uuid}"
 
     return key
 
@@ -50,25 +57,38 @@ async def set_session_info(
 async def get_session_info(
     session_uuid: UUID,
     redis_client: Redis,
-) -> dict[str, Any]:
+) -> dict[str, str]:
     key = await get_session_info_key(uuid=session_uuid)
     session_info = await redis_client.get(name=key)
 
     return session_info
 
 
-async def get_user_answered_question_uuids(
+async def clear_session_data(
     session_uuid: UUID,
-    user_uuid: UUID,
     redis_client: Redis,
-) -> list[str]:
-    key = await get_user_answers_key(
-        session_uuid=session_uuid,
-        user_uuid=user_uuid,
-    )
-    answered_question_uuids = await redis_client.hkeys(name=key)
+) -> bool:
+    session_info_key = await get_session_info_key(uuid=session_uuid)
+    session_answers_key = await get_session_answers_key(uuid=session_uuid)
+    match_pattern = f"{session_answers_key}:*"
+    keys = [session_info_key]
+    cursor = 0
 
-    return set(answered_question_uuids)
+    while True:
+        cursor, partial_keys = await redis_client.scan(
+            cursor=cursor,
+            match=match_pattern,
+            count=100,
+        )
+
+        keys.extend(partial_keys)
+
+        if cursor == 0:
+            break
+
+    value = await redis_client.delete(*keys)
+
+    return value is not None
 
 
 async def save_user_answer(
@@ -97,3 +117,48 @@ async def save_user_answer(
         result = await pipeline.execute()
 
     return bool(result[0])
+
+
+async def get_user_answered_question_uuids(
+    session_uuid: UUID,
+    user_uuid: UUID,
+    redis_client: Redis,
+) -> list[str]:
+    key = await get_user_answers_key(
+        session_uuid=session_uuid,
+        user_uuid=user_uuid,
+    )
+    answered_question_uuids = await redis_client.hkeys(name=key)
+
+    return set(answered_question_uuids)
+
+
+async def get_session_answers(
+    session_uuid: UUID,
+    redis_client: Redis,
+) -> dict[str, dict[str, str]]:
+    session_answers_key = await get_session_answers_key(uuid=session_uuid)
+    match_pattern = f"{session_answers_key}:*"
+    keys = []
+    cursor = 0
+
+    while True:
+        cursor, partial_keys = await redis_client.scan(
+            cursor=cursor,
+            match=match_pattern,
+            count=100,
+        )
+
+        keys.extend(partial_keys)
+
+        if cursor == 0:
+            break
+
+    result = {}
+
+    for key in keys:
+        user_uuid_str = key.split(":")[-1]
+        answers = await redis_client.hgetall(name=key)
+        result[user_uuid_str] = answers
+
+    return result

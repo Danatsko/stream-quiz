@@ -11,6 +11,7 @@ from app.sessions.models import (
     SessionQuestion,
     SessionMember,
     SessionQuestionOption,
+    SessionMemberAnswer,
 )
 
 
@@ -237,3 +238,44 @@ async def bulk_create_and_return_session_questions(
     ]
 
     return result
+
+
+async def bulk_create_session_members(
+    session_id: int,
+    create_session_members_data: list[dict[str, Any]],
+    db_session: AsyncSession,
+) -> None:
+    if not create_session_members_data:
+        return
+
+    member_rows = [
+        {
+            "session_id": session_id,
+            "user_id": member["user_id"],
+        }
+        for member in create_session_members_data
+    ]
+    stmt = insert(SessionMember).values(member_rows).returning(SessionMember)
+    created_members = list(await db_session.scalars(stmt))
+    member_mapping = {member.user_id: member.id for member in created_members}
+    answer_rows = []
+
+    for member_data in create_session_members_data:
+        member_id = member_mapping.get(member_data["user_id"])
+
+        if not member_id or not member_data.get("answers"):
+            continue
+
+        for answer in member_data["answers"]:
+            answer_rows.append(
+                {
+                    "session_question_id": answer["session_question_id"],
+                    "session_question_option_id": answer["session_question_option_id"],
+                    "session_member_id": member_id,
+                }
+            )
+
+    if answer_rows:
+        stmt = insert(SessionMemberAnswer).values(answer_rows)
+
+        await db_session.execute(stmt)

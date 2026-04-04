@@ -79,6 +79,20 @@ async def get_user_uuids_by_ids(
     return result
 
 
+async def get_user_ids_by_uuids(
+    uuids: set[UUID],
+    db_session: AsyncSession,
+) -> dict[UUID, int]:
+    stmt = select(User.uuid, User.id).where(
+        User.uuid.in_(uuids),
+        User.deleted_at.is_(None),
+    )
+    result = await db_session.execute(stmt)
+    result = dict(result.all())
+
+    return result
+
+
 async def get_users_by_ids(
     ids: set[int],
     db_session: AsyncSession,

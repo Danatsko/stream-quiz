@@ -11,6 +11,7 @@ from app.users.db_crud import (
     get_user_by_id as db_crud_get_user_by_id,
     get_user_by_uuid as db_crud_get_user_by_uuid,
     get_user_uuids_by_ids as db_crud_get_user_uuids_by_ids,
+    get_user_ids_by_uuids as db_crud_get_user_ids_by_uuids,
     get_users_by_ids as db_crud_get_users_by_ids,
 )
 from app.users.models import User
@@ -89,6 +90,18 @@ async def get_user_uuids_by_ids(
     )
 
     return user_uuids_db
+
+
+async def get_user_ids_by_uuids(
+    uuids: set[UUID],
+    db_session: AsyncSession,
+) -> dict[UUID, int]:
+    user_ids_db = await db_crud_get_user_ids_by_uuids(
+        uuids=uuids,
+        db_session=db_session,
+    )
+
+    return user_ids_db
 
 
 async def get_users_by_ids(

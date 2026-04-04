@@ -1,23 +1,23 @@
 from typing import Any
+from uuid import UUID
 
 from app.core.db import get_db_session_factory
-from app.sessions.db_crud import complete_session_by_id
+from app.core.redis import get_redis_client
+from app.sessions.service import finalize_session
 
 
 async def auto_close_session(
     ctx: dict[str, Any],
-    session_id: int,
+    session_uuid: UUID,
     room_id: int,
 ) -> None:
-    # TODO: fetch member answers from Redis
-    # TODO: bulk insert member answers to DB
-    # TODO: clear session data from Redis after completion
-
+    redis_client = await get_redis_client()
     db_session_factory = await get_db_session_factory()
 
     async with db_session_factory.begin() as db_session:
-        await complete_session_by_id(
-            id=session_id,
+        await finalize_session(
+            session_uuid=session_uuid,
             room_id=room_id,
             db_session=db_session,
+            redis_client=redis_client,
         )
