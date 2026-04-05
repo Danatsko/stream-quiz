@@ -27,7 +27,7 @@ class SessionConnectionManager:
 
         self.active_connections[session_uuid][user_uuid] = websocket
 
-    def disconnect(
+    async def disconnect(
         self,
         session_uuid: UUID,
         user_uuid: UUID,
@@ -39,7 +39,33 @@ class SessionConnectionManager:
             )
 
             if not self.active_connections[session_uuid]:
-                del self.active_connections[session_uuid]
+                self.active_connections.pop(
+                    session_uuid,
+                    None,
+                )
+
+    async def close_session_connections(
+        self,
+        session_uuid: UUID,
+        code: int,
+        reason: str,
+    ) -> None:
+        if session_uuid in self.active_connections:
+            connections = list(self.active_connections[session_uuid].values())
+
+            for connection in connections:
+                try:
+                    await connection.close(
+                        code=code,
+                        reason=reason,
+                    )
+                except Exception:
+                    pass
+
+            self.active_connections.pop(
+                session_uuid,
+                None,
+            )
 
     async def broadcast_to_session(
         self,

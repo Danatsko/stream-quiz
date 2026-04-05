@@ -1,41 +1,49 @@
 import json
+from asyncio import CancelledError
 from uuid import UUID
 
-from fastapi import WebSocket, WebSocketDisconnect
 from redis.asyncio import Redis
 
 from app.sessions.redis_crud import get_session_events_channel
+from app.sessions.ws_manager import session_manager
 
 
-async def redis_pubsub_listener(
-    session_uuid: UUID,
-    websocket: WebSocket,
-    redis_client: Redis,
-) -> None:
+async def global_redis_pubsub_listener(redis_client: Redis) -> None:
     pubsub = redis_client.pubsub()
-    channel = await get_session_events_channel(uuid=session_uuid)
+    match_pattern = await get_session_events_channel(uuid="*")
 
-    await pubsub.subscribe(channel)
+    await pubsub.psubscribe(match_pattern)
 
     try:
         async for message in pubsub.listen():
-            if message["type"] == "message":
+            if message["type"] == "pmessage":
                 data = json.loads(message["data"])
 
+                channel_name = (
+                    message["channel"].decode()
+                    if isinstance(message["channel"], bytes)
+                    else message["channel"]
+                )
+                session_uuid_str = channel_name.split(":")[1]
+
                 try:
-                    await websocket.send_json(data)
+                    session_uuid = UUID(session_uuid_str)
+                except ValueError:
+                    continue
 
-                    if data.get("event") == "session_closed":
-                        await websocket.close(
-                            code=1000,
-                            reason="Session closed by server",
-                        )
+                await session_manager.broadcast_to_session(
+                    session_uuid=session_uuid,
+                    message=data,
+                )
 
-                        break
-                except (WebSocketDisconnect, RuntimeError):
-                    break
+                if data.get("event") == "session_closed":
+                    await session_manager.close_session_connections(
+                        session_uuid=session_uuid
+                    )
+    except CancelledError:
+        pass
     except Exception:
         pass
     finally:
-        await pubsub.unsubscribe(channel)
+        await pubsub.punsubscribe(match_pattern)
         await pubsub.close()

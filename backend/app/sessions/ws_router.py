@@ -1,4 +1,3 @@
-import asyncio
 import json
 from typing import Annotated, Any
 from uuid import UUID
@@ -10,7 +9,6 @@ from app.auth.dependencies import get_ws_auth_context
 from app.core.redis import get_redis_client
 from app.sessions.service import get_ws_sync_state, process_ws_event
 from app.sessions.ws_manager import session_manager
-from app.sessions.ws_pubsub import redis_pubsub_listener
 
 sessions_ws_router = APIRouter()
 
@@ -30,14 +28,6 @@ async def session_websocket(
         session_uuid=session_uuid,
         user_uuid=user_uuid,
         websocket=websocket,
-    )
-
-    pubsub_task = asyncio.create_task(
-        redis_pubsub_listener(
-            session_uuid=session_uuid,
-            websocket=websocket,
-            redis_client=redis_client,
-        )
     )
 
     try:
@@ -87,8 +77,7 @@ async def session_websocket(
     except WebSocketDisconnect:
         pass
     finally:
-        pubsub_task.cancel()
-        session_manager.disconnect(
+        await session_manager.disconnect(
             session_uuid=session_uuid,
             user_uuid=user_uuid,
         )

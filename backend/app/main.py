@@ -21,6 +21,7 @@ from app.core.limiter import limiter
 from app.core.db import get_db_session, close_db_connection, init_db
 from app.core.redis import get_redis_client, close_redis_connection, init_redis
 from app.core.schemas import HealthResponse
+from app.sessions.ws_pubsub import global_redis_pubsub_listener
 from app.users.router import users_router
 from app.quizzes.router import quizzes_router
 from app.rooms.router import rooms_router
@@ -33,11 +34,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, Any]:
     await init_redis()
     await init_arq_pool()
 
+    redis_client = await get_redis_client()
+    pubsub_task = asyncio.create_task(global_redis_pubsub_listener(redis_client))
+
     yield
 
+    pubsub_task.cancel()
     await close_arq_pool()
-    await close_db_connection()
     await close_redis_connection()
+    await close_db_connection()
 
 
 app = FastAPI(
