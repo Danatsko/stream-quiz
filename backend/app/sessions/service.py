@@ -33,6 +33,7 @@ from app.sessions.redis_crud import (
     save_user_answer,
     clear_session_data,
     get_session_answers,
+    publish_session_closed_event,
 )
 from app.users.service import get_users_by_ids, get_user_ids_by_uuids
 
@@ -552,6 +553,11 @@ async def finalize_session(
         id=session_db.id,
         room_id=room_id,
         db_session=db_session,
+    )
+
+    await publish_session_closed_event(
+        session_uuid=session_uuid,
+        redis_client=redis_client,
     )
 
     answers_data = await get_session_answers(
