@@ -1,5 +1,5 @@
 from typing import Any, Literal
-from uuid import UUID
+from uuid import UUID, uuid7
 
 from sqlalchemy import insert, update, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -184,27 +184,36 @@ async def bulk_create_and_return_session_questions(
     db_session: AsyncSession,
     mode: Literal["python", "json"] = "python",
 ) -> list[dict[str, Any]]:
-    question_rows = [
-        {
-            "session_id": session_id,
-            "text": question["text"],
-            "is_multiple_answers": question["is_multiple_answers"],
-        }
-        for question in create_session_questions_data
-    ]
+    question_rows = []
+    options_mapping = {}
+
+    for question in create_session_questions_data:
+        question_uuid = uuid7()
+
+        question_rows.append(
+            {
+                "session_id": session_id,
+                "text": question["text"],
+                "is_multiple_answers": question["is_multiple_answers"],
+                "uuid": question_uuid,
+            }
+        )
+
+        options_mapping[question_uuid] = question["options"]
+
     stmt = insert(SessionQuestion).values(question_rows).returning(SessionQuestion)
     created_questions = list(await db_session.scalars(stmt))
     option_rows = []
 
-    for question_db, question_data in zip(
-        created_questions, create_session_questions_data
-    ):
-        for option_db in question_data["options"]:
+    for question_db in created_questions:
+        mapped_options = options_mapping.get(question_db.uuid, [])
+
+        for option_db_data in mapped_options:
             option_rows.append(
                 {
                     "session_question_id": question_db.id,
-                    "text": option_db["text"],
-                    "is_correct": option_db["is_correct"],
+                    "text": option_db_data["text"],
+                    "is_correct": option_db_data["is_correct"],
                 }
             )
 
@@ -232,7 +241,7 @@ async def bulk_create_and_return_session_questions(
             "uuid": str(question_db.uuid) if mode == "json" else question_db.uuid,
             "text": question_db.text,
             "is_multiple_answers": question_db.is_multiple_answers,
-            "options": options_by_question_id[question_db.id],
+            "options": options_by_question_id.get(question_db.id, []),
         }
         for question_db in created_questions
     ]
@@ -257,7 +266,7 @@ async def bulk_create_session_members(
     ]
     stmt = insert(SessionMember).values(member_rows).returning(SessionMember)
     created_members = list(await db_session.scalars(stmt))
-    member_mapping = {member.user_id: member.id for member in created_members}
+    member_mapping = {member_db.user_id: member_db.id for member_db in created_members}
     answer_rows = []
 
     for member_data in create_session_members_data:

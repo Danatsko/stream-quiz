@@ -1,4 +1,4 @@
-from uuid import UUID
+from uuid import UUID, uuid7
 from typing import Any
 
 from sqlalchemy import or_, select, func, update, delete, insert
@@ -239,22 +239,31 @@ async def bulk_create_quiz_questions(
     create_quiz_questions_data: list[dict[str, Any]],
     db_session: AsyncSession,
 ) -> None:
-    question_rows = [
-        {
-            "quiz_id": quiz_id,
-            "text": question["text"],
-            "is_multiple_answers": question["is_multiple_answers"],
-        }
-        for question in create_quiz_questions_data
-    ]
+    question_rows = []
+    options_mapping = {}
+
+    for question_data in create_quiz_questions_data:
+        question_uuid = uuid7()
+
+        question_rows.append(
+            {
+                "quiz_id": quiz_id,
+                "text": question_data["text"],
+                "is_multiple_answers": question_data["is_multiple_answers"],
+                "uuid": question_uuid,
+            }
+        )
+
+        options_mapping[question_uuid] = question_data["options"]
+
     stmt = insert(QuizQuestion).values(question_rows).returning(QuizQuestion)
     created_questions = list(await db_session.scalars(stmt))
     option_rows = []
 
-    for question_db, question_data in zip(
-        created_questions, create_quiz_questions_data
-    ):
-        for option in question_data["options"]:
+    for question_db in created_questions:
+        mapped_options = options_mapping.get(question_db.uuid, [])
+
+        for option in mapped_options:
             option_rows.append(
                 {
                     "quiz_question_id": question_db.id,
