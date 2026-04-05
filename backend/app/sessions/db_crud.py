@@ -103,6 +103,9 @@ async def update_session_by_uuid(
     update_session_data: dict[str, Any],
     db_session: AsyncSession,
 ) -> bool:
+    if not update_session_data:
+        return False
+
     stmt = (
         update(Session)
         .where(
@@ -184,6 +187,9 @@ async def bulk_create_and_return_session_questions(
     db_session: AsyncSession,
     mode: Literal["python", "json"] = "python",
 ) -> list[dict[str, Any]]:
+    if not create_session_questions_data:
+        return []
+
     question_rows = []
     options_mapping = {}
 
@@ -201,6 +207,9 @@ async def bulk_create_and_return_session_questions(
 
         options_mapping[question_uuid] = question["options"]
 
+    if not question_rows:
+        return []
+
     stmt = insert(SessionQuestion).values(question_rows).returning(SessionQuestion)
     created_questions = list(await db_session.scalars(stmt))
     option_rows = []
@@ -217,24 +226,26 @@ async def bulk_create_and_return_session_questions(
                 }
             )
 
-    stmt = (
-        insert(SessionQuestionOption)
-        .values(option_rows)
-        .returning(SessionQuestionOption)
-    )
-    created_options = list(await db_session.scalars(stmt))
     options_by_question_id = {}
 
-    for option_db in created_options:
-        option_uuid = str(option_db.uuid) if mode == "json" else option_db.uuid
-
-        options_by_question_id.setdefault(option_db.session_question_id, []).append(
-            {
-                "uuid": option_uuid,
-                "text": option_db.text,
-                "is_correct": option_db.is_correct,
-            }
+    if option_rows:
+        stmt = (
+            insert(SessionQuestionOption)
+            .values(option_rows)
+            .returning(SessionQuestionOption)
         )
+        created_options = list(await db_session.scalars(stmt))
+
+        for option_db in created_options:
+            option_uuid = str(option_db.uuid) if mode == "json" else option_db.uuid
+
+            options_by_question_id.setdefault(option_db.session_question_id, []).append(
+                {
+                    "uuid": option_uuid,
+                    "text": option_db.text,
+                    "is_correct": option_db.is_correct,
+                }
+            )
 
     result = [
         {
@@ -264,6 +275,10 @@ async def bulk_create_session_members(
         }
         for member in create_session_members_data
     ]
+
+    if not member_rows:
+        return
+
     stmt = insert(SessionMember).values(member_rows).returning(SessionMember)
     created_members = list(await db_session.scalars(stmt))
     member_mapping = {member_db.user_id: member_db.id for member_db in created_members}
@@ -284,7 +299,9 @@ async def bulk_create_session_members(
                 }
             )
 
-    if answer_rows:
-        stmt = insert(SessionMemberAnswer).values(answer_rows)
+    if not answer_rows:
+        return
 
-        await db_session.execute(stmt)
+    stmt = insert(SessionMemberAnswer).values(answer_rows)
+
+    await db_session.execute(stmt)

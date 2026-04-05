@@ -162,6 +162,9 @@ async def get_available_quiz_uuids_by_ids(
     user_id: int,
     db_session: AsyncSession,
 ) -> dict[int, UUID]:
+    if not ids:
+        return {}
+
     stmt = select(Quiz.id, Quiz.uuid).where(
         Quiz.id.in_(ids),
         or_(
@@ -201,6 +204,9 @@ async def update_quiz_by_uuid(
     update_quiz_data: dict[str, Any],
     db_session: AsyncSession,
 ) -> bool:
+    if not update_quiz_data:
+        return False
+
     stmt = (
         update(Quiz)
         .where(
@@ -239,6 +245,9 @@ async def bulk_create_quiz_questions(
     create_quiz_questions_data: list[dict[str, Any]],
     db_session: AsyncSession,
 ) -> None:
+    if not create_quiz_questions_data:
+        return
+
     question_rows = []
     options_mapping = {}
 
@@ -256,6 +265,9 @@ async def bulk_create_quiz_questions(
 
         options_mapping[question_uuid] = question_data["options"]
 
+    if not question_rows:
+        return
+
     stmt = insert(QuizQuestion).values(question_rows).returning(QuizQuestion)
     created_questions = list(await db_session.scalars(stmt))
     option_rows = []
@@ -272,6 +284,9 @@ async def bulk_create_quiz_questions(
                 }
             )
 
+    if not option_rows:
+        return
+
     stmt = insert(QuizQuestionOption).values(option_rows)
 
     await db_session.execute(stmt)
@@ -281,13 +296,22 @@ async def bulk_update_quiz_questions(
     update_quiz_questions_data: list[dict[str, Any]],
     db_session: AsyncSession,
 ) -> None:
-    await db_session.execute(update(QuizQuestion), update_quiz_questions_data)
+    if not update_quiz_questions_data:
+        return
+
+    await db_session.execute(
+        update(QuizQuestion),
+        update_quiz_questions_data,
+    )
 
 
 async def bulk_delete_quiz_questions_by_ids(
     quiz_questions_ids: list[int],
     db_session: AsyncSession,
 ) -> None:
+    if not quiz_questions_ids:
+        return
+
     stmt = delete(QuizQuestion).where(QuizQuestion.id.in_(quiz_questions_ids))
 
     await db_session.execute(stmt)
@@ -298,6 +322,9 @@ async def bulk_create_quiz_question_options(
     options: list[dict[str, Any]],
     db_session: AsyncSession,
 ) -> None:
+    if not options:
+        return
+
     option_rows = [
         {
             "quiz_question_id": quiz_question_id,
@@ -306,6 +333,10 @@ async def bulk_create_quiz_question_options(
         }
         for option in options
     ]
+
+    if not option_rows:
+        return
+
     stmt = insert(QuizQuestionOption).values(option_rows)
 
     await db_session.execute(stmt)
@@ -315,8 +346,12 @@ async def bulk_update_quiz_question_options(
     update_quiz_question_options_data: list[dict[str, Any]],
     db_session: AsyncSession,
 ) -> None:
+    if not update_quiz_question_options_data:
+        return
+
     await db_session.execute(
-        update(QuizQuestionOption), update_quiz_question_options_data
+        update(QuizQuestionOption),
+        update_quiz_question_options_data,
     )
 
 
@@ -324,6 +359,9 @@ async def bulk_delete_quiz_question_options_by_ids(
     quiz_question_option_ids: list[int],
     db_session: AsyncSession,
 ) -> None:
+    if not quiz_question_option_ids:
+        return
+
     stmt = delete(QuizQuestionOption).where(
         QuizQuestionOption.id.in_(quiz_question_option_ids)
     )

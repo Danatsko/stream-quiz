@@ -86,6 +86,9 @@ async def update_room_by_uuid(
     update_room_data: dict[str, Any],
     db_session: AsyncSession,
 ) -> bool:
+    if not update_room_data:
+        return False
+
     stmt = (
         update(Room)
         .where(
