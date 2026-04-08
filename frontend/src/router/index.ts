@@ -46,9 +46,15 @@ const router = createRouter({
       children: [
         {
           path: '/take',
-          name: 'Take',
-          component: () => import('@/views/TakeView.vue'),
-          meta: { requiresAuth: true },
+          component: { render: () => h(RouterView) },
+          children: [
+            {
+              path: '',
+              name: 'Take',
+              component: () => import('@/views/TakeView.vue'),
+              meta: { requiresAuth: true },
+            },
+          ],
         },
         {
           path: '/quizzes',

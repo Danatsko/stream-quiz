@@ -23,6 +23,7 @@ const MAX_DESCRIPTION_LENGTH = 500
 const MIN_TIME_SECONDS = 1
 const MAX_TIME_SECONDS = 604800
 const QUIZ_UUID_LENGTH = 36
+const QUIZ_UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 const route = useRoute()
 const router = useRouter()
@@ -134,7 +135,7 @@ const isQuizUuidValid = computed((): boolean => {
 
   const { quiz_uuid } = editableSession.value
 
-  return !!quiz_uuid && quiz_uuid.length == QUIZ_UUID_LENGTH
+  return !!quiz_uuid && quiz_uuid.length == QUIZ_UUID_LENGTH && QUIZ_UUID_REGEX.test(quiz_uuid)
 })
 
 const isFormValid = computed((): boolean => {
@@ -295,14 +296,14 @@ const confirmDeleteSession = async (): Promise<void> => {
                 :class="{ 'input-error': editableSession.quiz_uuid && !isQuizUuidValid }"
                 id="quiz-uuid"
                 type="text"
-                placeholder="Quiz uuid"
+                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                 v-model="editableSession.quiz_uuid"
                 :minlength="QUIZ_UUID_LENGTH"
                 :maxLength="QUIZ_UUID_LENGTH"
                 required
               />
               <AppErrorMessage v-if="editableSession.quiz_uuid && !isQuizUuidValid">
-                Only {{ QUIZ_UUID_LENGTH }} characters
+                Invalid uuid format
               </AppErrorMessage>
             </div>
           </template>
