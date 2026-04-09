@@ -671,9 +671,9 @@ async def process_ws_event(
 
     if event_type == "submit_answer":
         question_uuid_raw = event_data.get("question_uuid")
-        selected_options_raw = event_data.get("selected_options")
+        selected_option_uuids_raw = event_data.get("selected_option_uuids")
 
-        if not question_uuid_raw or not isinstance(selected_options_raw, list):
+        if not question_uuid_raw or not isinstance(selected_option_uuids_raw, list):
             return {
                 "event": "error",
                 "message": "Invalid payload format for 'submit_answer'",
@@ -681,7 +681,7 @@ async def process_ws_event(
 
         try:
             question_uuid = UUID(question_uuid_raw)
-            answer_data = [str(option) for option in selected_options_raw]
+            answer_data = [str(option) for option in selected_option_uuids_raw]
         except ValueError:
             return {
                 "event": "error",
