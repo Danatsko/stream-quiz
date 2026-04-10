@@ -49,6 +49,8 @@ async def session_websocket(
                 "event": "sync_state",
                 "end_time_ts": sync_state_data["end_time_ts"],
                 "questions": sync_state_data["questions"],
+                "total_questions": sync_state_data["total_questions"],
+                "answered_questions": sync_state_data["answered_questions"],
             }
         )
 

@@ -658,6 +658,8 @@ async def get_ws_sync_state(
     return {
         "end_time_ts": session_info.get("end_time_ts"),
         "questions": unanswered_questions,
+        "total_questions": len(all_questions),
+        "answered_questions": len(answered_uuids),
     }
 
 
