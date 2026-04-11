@@ -32,7 +32,7 @@ useInfiniteScroll(
   <div class="async-list-container" ref="listRef">
     <div v-if="isLoading && items.length === 0" class="empty-state">
       <Icon icon="mdi:loading" class="spin-icon empty-icon" />
-      <p class="empty-text">Loading...</p>
+      <p>Loading</p>
     </div>
 
     <div v-else-if="!isLoading && items.length === 0" class="empty-state">
@@ -47,7 +47,8 @@ useInfiniteScroll(
       </div>
 
       <div v-if="isLoading" class="loading-indicator">
-        <Icon icon="mdi:loading" class="spin-icon" /> Loading more...
+        <Icon icon="mdi:loading" class="spin-icon" />
+        Loading
       </div>
     </template>
   </div>
