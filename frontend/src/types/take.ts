@@ -16,6 +16,8 @@ export interface SyncStateEvent {
   event: 'sync_state'
   end_time_ts: number
   questions: Array<GameQuestion>
+  total_questions: number
+  answered_questions: number
 }
 
 export interface ErrorEvent {
@@ -36,5 +38,5 @@ export type IncomingWsMessage =
 export interface SubmitAnswerPayload {
   event: 'submit_answer'
   question_uuid: string
-  option_uuids: Array<string>
+  selected_option_uuids: Array<string>
 }

@@ -54,6 +54,12 @@ const router = createRouter({
               component: () => import('@/views/TakeView.vue'),
               meta: { requiresAuth: true },
             },
+            {
+              path: ':uuid',
+              name: 'TakeSession',
+              component: () => import('@/views/TakeSessionView.vue'),
+              meta: { requiresAuth: true },
+            },
           ],
         },
         {

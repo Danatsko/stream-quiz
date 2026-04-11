@@ -10,8 +10,6 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 const sessionUuid = ref<string>('')
 const isLoading = ref<boolean>(false)
-const error = ref<string | null>(null)
-
 const takeStore = useTakeStore()
 const router = useRouter()
 
@@ -19,37 +17,29 @@ const isUuidValid = computed((): boolean => {
   return !!sessionUuid.value && UUID_REGEX.test(sessionUuid.value)
 })
 
-const handleJoin = async () => {
-  if (!isUuidValid.value || isLoading.value) {
+watch(sessionUuid, () => {
+  if (takeStore.error) {
+    takeStore.error = null
+  }
+})
+
+const handleTake = async () => {
+  if (!isUuidValid.value) {
     return
   }
 
-  isLoading.value = true
-  error.value = null
-
   try {
-    takeStore.connectToSession(sessionUuid.value)
+    isLoading.value = true
+    takeStore.error = null
 
-    const unwatch = watch(
-      () => [takeStore.isConnected, takeStore.error],
-      ([connected, joinError]) => {
-        if (connected) {
-          unwatch()
-          isLoading.value = false
-
-          // TODO: Add routing to take session view
-        } else if (joinError) {
-          unwatch()
-          isLoading.value = false
-          error.value = joinError as string
-
-          takeStore.disconnectFromSession()
-        }
+    await router.push({
+      name: 'TakeSession',
+      params: {
+        uuid: sessionUuid.value,
       },
-    )
-  } catch (joinError) {
+    })
+  } finally {
     isLoading.value = false
-    error.value = 'Error during join'
   }
 }
 </script>
@@ -57,14 +47,13 @@ const handleJoin = async () => {
 <template>
   <div class="layout">
     <div class="header">
-      <h1 class="header-title">Join</h1>
+      <h1 class="header-title">Take</h1>
       <p class="header-subtitle">Enter the session uuid to participate</p>
     </div>
 
     <div class="main">
-      <form class="form" @submit.prevent="handleJoin">
+      <form class="form" @submit.prevent="handleTake">
         <div class="form-group">
-          <label for="session-uuid">Session UUID</label>
           <input
             class="input"
             :class="{ 'input-error': sessionUuid && !isUuidValid }"
@@ -81,8 +70,8 @@ const handleJoin = async () => {
           </AppErrorMessage>
         </div>
 
-        <AppButton class="btn-join" type="submit" :disabled="!isUuidValid || isLoading">
-          {{ isLoading ? 'Processing' : 'Join' }}
+        <AppButton class="btn-take" type="submit" :disabled="!isUuidValid || isLoading">
+          {{ isLoading ? 'Processing' : 'Take' }}
         </AppButton>
       </form>
     </div>
@@ -107,15 +96,12 @@ const handleJoin = async () => {
 .header-title {
   font-size: 1.5rem;
   font-weight: 900;
-  margin-bottom: 0;
+  margin: 0;
 }
 .header-subtitle {
-  font-size: 0.75rem;
-  font-weight: 500;
-  margin-top: 0;
-  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  margin: 0.5rem 0 1rem 0;
   color: var(--color-text-secondary);
-  opacity: 0.8;
 }
 
 .main {
@@ -145,6 +131,7 @@ label {
   padding: 0.75rem 1rem;
   box-sizing: border-box;
   background-color: transparent;
+  text-align: center;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   font-size: 1rem;
@@ -164,7 +151,7 @@ label {
 .input-error {
   border-color: red;
 }
-.btn-join {
+.btn-take {
   align-self: center;
   width: 100%;
   margin-top: 0.5rem;

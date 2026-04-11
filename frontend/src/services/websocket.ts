@@ -29,7 +29,11 @@ export class WebSocketService {
     this.ws = new WebSocket(this.url)
 
     this.ws.onopen = (): void => {
-      this.reconnectAttempts = 0
+      setTimeout((): void => {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          this.reconnectAttempts = 0
+        }
+      }, 1000)
 
       this.flushQueue()
 

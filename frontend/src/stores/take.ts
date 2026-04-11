@@ -8,8 +8,18 @@ export const useTakeStore = defineStore('take', () => {
   const isConnected = ref<boolean>(false)
   const isReconnecting = ref<boolean>(false)
   const questions = ref<GameQuestion[]>([])
+  const totalQuestions = ref<number | null>(null)
+  const answeredQuestions = ref<number | null>(null)
   const endTimeTs = ref<number | null>(null)
   const error = ref<string | null>(null)
+
+  const clearState = (): void => {
+    questions.value = []
+    totalQuestions.value = null
+    answeredQuestions.value = null
+    endTimeTs.value = null
+    error.value = null
+  }
 
   const connectToSession = (sessionUuid: string): void => {
     if (wsService.value) {
@@ -48,6 +58,8 @@ export const useTakeStore = defineStore('take', () => {
       case 'sync_state':
         questions.value = message.questions
         endTimeTs.value = message.end_time_ts
+        totalQuestions.value = message.total_questions
+        answeredQuestions.value = message.answered_questions
 
         break
       case 'error':
@@ -55,6 +67,8 @@ export const useTakeStore = defineStore('take', () => {
 
         break
       case 'session_closed':
+        error.value = 'Session has been closed'
+
         disconnectFromSession()
 
         break
@@ -71,7 +85,7 @@ export const useTakeStore = defineStore('take', () => {
     const payload: SubmitAnswerPayload = {
       event: 'submit_answer',
       question_uuid: questionUuid,
-      option_uuids: optionUuids,
+      selected_option_uuids: optionUuids,
     }
 
     wsService.value.send(payload)
@@ -85,16 +99,17 @@ export const useTakeStore = defineStore('take', () => {
     }
     isConnected.value = false
     isReconnecting.value = false
-    questions.value = []
-    endTimeTs.value = null
   }
 
   return {
     isConnected,
     isReconnecting,
     questions,
+    totalQuestions,
+    answeredQuestions,
     endTimeTs,
     error,
+    clearState,
     connectToSession,
     submitAnswer,
     disconnectFromSession,
