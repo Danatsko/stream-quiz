@@ -26,6 +26,7 @@ from app.sessions.db_crud import (
     bulk_create_session_members,
     get_sessions_total_count_by_user_id,
     get_sessions_list_by_user_id,
+    get_session_with_relations_by_user_id,
 )
 from app.sessions.models import SessionStatus
 from app.sessions.redis_crud import (
@@ -339,9 +340,9 @@ async def get_session(
             grouped_answers[question_db_id].append(answer_db.session_question_option_id)
 
         for question_id, question_scoring in scoring_map.items():
-            selected_opt_ids = set(grouped_answers.get(question_id, []))
+            selected_option_ids = set(grouped_answers.get(question_id, []))
 
-            if not selected_opt_ids:
+            if not selected_option_ids:
                 member_answers_data.append(
                     {
                         "question_uuid": question_scoring["question_uuid"],
@@ -353,10 +354,10 @@ async def get_session(
 
             member_total_answers += 1
 
-            correct_selected = selected_opt_ids.intersection(
+            correct_selected = selected_option_ids.intersection(
                 question_scoring["correct_opts"]
             )
-            wrong_selected = selected_opt_ids.intersection(
+            wrong_selected = selected_option_ids.intersection(
                 question_scoring["wrong_opts"]
             )
             total_correct = len(question_scoring["correct_opts"])
@@ -374,7 +375,7 @@ async def get_session(
 
             selected_uuids = [
                 option_id_to_uuid_map[option_id]
-                for option_id in selected_opt_ids
+                for option_id in selected_option_ids
                 if option_id in option_id_to_uuid_map
             ]
 
@@ -414,6 +415,165 @@ async def get_session(
         "total_score": total_score,
         "created_at": session_db.created_at,
         "updated_at": session_db.updated_at,
+    }
+
+    return result
+
+
+async def get_user_session(
+    user_id: int,
+    session_uuid: UUID,
+    db_session: AsyncSession,
+) -> dict[str, Any]:
+    session_db = await get_session_with_relations_by_user_id(
+        uuid=session_uuid,
+        user_id=user_id,
+        db_session=db_session,
+    )
+
+    if session_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found",
+        )
+
+    quiz_db = await get_available_quiz_by_id(
+        id=session_db.quiz_id,
+        user_id=user_id,
+        db_session=db_session,
+    )
+    quiz_uuid = quiz_db.uuid if quiz_db else None
+
+    questions = []
+    scoring_map = {}
+    options_mapping = {}
+
+    for question_db in session_db.questions:
+        options_data = []
+        correct_options = set()
+        wrong_options = set()
+
+        for option_db in question_db.options:
+            options_mapping[option_db.id] = option_db
+            options_data.append(
+                {
+                    "uuid": option_db.uuid,
+                    "text": option_db.text,
+                    "is_correct": option_db.is_correct,
+                }
+            )
+
+            if option_db.is_correct:
+                correct_options.add(option_db.id)
+            else:
+                wrong_options.add(option_db.id)
+
+        scoring_map[question_db.id] = {
+            "question_uuid": question_db.uuid,
+            "correct_opts": correct_options,
+            "wrong_opts": wrong_options,
+        }
+
+        questions.append(
+            {
+                "uuid": question_db.uuid,
+                "text": question_db.text,
+                "is_multiple_answers": question_db.is_multiple_answers,
+                "options": options_data,
+            }
+        )
+
+    total_questions = len(questions)
+    total_score = float(total_questions)
+
+    member_db = next(
+        (member_db for member_db in session_db.members if member_db.user_id == user_id),
+        None,
+    )
+
+    if member_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Member not found for this session",
+        )
+
+    answers = []
+    score = 0.0
+    total_answers = 0
+    grouped_answers = {}
+
+    for answer_db in member_db.answers:
+        question_db_id = answer_db.session_question_id
+
+        if question_db_id not in grouped_answers:
+            grouped_answers[question_db_id] = []
+
+        grouped_answers[question_db_id].append(answer_db.session_question_option_id)
+
+    for question_id, question_scoring in scoring_map.items():
+        selected_option_ids = set(grouped_answers.get(question_id, []))
+
+        if not selected_option_ids:
+            answers.append(
+                {
+                    "question_uuid": question_scoring["question_uuid"],
+                    "selected_options": [],
+                    "score": 0.00,
+                }
+            )
+            continue
+
+        total_answers += 1
+
+        correct_selected = selected_option_ids.intersection(
+            question_scoring["correct_opts"]
+        )
+        wrong_selected = selected_option_ids.intersection(
+            question_scoring["wrong_opts"]
+        )
+        total_correct = len(question_scoring["correct_opts"])
+        total_wrong = len(question_scoring["wrong_opts"])
+        correct_ratio = (
+            len(correct_selected) / total_correct if total_correct > 0 else 0.0
+        )
+        wrong_ratio = len(wrong_selected) / total_wrong if total_wrong > 0 else 0.0
+        question_score = correct_ratio - wrong_ratio
+
+        if question_score < 0:
+            question_score = 0.0
+
+        score += question_score
+
+        selected_options = [
+            {
+                "uuid": options_mapping[option_id].uuid,
+                "is_correct": options_mapping[option_id].is_correct,
+            }
+            for option_id in selected_option_ids
+            if option_id in options_mapping
+        ]
+
+        answers.append(
+            {
+                "question_uuid": question_scoring["question_uuid"],
+                "selected_options": selected_options,
+                "score": round(question_score, 2),
+            }
+        )
+
+    result = {
+        "uuid": session_db.uuid,
+        "quiz_uuid": quiz_uuid,
+        "title": session_db.title,
+        "description": session_db.description,
+        "time_seconds": session_db.time_seconds,
+        "status": session_db.status,
+        "questions": questions,
+        "total_questions": total_questions,
+        "total_score": total_score,
+        "answers": answers,
+        "total_answers": total_answers,
+        "score": score,
     }
 
     return result

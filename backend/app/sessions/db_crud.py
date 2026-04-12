@@ -137,6 +137,27 @@ async def get_session_with_relations_by_uuid(
     return result
 
 
+async def get_session_with_relations_by_user_id(
+    uuid: UUID,
+    user_id: int,
+    db_session: AsyncSession,
+) -> Session:
+    stmt = (
+        select(Session)
+        .join(Session.members)
+        .where(
+            SessionMember.user_id == user_id,
+            Session.uuid == uuid,
+            Session.deleted_at.is_(None),
+        )
+        .options(selectinload(Session.questions).selectinload(SessionQuestion.options))
+        .options(selectinload(Session.members).selectinload(SessionMember.answers))
+    )
+    result = await db_session.scalar(stmt)
+
+    return result
+
+
 async def update_session_by_uuid(
     uuid: UUID,
     room_id: int,

@@ -146,11 +146,30 @@ async def get_me_sessions(
         uuid=user_uuid,
         db_session=db_session,
     )
-
     result = await get_user_sessions(
         page=page,
         size=size,
         user_id=user_db.id,
+        db_session=db_session,
+    )
+
+    return result
+
+
+async def get_me_session(
+    user_uuid: UUID,
+    session_uuid: UUID,
+    db_session: AsyncSession,
+) -> dict[str, Any]:
+    from app.sessions.service import get_user_session
+
+    user_db = await db_crud_get_user_by_uuid(
+        uuid=user_uuid,
+        db_session=db_session,
+    )
+    result = await get_user_session(
+        user_id=user_db.id,
+        session_uuid=session_uuid,
         db_session=db_session,
     )
 

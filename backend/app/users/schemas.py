@@ -18,6 +18,41 @@ class UserBase(Base):
     email: EmailStr
 
 
+class SessionQuestionOptionBase(Base):
+    uuid: UUID
+    text: Annotated[
+        str,
+        StringConstraints(
+            min_length=3,
+            max_length=500,
+        ),
+    ]
+
+
+class SessionQuestionBase(Base):
+    uuid: UUID
+    text: Annotated[
+        str,
+        StringConstraints(
+            min_length=3,
+            max_length=500,
+        ),
+    ]
+    is_multiple_answers: bool
+    options: list[SessionQuestionOptionBase]
+
+
+class SessionMemberAnswerSelectedOptionBase(Base):
+    uuid: UUID
+    is_correct: bool
+
+
+class SessionMemberAnswerBase(Base):
+    question_uuid: UUID
+    selected_options: list[SessionMemberAnswerSelectedOptionBase]
+    score: float
+
+
 class SessionBase(Base):
     title: Annotated[
         str,
@@ -55,3 +90,12 @@ class GetMeSessionsResponse(Base):
     page: int
     size: int
     total_pages: int
+
+
+class GetMeSessionResponse(SummarySession):
+    questions: list[SessionQuestionBase]
+    total_questions: int
+    total_score: float
+    answers: list[SessionMemberAnswerBase]
+    total_answers: int
+    score: float
