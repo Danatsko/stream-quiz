@@ -93,6 +93,13 @@ async def create_quiz(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     quiz_db = await db_repository_create_quiz(
         title=title,
         description=description,
@@ -115,6 +122,13 @@ async def get_quizzes(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     total_quizzes_db = await get_available_quizzes_total_count(
         user_id=user_db.id,
         db_session=db_session,
@@ -181,6 +195,13 @@ async def get_quiz(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     quiz_db = await get_available_quiz_with_relations_by_uuid(
         uuid=quiz_uuid,
         user_id=user_db.id,
@@ -256,6 +277,13 @@ async def update_quiz(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     is_updated = await update_quiz_by_uuid(
         uuid=quiz_uuid,
         user_id=user_db.id,
@@ -280,6 +308,13 @@ async def full_update_quiz(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     quiz_db = await get_quiz_with_relations_by_uuid(
         uuid=quiz_uuid,
         user_id=user_db.id,
@@ -474,6 +509,13 @@ async def delete_quiz(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     is_deleted = await soft_delete_quiz_by_uuid(
         uuid=quiz_uuid,
         user_id=user_db.id,

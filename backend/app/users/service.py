@@ -125,6 +125,12 @@ async def get_me(
         db_session=db_session,
     )
 
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     result = {
         "uuid": user_db.uuid,
         "username": user_db.username,
@@ -146,6 +152,13 @@ async def get_me_sessions(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     result = await get_user_sessions(
         page=page,
         size=size,
@@ -167,6 +180,13 @@ async def get_me_session(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     result = await get_user_session(
         user_id=user_db.id,
         session_uuid=session_uuid,

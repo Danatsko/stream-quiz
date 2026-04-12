@@ -35,6 +35,13 @@ async def create_room(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     room_db = await db_repository_create_room(
         title=title,
         description=description,
@@ -57,6 +64,13 @@ async def get_rooms(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     total_rooms_db = await get_rooms_total_count(
         user_id=user_db.id,
         db_session=db_session,
@@ -114,6 +128,13 @@ async def get_room(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     room_db = await get_room_by_uuid(
         uuid=room_uuid,
         user_id=user_db.id,
@@ -151,6 +172,13 @@ async def update_room(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     is_updated = await update_room_by_uuid(
         uuid=room_uuid,
         user_id=user_db.id,
@@ -174,6 +202,13 @@ async def delete_room(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     is_deleted = await soft_delete_room_by_uuid(
         uuid=room_uuid,
         user_id=user_db.id,
@@ -200,6 +235,13 @@ async def create_session(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     room_db = await get_room_by_uuid(
         uuid=room_uuid,
         user_id=user_db.id,
@@ -236,6 +278,13 @@ async def get_sessions(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     room_db = await get_room_by_uuid(
         uuid=room_uuid,
         user_id=user_db.id,
@@ -270,6 +319,13 @@ async def get_session(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     room_db = await get_room_by_uuid(
         uuid=room_uuid,
         user_id=user_db.id,
@@ -307,6 +363,13 @@ async def update_session(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     room_db = await get_room_by_uuid(
         uuid=room_uuid,
         user_id=user_db.id,
@@ -338,6 +401,13 @@ async def delete_session(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     room_db = await get_room_by_uuid(
         uuid=room_uuid,
         user_id=user_db.id,
@@ -369,6 +439,13 @@ async def start_session(
         uuid=user_uuid,
         db_session=db_session,
     )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
     room_db = await get_room_by_uuid(
         uuid=room_uuid,
         user_id=user_db.id,
