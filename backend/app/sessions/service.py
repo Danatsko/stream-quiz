@@ -13,8 +13,8 @@ from app.quizzes.service import (
     get_available_quiz_uuids_by_ids,
     get_available_quiz_by_id,
 )
-from app.sessions.db_crud import (
-    create_session as db_crud_create_session,
+from app.sessions.db_repository import (
+    create_session as db_repository_create_session,
     get_sessions_total_count_by_room_id,
     get_sessions_list_by_room_id,
     get_session_with_relations_by_uuid,
@@ -62,7 +62,7 @@ async def create_session(
             detail="Quiz not found",
         )
 
-    session_db = await db_crud_create_session(
+    session_db = await db_repository_create_session(
         title=title,
         description=description,
         time_seconds=time_seconds,

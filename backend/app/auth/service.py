@@ -11,7 +11,7 @@ from pwdlib import PasswordHash
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.db_crud import (
+from app.auth.db_repository import (
     create_refresh_token,
     revoke_refresh_token_by_token,
     get_refresh_token_by_token,

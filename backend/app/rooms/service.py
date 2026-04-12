@@ -6,8 +6,8 @@ from fastapi import HTTPException, status
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.rooms.db_crud import (
-    create_room as db_crud_create_room,
+from app.rooms.db_repository import (
+    create_room as db_repository_create_room,
     get_rooms_total_count,
     get_rooms_list,
     update_room_by_uuid,
@@ -35,7 +35,7 @@ async def create_room(
         uuid=user_uuid,
         db_session=db_session,
     )
-    room_db = await db_crud_create_room(
+    room_db = await db_repository_create_room(
         title=title,
         description=description,
         creator_id=user_db.id,

@@ -4,15 +4,15 @@ from typing import Any
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.quizzes.db_crud import (
-    create_quiz as db_crud_create_quiz,
+from app.quizzes.db_repository import (
+    create_quiz as db_repository_create_quiz,
     get_available_quizzes_total_count,
     get_available_quizzes_list,
     get_available_quiz_with_relations_by_uuid,
-    get_available_quiz_with_relations_by_id as db_crud_get_available_quiz_with_relations_by_id,
-    get_available_quiz_by_uuid as db_crud_get_available_quiz_by_uuid,
-    get_available_quiz_by_id as db_crud_get_available_quiz_by_id,
-    get_available_quiz_uuids_by_ids as db_crud_get_available_quiz_uuids_by_ids,
+    get_available_quiz_with_relations_by_id as db_repository_get_available_quiz_with_relations_by_id,
+    get_available_quiz_by_uuid as db_repository_get_available_quiz_by_uuid,
+    get_available_quiz_by_id as db_repository_get_available_quiz_by_id,
+    get_available_quiz_uuids_by_ids as db_repository_get_available_quiz_uuids_by_ids,
     get_quiz_with_relations_by_uuid,
     update_quiz_by_uuid,
     soft_delete_quiz_by_uuid,
@@ -32,7 +32,7 @@ async def get_available_quiz_by_uuid(
     user_id: int,
     db_session: AsyncSession,
 ) -> Quiz | None:
-    quiz_db = await db_crud_get_available_quiz_by_uuid(
+    quiz_db = await db_repository_get_available_quiz_by_uuid(
         uuid=uuid,
         user_id=user_id,
         db_session=db_session,
@@ -46,7 +46,7 @@ async def get_available_quiz_by_id(
     user_id: int,
     db_session: AsyncSession,
 ) -> Quiz | None:
-    quiz_db = await db_crud_get_available_quiz_by_id(
+    quiz_db = await db_repository_get_available_quiz_by_id(
         id=id,
         user_id=user_id,
         db_session=db_session,
@@ -60,7 +60,7 @@ async def get_available_quiz_with_relations_by_id(
     user_id: int,
     db_session: AsyncSession,
 ) -> Quiz | None:
-    quiz_db = await db_crud_get_available_quiz_with_relations_by_id(
+    quiz_db = await db_repository_get_available_quiz_with_relations_by_id(
         id=id,
         user_id=user_id,
         db_session=db_session,
@@ -74,7 +74,7 @@ async def get_available_quiz_uuids_by_ids(
     user_id: int,
     db_session: AsyncSession,
 ) -> dict[int, UUID]:
-    uuids_mapping = await db_crud_get_available_quiz_uuids_by_ids(
+    uuids_mapping = await db_repository_get_available_quiz_uuids_by_ids(
         ids=ids,
         user_id=user_id,
         db_session=db_session,
@@ -93,7 +93,7 @@ async def create_quiz(
         uuid=user_uuid,
         db_session=db_session,
     )
-    quiz_db = await db_crud_create_quiz(
+    quiz_db = await db_repository_create_quiz(
         title=title,
         description=description,
         creator_id=user_db.id,
