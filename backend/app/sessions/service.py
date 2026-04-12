@@ -15,8 +15,8 @@ from app.quizzes.service import (
 )
 from app.sessions.db_crud import (
     create_session as db_crud_create_session,
-    get_sessions_total_count,
-    get_sessions_list,
+    get_sessions_total_count_by_room_id,
+    get_sessions_list_by_room_id,
     get_session_with_relations_by_uuid,
     update_session_by_uuid,
     soft_delete_session_by_uuid,
@@ -24,6 +24,8 @@ from app.sessions.db_crud import (
     bulk_create_and_return_session_questions,
     complete_session_by_id,
     bulk_create_session_members,
+    get_sessions_total_count_by_user_id,
+    get_sessions_list_by_user_id,
 )
 from app.sessions.models import SessionStatus
 from app.sessions.redis_crud import (
@@ -82,7 +84,7 @@ async def get_sessions(
     db_session: AsyncSession,
 ) -> dict[str, Any]:
     offset = (page - 1) * size
-    total_sessions_db = await get_sessions_total_count(
+    total_sessions_db = await get_sessions_total_count_by_room_id(
         room_id=room_id,
         db_session=db_session,
     )
@@ -98,7 +100,7 @@ async def get_sessions(
 
         return result
 
-    sessions_db = await get_sessions_list(
+    sessions_db = await get_sessions_list_by_room_id(
         room_id=room_id,
         limit=size,
         offset=offset,
@@ -127,6 +129,69 @@ async def get_sessions(
                 "status": session_db.status,
                 "created_at": session_db.created_at,
                 "updated_at": session_db.updated_at,
+            }
+        )
+
+    result = {
+        "sessions": sessions,
+        "total_sessions": total_sessions_db,
+        "page": page,
+        "size": size,
+        "total_pages": total_pages,
+    }
+
+    return result
+
+
+async def get_user_sessions(
+    page: int,
+    size: int,
+    user_id: int,
+    db_session: AsyncSession,
+) -> dict[str, Any]:
+    offset = (page - 1) * size
+    total_sessions_db = await get_sessions_total_count_by_user_id(
+        user_id=user_id,
+        db_session=db_session,
+    )
+
+    if total_sessions_db == 0:
+        result = {
+            "sessions": [],
+            "total_sessions": total_sessions_db,
+            "page": page,
+            "size": size,
+            "total_pages": 0,
+        }
+
+        return result
+
+    sessions_db = await get_sessions_list_by_user_id(
+        user_id=user_id,
+        limit=size,
+        offset=offset,
+        db_session=db_session,
+    )
+    quizzes_ids = {session_db.quiz_id for session_db in sessions_db}
+    quizzes_mapping = await get_available_quiz_uuids_by_ids(
+        ids=quizzes_ids,
+        user_id=user_id,
+        db_session=db_session,
+    )
+    total_pages = (total_sessions_db + size - 1) // size
+    sessions = []
+
+    for session_db in sessions_db:
+        quiz_uuid_mapped = quizzes_mapping.get(session_db.quiz_id)
+
+        sessions.append(
+            {
+                "uuid": session_db.uuid,
+                "quiz_uuid": quiz_uuid_mapped,
+                "title": session_db.title,
+                "description": session_db.description,
+                "time_seconds": session_db.time_seconds,
+                "status": session_db.status,
             }
         )
 

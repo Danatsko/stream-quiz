@@ -39,7 +39,7 @@ async def create_session(
     return result
 
 
-async def get_sessions_total_count(
+async def get_sessions_total_count_by_room_id(
     room_id: int,
     db_session: AsyncSession,
 ) -> int:
@@ -56,7 +56,25 @@ async def get_sessions_total_count(
     return result or 0
 
 
-async def get_sessions_list(
+async def get_sessions_total_count_by_user_id(
+    user_id: int,
+    db_session: AsyncSession,
+) -> int:
+    stmt = (
+        select(func.count())
+        .select_from(Session)
+        .join(Session.members)
+        .where(
+            SessionMember.user_id == user_id,
+            Session.deleted_at.is_(None),
+        )
+    )
+    result = await db_session.scalar(stmt)
+
+    return result or 0
+
+
+async def get_sessions_list_by_room_id(
     room_id: int,
     limit: int,
     offset: int,
@@ -66,6 +84,28 @@ async def get_sessions_list(
         select(Session)
         .where(
             Session.room_id == room_id,
+            Session.deleted_at.is_(None),
+        )
+        .order_by(Session.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    result = await db_session.scalars(stmt)
+
+    return list(result.all())
+
+
+async def get_sessions_list_by_user_id(
+    user_id: int,
+    limit: int,
+    offset: int,
+    db_session: AsyncSession,
+) -> list[Session]:
+    stmt = (
+        select(Session)
+        .join(Session.members)
+        .where(
+            SessionMember.user_id == user_id,
             Session.deleted_at.is_(None),
         )
         .order_by(Session.created_at.desc())

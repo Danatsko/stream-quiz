@@ -117,11 +117,11 @@ async def get_users_by_ids(
 
 
 async def get_me(
-    uuid: UUID,
+    user_uuid: UUID,
     db_session: AsyncSession,
 ) -> dict[str, Any]:
     user_db = await db_crud_get_user_by_uuid(
-        uuid=uuid,
+        uuid=user_uuid,
         db_session=db_session,
     )
 
@@ -130,5 +130,28 @@ async def get_me(
         "username": user_db.username,
         "email": user_db.email,
     }
+
+    return result
+
+
+async def get_me_sessions(
+    page: int,
+    size: int,
+    user_uuid: UUID,
+    db_session: AsyncSession,
+) -> dict[str, Any]:
+    from app.sessions.service import get_user_sessions
+
+    user_db = await db_crud_get_user_by_uuid(
+        uuid=user_uuid,
+        db_session=db_session,
+    )
+
+    result = await get_user_sessions(
+        page=page,
+        size=size,
+        user_id=user_db.id,
+        db_session=db_session,
+    )
 
     return result
