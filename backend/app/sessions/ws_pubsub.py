@@ -4,7 +4,7 @@ from uuid import UUID
 
 from redis.asyncio import Redis
 
-from app.sessions.redis_crud import get_session_events_channel
+from app.sessions.redis_store import get_session_events_channel
 from app.sessions.ws_manager import session_manager
 
 

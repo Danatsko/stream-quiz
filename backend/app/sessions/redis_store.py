@@ -166,20 +166,3 @@ async def get_session_answers(
         result[user_uuid_str] = answers
 
     return result
-
-
-async def publish_session_closed_event(
-    session_uuid: UUID,
-    redis_client: Redis,
-) -> bool:
-    channel = await get_session_events_channel(uuid=session_uuid)
-    event_payload = {
-        "event": "session_closed",
-        "message": "Session has been completed and closed",
-    }
-    receivers_count = await redis_client.publish(
-        channel=channel,
-        message=json.dumps(event_payload),
-    )
-
-    return receivers_count > 0

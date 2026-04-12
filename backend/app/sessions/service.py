@@ -29,14 +29,14 @@ from app.sessions.db_repository import (
     get_session_with_relations_by_user_id,
 )
 from app.sessions.models import SessionStatus
-from app.sessions.redis_crud import (
+from app.sessions.redis_pubsub import publish_session_closed_event
+from app.sessions.redis_store import (
     set_session_info,
     get_session_info,
     get_user_answered_question_uuids,
     save_user_answer,
     clear_session_data,
     get_session_answers,
-    publish_session_closed_event,
 )
 from app.users.service import get_users_by_ids, get_user_ids_by_uuids
 

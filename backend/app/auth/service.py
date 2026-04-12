@@ -16,7 +16,7 @@ from app.auth.db_repository import (
     revoke_refresh_token_by_token,
     get_refresh_token_by_token,
 )
-from app.auth.redis_crud import blacklist_access_token
+from app.auth.redis_store import blacklist_access_token
 from app.core.config import settings
 from app.users.service import create_user, get_user_by_email, get_user_by_id
 

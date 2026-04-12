@@ -12,7 +12,7 @@ from fastapi import (
 )
 from redis.asyncio import Redis
 
-from app.auth.redis_crud import is_access_token_blacklisted, is_user_blacklisted
+from app.auth.redis_store import is_access_token_blacklisted, is_user_blacklisted
 from app.core.config import settings
 from app.core.redis import get_redis_client
 
