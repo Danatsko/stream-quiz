@@ -362,6 +362,7 @@ const confirmDeleteSession = async (): Promise<void> => {
                     {{ sessionStatusLabels[session.status] }}
                   </AppBadge>
                 </div>
+
                 <p class="item-description">{{ session.description }}</p>
                 <div class="info-bottom">
                   <span class="meta-item">
@@ -372,7 +373,7 @@ const confirmDeleteSession = async (): Promise<void> => {
                   <div class="meta-item" v-if="session.quiz_uuid">
                     <Icon icon="mdi:book-open-variant-outline" />
 
-                    <div class="item-id" @click="copyToClipboard(session.uuid)">
+                    <div class="item-id" @click="copyToClipboard(session.quiz_uuid)">
                       {{ session.quiz_uuid }}
                       <Icon icon="mdi:content-copy" class="copy-icon" />
                     </div>

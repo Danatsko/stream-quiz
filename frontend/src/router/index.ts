@@ -124,9 +124,15 @@ const router = createRouter({
         },
         {
           path: '/history',
-          name: 'History',
-          component: () => import('@/views/HistoryView.vue'),
-          meta: { requiresAuth: true },
+          component: { render: () => h(RouterView) },
+          children: [
+            {
+              path: '',
+              name: 'History',
+              component: () => import('@/views/HistoryView.vue'),
+              meta: { requiresAuth: true },
+            },
+          ],
         },
         {
           path: '/settings',
