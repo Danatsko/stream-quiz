@@ -132,6 +132,12 @@ const router = createRouter({
               component: () => import('@/views/HistoryView.vue'),
               meta: { requiresAuth: true },
             },
+            {
+              path: ':uuid',
+              name: 'HistorySession',
+              component: () => import('@/views/HistorySessionView.vue'),
+              meta: { requiresAuth: true, nativeScroll: true },
+            },
           ],
         },
         {

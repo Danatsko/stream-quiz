@@ -29,7 +29,12 @@ const copyToClipboard = (text: string): void => {
 }
 
 const goToSession = async (uuid: string): Promise<void> => {
-  // TODO: add routing to history session
+  await router.push({
+    name: 'HistorySession',
+    params: {
+      uuid: uuid,
+    },
+  })
 }
 
 onMounted(async () => {
