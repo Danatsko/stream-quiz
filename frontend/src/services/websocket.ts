@@ -1,4 +1,4 @@
-const WS_URL = 'ws://localhost:8000/ws/v1'
+const WS_URL: string = import.meta.env.VITE_WS_URL
 
 export class WebSocketService {
   private ws: WebSocket | null = null
