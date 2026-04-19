@@ -38,12 +38,12 @@ onKeyStroke('Tab', (e) => {
   if (e.shiftKey) {
     if (document.activeElement === firstElement || document.activeElement === document.body) {
       e.preventDefault()
-      lastElement.focus()
+      lastElement?.focus()
     }
   } else {
     if (document.activeElement === lastElement) {
       e.preventDefault()
-      firstElement.focus()
+      firstElement?.focus()
     }
   }
 })

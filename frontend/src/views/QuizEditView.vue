@@ -271,7 +271,9 @@ const toggleMultipleAnswers = (uiUuid: string): void => {
     })
 
     if (!foundCorrect && question.options.length > 0) {
-      question.options[0].is_correct = true
+      if (question.options[0]) {
+        question.options[0].is_correct = true
+      }
     }
   }
 }
