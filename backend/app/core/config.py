@@ -112,6 +112,7 @@ class AuthSettings(CustomBaseSettings):
     access_token_expire_seconds: int
     refresh_token_expire_seconds: int
     refresh_token_pepper: SecretStr
+    refresh_token_cookie_path: str = "/api/v1/auth"
     password_pepper: SecretStr
 
 

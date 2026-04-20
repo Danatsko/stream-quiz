@@ -60,6 +60,7 @@ async def registration(
         secure=(not settings.app.debug),
         samesite="lax",
         max_age=settings.auth.refresh_token_expire_seconds,
+        path=settings.auth.refresh_token_cookie_path,
     )
 
 
@@ -95,6 +96,7 @@ async def login(
         secure=(not settings.app.debug),
         samesite="lax",
         max_age=settings.auth.refresh_token_expire_seconds,
+        path=settings.auth.refresh_token_cookie_path,
     )
 
 
@@ -137,6 +139,7 @@ async def logout(
         httponly=True,
         secure=(not settings.app.debug),
         samesite="lax",
+        path=settings.auth.refresh_token_cookie_path,
     )
 
 
