@@ -7,9 +7,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_current_auth_context
 from app.core.db import get_db_session
 from app.core.limiter import limiter
-from app.users.schemas import GetMeResponse, GetMeSessionsResponse, GetMeSessionResponse
+from app.users.schemas import (
+    GetMeResponse,
+    GetMeSessionsResponse,
+    GetMeSessionResponse,
+    UpdateMeRequest,
+)
 from app.users.service import (
     get_me as service_get_me,
+    update_me as service_update_me,
     get_me_sessions as service_get_me_sessions,
     get_me_session as service_get_me_session,
 )
@@ -38,6 +44,26 @@ async def get_me(
         uuid=result["uuid"],
         username=result["username"],
         email=result["email"],
+    )
+
+
+@users_router.patch(
+    path="/me",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+@limiter.limit("300/minute")
+async def update_me(
+    request: Request,
+    update_me_data: UpdateMeRequest,
+    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> None:
+    user_uuid = auth_context["user_uuid"]
+
+    await service_update_me(
+        user_uuid=user_uuid,
+        update_me_data=update_me_data.model_dump(exclude_unset=True),
+        db_session=db_session,
     )
 
 

@@ -1,6 +1,7 @@
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.users.models import User
@@ -114,3 +115,24 @@ async def get_users_by_ids(
     result = dict(result.all())
 
     return result
+
+
+async def update_user_by_uuid(
+    uuid: UUID,
+    update_user_data: dict[str, Any],
+    db_session: AsyncSession,
+) -> bool:
+    if not update_user_data:
+        return False
+
+    stmt = (
+        update(User)
+        .where(
+            User.uuid == uuid,
+            User.deleted_at.is_(None),
+        )
+        .values(**update_user_data)
+    )
+    result = await db_session.execute(stmt)
+
+    return result.rowcount == 1

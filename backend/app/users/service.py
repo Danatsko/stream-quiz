@@ -13,6 +13,7 @@ from app.users.db_repository import (
     get_user_uuids_by_ids as db_repository_get_user_uuids_by_ids,
     get_user_ids_by_uuids as db_repository_get_user_ids_by_uuids,
     get_users_by_ids as db_repository_get_users_by_ids,
+    update_user_by_uuid,
 )
 from app.users.models import User
 
@@ -138,6 +139,27 @@ async def get_me(
     }
 
     return result
+
+
+async def update_me(
+    user_uuid: UUID,
+    update_me_data: dict[str, Any],
+    db_session: AsyncSession,
+) -> None:
+    if not update_me_data:
+        return
+
+    is_updated = await update_user_by_uuid(
+        uuid=user_uuid,
+        update_user_data=update_me_data,
+        db_session=db_session,
+    )
+
+    if not is_updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
 
 
 async def get_me_sessions(

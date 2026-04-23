@@ -1,7 +1,7 @@
 from uuid import UUID
 from typing import Annotated
 
-from pydantic import StringConstraints, EmailStr, Field
+from pydantic import StringConstraints, EmailStr, Field, field_validator
 
 from app.core.schemas import Base
 
@@ -76,6 +76,27 @@ class SessionBase(Base):
 
 class GetMeResponse(UserBase):
     pass
+
+
+class UpdateMeRequest(Base):
+    username: (
+        Annotated[
+            str,
+            StringConstraints(
+                min_length=3,
+                max_length=30,
+            ),
+        ]
+        | None
+    ) = None
+
+    @field_validator("username")
+    @classmethod
+    def prevent_explicit_null(cls, value):
+        if value is None:
+            raise ValueError("Null is not allowed for this field")
+
+        return value
 
 
 class SummarySession(SessionBase):
