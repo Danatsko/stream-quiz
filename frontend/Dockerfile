@@ -29,13 +29,6 @@ FROM base AS builder
 
 ENV NODE_ENV=production
 
-ARG VITE_API_URL
-
-ARG VITE_WS_URL
-
-ENV VITE_API_URL=$VITE_API_URL \
-    VITE_WS_URL=$VITE_WS_URL
-
 WORKDIR /app
 
 COPY --link --from=deps /app/node_modules ./node_modules
@@ -54,10 +47,16 @@ COPY --link nginx/default.conf /etc/nginx/conf.d/default.conf
 
 RUN rm /docker-entrypoint.d/20-envsubst-on-templates.sh
 
+COPY --link entrypoint.sh /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh
+
+COPY --link --from=builder --chown=101:101 /app/dist /usr/share/nginx/html
+
 USER nginx
 
-COPY --link --from=builder /app/dist /usr/share/nginx/html
-
 EXPOSE 8080
+
+ENTRYPOINT ["/entrypoint.sh"]
 
 CMD ["nginx", "-g", "daemon off;"]

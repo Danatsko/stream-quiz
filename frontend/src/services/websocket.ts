@@ -1,4 +1,4 @@
-const WS_URL: string = import.meta.env.VITE_WS_URL
+const WS_URL: string = window.APP_CONFIG.WS_URL
 
 export class WebSocketService {
   private ws: WebSocket | null = null

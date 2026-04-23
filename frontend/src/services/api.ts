@@ -1,7 +1,7 @@
 import axios from 'axios'
 import router from '@/router'
 
-const API_URL: string = import.meta.env.VITE_API_URL
+const API_URL: string = window.APP_CONFIG.API_URL
 
 const api = axios.create({
   baseURL: API_URL,
