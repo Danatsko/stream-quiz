@@ -6,7 +6,7 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_auth_context
-from app.core.config import settings
+from app.auth.web_utils import clear_auth_cookies
 from app.core.db import get_db_session
 from app.core.limiter import limiter
 from app.core.redis import get_redis_client
@@ -91,19 +91,7 @@ async def delete_me(
         redis_client=redis_client,
     )
 
-    response.delete_cookie(
-        key="access_token",
-        httponly=True,
-        secure=(not settings.app.debug),
-        samesite="lax",
-    )
-    response.delete_cookie(
-        key="refresh_token",
-        httponly=True,
-        secure=(not settings.app.debug),
-        samesite="lax",
-        path=settings.auth.refresh_token_cookie_path,
-    )
+    await clear_auth_cookies(response=response)
 
 
 @users_router.get(

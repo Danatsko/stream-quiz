@@ -20,7 +20,7 @@ from app.auth.service import (
     logout as service_logout,
     refresh as service_refresh,
 )
-from app.core.config import settings
+from app.auth.web_utils import set_auth_cookies, clear_auth_cookies
 from app.core.db import get_db_session
 from app.core.limiter import limiter
 from app.core.redis import get_redis_client
@@ -45,22 +45,10 @@ async def registration(
         db_session=db_session,
     )
 
-    response.set_cookie(
-        key="access_token",
-        value=result["access_token"],
-        httponly=True,
-        secure=(not settings.app.debug),
-        samesite="lax",
-        max_age=settings.auth.access_token_expire_seconds,
-    )
-    response.set_cookie(
-        key="refresh_token",
-        value=result["refresh_token"],
-        httponly=True,
-        secure=(not settings.app.debug),
-        samesite="lax",
-        max_age=settings.auth.refresh_token_expire_seconds,
-        path=settings.auth.refresh_token_cookie_path,
+    await set_auth_cookies(
+        response=response,
+        access_token=result["access_token"],
+        refresh_token=result["refresh_token"],
     )
 
 
@@ -81,22 +69,10 @@ async def login(
         db_session=db_session,
     )
 
-    response.set_cookie(
-        key="access_token",
-        value=result["access_token"],
-        httponly=True,
-        secure=(not settings.app.debug),
-        samesite="lax",
-        max_age=settings.auth.access_token_expire_seconds,
-    )
-    response.set_cookie(
-        key="refresh_token",
-        value=result["refresh_token"],
-        httponly=True,
-        secure=(not settings.app.debug),
-        samesite="lax",
-        max_age=settings.auth.refresh_token_expire_seconds,
-        path=settings.auth.refresh_token_cookie_path,
+    await set_auth_cookies(
+        response=response,
+        access_token=result["access_token"],
+        refresh_token=result["refresh_token"],
     )
 
 
@@ -128,19 +104,7 @@ async def logout(
         redis_client=redis_client,
     )
 
-    response.delete_cookie(
-        key="access_token",
-        httponly=True,
-        secure=(not settings.app.debug),
-        samesite="lax",
-    )
-    response.delete_cookie(
-        key="refresh_token",
-        httponly=True,
-        secure=(not settings.app.debug),
-        samesite="lax",
-        path=settings.auth.refresh_token_cookie_path,
-    )
+    await clear_auth_cookies(response=response)
 
 
 @auth_router.post(
@@ -171,11 +135,7 @@ async def refresh(
         redis_client=redis_client,
     )
 
-    response.set_cookie(
-        key="access_token",
-        value=result["access_token"],
-        httponly=True,
-        secure=(not settings.app.debug),
-        samesite="lax",
-        max_age=settings.auth.access_token_expire_seconds,
+    await set_auth_cookies(
+        response=response,
+        access_token=result["access_token"],
     )
