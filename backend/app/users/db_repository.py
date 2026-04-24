@@ -1,7 +1,7 @@
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select, insert, update
+from sqlalchemy import select, insert, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.users.models import User
@@ -132,6 +132,23 @@ async def update_user_by_uuid(
             User.deleted_at.is_(None),
         )
         .values(**update_user_data)
+    )
+    result = await db_session.execute(stmt)
+
+    return result.rowcount == 1
+
+
+async def soft_delete_user_by_uuid(
+    uuid: UUID,
+    db_session: AsyncSession,
+) -> bool:
+    stmt = (
+        update(User)
+        .where(
+            User.uuid == uuid,
+            User.deleted_at.is_(None),
+        )
+        .values(deleted_at=func.now())
     )
     result = await db_session.execute(stmt)
 

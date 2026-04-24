@@ -41,6 +41,21 @@ async def is_access_token_blacklisted(
     return value is not None
 
 
+async def blacklist_user(
+    user_uuid: UUID,
+    ttl: int,
+    redis_client: Redis,
+) -> bool:
+    key = await get_blacklist_user_key(uuid=user_uuid)
+    result = await redis_client.set(
+        name=key,
+        value=1,
+        ex=ttl,
+    )
+
+    return result is not None
+
+
 async def is_user_blacklisted(
     user_uuid: UUID,
     redis_client: Redis,

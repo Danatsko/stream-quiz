@@ -1,12 +1,15 @@
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, status, Request, Depends, Query
+from fastapi import APIRouter, status, Request, Depends, Query, Response
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_auth_context
+from app.core.config import settings
 from app.core.db import get_db_session
 from app.core.limiter import limiter
+from app.core.redis import get_redis_client
 from app.users.schemas import (
     GetMeResponse,
     GetMeSessionsResponse,
@@ -16,6 +19,7 @@ from app.users.schemas import (
 from app.users.service import (
     get_me as service_get_me,
     update_me as service_update_me,
+    delete_me as service_delete_me,
     get_me_sessions as service_get_me_sessions,
     get_me_session as service_get_me_session,
 )
@@ -64,6 +68,41 @@ async def update_me(
         user_uuid=user_uuid,
         update_me_data=update_me_data.model_dump(exclude_unset=True),
         db_session=db_session,
+    )
+
+
+@users_router.delete(
+    path="/me",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+@limiter.limit("300/minute")
+async def delete_me(
+    request: Request,
+    response: Response,
+    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
+    redis_client: Annotated[Redis, Depends(get_redis_client)],
+) -> None:
+    user_uuid = auth_context["user_uuid"]
+
+    await service_delete_me(
+        user_uuid=user_uuid,
+        db_session=db_session,
+        redis_client=redis_client,
+    )
+
+    response.delete_cookie(
+        key="access_token",
+        httponly=True,
+        secure=(not settings.app.debug),
+        samesite="lax",
+    )
+    response.delete_cookie(
+        key="refresh_token",
+        httponly=True,
+        secure=(not settings.app.debug),
+        samesite="lax",
+        path=settings.auth.refresh_token_cookie_path,
     )
 
 

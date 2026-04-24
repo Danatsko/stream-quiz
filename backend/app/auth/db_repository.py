@@ -54,3 +54,19 @@ async def revoke_refresh_token_by_token(
     result = await db_session.execute(stmt)
 
     return result.rowcount == 1
+
+
+async def revoke_all_refresh_tokens_by_user_id(
+    user_id: int,
+    db_session: AsyncSession,
+) -> None:
+    stmt = (
+        update(RefreshToken)
+        .where(
+            RefreshToken.user_id == user_id,
+            RefreshToken.is_revoked.is_(False),
+        )
+        .values(is_revoked=True)
+    )
+
+    await db_session.execute(stmt)

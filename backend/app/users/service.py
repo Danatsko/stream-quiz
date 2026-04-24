@@ -2,6 +2,7 @@ from uuid import UUID
 from typing import Any
 
 from fastapi import HTTPException, status
+from redis.asyncio import Redis
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,6 +15,7 @@ from app.users.db_repository import (
     get_user_ids_by_uuids as db_repository_get_user_ids_by_uuids,
     get_users_by_ids as db_repository_get_users_by_ids,
     update_user_by_uuid,
+    soft_delete_user_by_uuid,
 )
 from app.users.models import User
 
@@ -160,6 +162,46 @@ async def update_me(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
+
+
+async def delete_me(
+    user_uuid: UUID,
+    db_session: AsyncSession,
+    redis_client: Redis,
+) -> None:
+    from app.auth.service import blacklist_user, revoke_all_refresh_tokens_by_user_id
+
+    user_db = await db_repository_get_user_by_uuid(
+        uuid=user_uuid,
+        db_session=db_session,
+    )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    is_deleted = await soft_delete_user_by_uuid(
+        uuid=user_db.uuid,
+        db_session=db_session,
+    )
+
+    if not is_deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    await revoke_all_refresh_tokens_by_user_id(
+        user_id=user_db.id,
+        db_session=db_session,
+    )
+
+    await blacklist_user(
+        user_uuid=user_db.uuid,
+        redis_client=redis_client,
+    )
 
 
 async def get_me_sessions(

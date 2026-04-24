@@ -15,8 +15,12 @@ from app.auth.db_repository import (
     create_refresh_token,
     revoke_refresh_token_by_token,
     get_refresh_token_by_token,
+    revoke_all_refresh_tokens_by_user_id as db_repository_revoke_all_refresh_tokens_by_user_id,
 )
-from app.auth.redis_store import blacklist_access_token
+from app.auth.redis_store import (
+    blacklist_access_token,
+    blacklist_user as redis_store_blacklist_user,
+)
 from app.core.config import settings
 from app.users.service import create_user, get_user_by_email, get_user_by_id
 
@@ -95,6 +99,29 @@ async def verify_password(
     )
 
     return is_verified
+
+
+async def blacklist_user(
+    user_uuid: UUID,
+    redis_client: Redis,
+) -> bool:
+    is_blacklisted = await redis_store_blacklist_user(
+        user_uuid=user_uuid,
+        ttl=settings.auth.access_token_expire_seconds,
+        redis_client=redis_client,
+    )
+
+    return is_blacklisted
+
+
+async def revoke_all_refresh_tokens_by_user_id(
+    user_id: int,
+    db_session: AsyncSession,
+) -> None:
+    await db_repository_revoke_all_refresh_tokens_by_user_id(
+        user_id=user_id,
+        db_session=db_session,
+    )
 
 
 async def registration(
