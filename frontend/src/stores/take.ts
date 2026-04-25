@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { WebSocketService } from '@/services/websocket'
 import type { GameQuestion, IncomingWsMessage, SubmitAnswerPayload } from '@/types/take'
+import useNotificationsStore from '@/stores/notifications'
 
 export const useTakeStore = defineStore('take', () => {
   const wsService = ref<WebSocketService | null>(null)
@@ -43,11 +44,15 @@ export const useTakeStore = defineStore('take', () => {
       isConnected.value = false
 
       if (event.code === 1008) {
-        error.value = event.reason || 'Session is not active'
+        const msg = event.reason || 'Session is not active'
+        error.value = msg
+
+        useNotificationsStore().addNotification(msg, 'error')
       }
     }
     wsService.value.onError = (message: string): void => {
       error.value = message
+      useNotificationsStore().addNotification(message, 'error')
     }
 
     wsService.value.connect()
@@ -65,10 +70,13 @@ export const useTakeStore = defineStore('take', () => {
       case 'error':
         error.value = message.message
 
+        useNotificationsStore().addNotification(message.message, 'error')
+
         break
       case 'session_closed':
         error.value = 'Session has been closed'
 
+        useNotificationsStore().addNotification('Session has been closed', 'info')
         disconnectFromSession()
 
         break

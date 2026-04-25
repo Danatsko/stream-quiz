@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { AxiosError } from 'axios'
 import type { LoginPayload, RegistrationPayload } from '@/types/auth'
 import type { User } from '@/types/user'
 import { authAPI } from '@/api/auth'
@@ -10,29 +9,19 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const isLoading = ref<boolean>(false)
   const isAuthChecked = ref<boolean>(false)
-  const error = ref<string | null>(null)
 
   const isAuthenticated = computed((): boolean => {
     return !!user.value
   })
 
-  const resetError = (): void => {
-    error.value = null
-  }
-
   const registration = async (payload: RegistrationPayload): Promise<void> => {
     isLoading.value = true
-    resetError()
 
     try {
       await authAPI.registration(payload)
       isAuthChecked.value = false
       await getMe()
     } catch (registrationError) {
-      if (registrationError instanceof AxiosError) {
-        error.value = registrationError.response?.data?.detail || 'Error during registration'
-      }
-
       throw registrationError
     } finally {
       isLoading.value = false
@@ -41,17 +30,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   const login = async (payload: LoginPayload): Promise<void> => {
     isLoading.value = true
-    resetError()
 
     try {
       await authAPI.login(payload)
       isAuthChecked.value = false
       await getMe()
     } catch (loginError) {
-      if (loginError instanceof AxiosError) {
-        error.value = loginError.response?.data?.detail || 'Error during login'
-      }
-
       throw loginError
     } finally {
       isLoading.value = false
@@ -69,7 +53,6 @@ export const useAuthStore = defineStore('auth', () => {
       throw logoutError
     } finally {
       user.value = null
-      error.value = null
       isLoading.value = false
       isAuthChecked.value = true
     }
@@ -96,7 +79,6 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     isLoading,
     isAuthChecked,
-    error,
     isAuthenticated,
     registration,
     login,

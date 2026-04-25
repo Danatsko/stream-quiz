@@ -1,5 +1,6 @@
 import axios from 'axios'
 import router from '@/router'
+import useNotificationsStore from '@/stores/notifications'
 
 const API_URL: string = window.APP_CONFIG.API_URL
 
@@ -43,6 +44,27 @@ api.interceptors.response.use(
         return Promise.reject(refreshError)
       }
     }
+
+    let errorMessage = 'An unknown error occurred'
+    const detail = error.response?.data?.detail
+
+    if (detail) {
+      if (Array.isArray(detail)) {
+        const isUuidError = detail.some((err: any) => err.type === 'uuid_parsing')
+
+        if (isUuidError) {
+          errorMessage = 'Invalid identifier passed'
+        } else {
+          errorMessage = detail.map((err: any) => err.msg).join(', ')
+        }
+      } else if (typeof detail === 'string') {
+        errorMessage = detail
+      }
+    }
+
+    const notificationsStore = useNotificationsStore()
+
+    notificationsStore.addNotification(errorMessage, 'error')
 
     return Promise.reject(error)
   },

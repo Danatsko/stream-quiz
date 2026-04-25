@@ -18,38 +18,26 @@ export const useQuizzesStore = defineStore('quizzes', () => {
   const size = 10
   const totalPages = ref<number | null>(null)
   const isLoading = ref<boolean>(false)
-  const error = ref<string | null>(null)
-
-  const resetError = (): void => {
-    error.value = null
-  }
 
   const clearQuizzes = (): void => {
     quizzes.value = []
     totalQuizzes.value = null
     page.value = null
     totalPages.value = null
-    resetError()
   }
 
   const clearQuiz = (): void => {
     quiz.value = null
-    resetError()
   }
 
   const createQuiz = async (payload: CreateQuizPayload): Promise<string> => {
     isLoading.value = true
-    resetError()
 
     try {
       const response = await quizzesAPI.createQuiz(payload)
 
       return response.uuid
     } catch (createQuizError) {
-      if (createQuizError instanceof AxiosError) {
-        error.value = createQuizError.response?.data?.detail || 'Error during create quiz'
-      }
-
       throw createQuizError
     } finally {
       isLoading.value = false
@@ -62,7 +50,6 @@ export const useQuizzesStore = defineStore('quizzes', () => {
     }
 
     isLoading.value = true
-    resetError()
 
     try {
       const nextPage = page.value === null ? 1 : page.value + 1
@@ -72,10 +59,6 @@ export const useQuizzesStore = defineStore('quizzes', () => {
       page.value = response.page
       totalPages.value = response.total_pages
     } catch (getQuizzesError) {
-      if (getQuizzesError instanceof AxiosError) {
-        error.value = getQuizzesError.response?.data?.detail || 'Error during get quizzes'
-      }
-
       throw getQuizzesError
     } finally {
       isLoading.value = false
@@ -84,15 +67,10 @@ export const useQuizzesStore = defineStore('quizzes', () => {
 
   const getQuiz = async (uuid: string): Promise<void> => {
     isLoading.value = true
-    resetError()
 
     try {
       quiz.value = await quizzesAPI.getQuiz(uuid)
     } catch (getQuizError) {
-      if (getQuizError instanceof AxiosError) {
-        error.value = getQuizError.response?.data?.detail || 'Error during get quiz'
-      }
-
       throw getQuizError
     } finally {
       isLoading.value = false
@@ -101,15 +79,10 @@ export const useQuizzesStore = defineStore('quizzes', () => {
 
   const updateQuiz = async (uuid: string, payload: UpdateQuizPayload): Promise<void> => {
     isLoading.value = true
-    resetError()
 
     try {
       await quizzesAPI.updateQuiz(uuid, payload)
     } catch (updateQuizError) {
-      if (updateQuizError instanceof AxiosError) {
-        error.value = updateQuizError.response?.data?.detail || 'Error during update quiz'
-      }
-
       throw updateQuizError
     } finally {
       isLoading.value = false
@@ -118,15 +91,10 @@ export const useQuizzesStore = defineStore('quizzes', () => {
 
   const fullUpdateQuiz = async (uuid: string, payload: FullUpdateQuizPayload): Promise<void> => {
     isLoading.value = true
-    resetError()
 
     try {
       await quizzesAPI.fullUpdateQuiz(uuid, payload)
     } catch (fullUpdateQuizError) {
-      if (fullUpdateQuizError instanceof AxiosError) {
-        error.value = fullUpdateQuizError.response?.data?.detail || 'Error during full update quiz'
-      }
-
       throw fullUpdateQuizError
     } finally {
       isLoading.value = false
@@ -135,7 +103,6 @@ export const useQuizzesStore = defineStore('quizzes', () => {
 
   const deleteQuiz = async (uuid: string): Promise<void> => {
     isLoading.value = true
-    resetError()
 
     try {
       await quizzesAPI.deleteQuiz(uuid)
@@ -146,10 +113,6 @@ export const useQuizzesStore = defineStore('quizzes', () => {
         quiz.value = null
       }
     } catch (deleteQuizError) {
-      if (deleteQuizError instanceof AxiosError) {
-        error.value = deleteQuizError.response?.data?.detail || 'Error during delete quiz'
-      }
-
       throw deleteQuizError
     } finally {
       isLoading.value = false
@@ -164,7 +127,6 @@ export const useQuizzesStore = defineStore('quizzes', () => {
     size,
     totalPages,
     isLoading,
-    error,
     clearQuizzes,
     clearQuiz,
     createQuiz,

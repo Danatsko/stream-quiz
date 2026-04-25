@@ -143,6 +143,8 @@ const closeDropdowns = (): void => {
 }
 
 onMounted(async () => {
+  document.addEventListener('click', closeDropdowns)
+
   if (roomUuid.value) {
     try {
       await roomsStore.getRoom(roomUuid.value)
@@ -158,13 +160,14 @@ onMounted(async () => {
 
         return
       }
+
+      await roomsStore.getSessions(roomUuid.value)
     } catch (onMountedError) {
       await router.push({ name: 'Rooms' })
+
+      return
     }
   }
-
-  document.addEventListener('click', closeDropdowns)
-  await roomsStore.getSessions(roomUuid.value)
 })
 
 onBeforeUnmount(() => {
