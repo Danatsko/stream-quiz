@@ -23,7 +23,7 @@ COPY --link . .
 
 EXPOSE 5173
 
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+CMD ["sh", "-c", "echo \"window.APP_CONFIG = { API_URL: '${API_URL}', WS_URL: '${WS_URL}' };\" > public/config.js && npm run dev -- --host 0.0.0.0"]
 
 FROM base AS builder
 
