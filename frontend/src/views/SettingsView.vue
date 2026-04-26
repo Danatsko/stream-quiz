@@ -29,7 +29,8 @@ const copyToClipboard = (text: string): void => {
       <div class="header-content">
         <div class="header-actions">
           <AppButton class="btn-logout" @click="handleLogout" :disabled="authStore.isLoading">
-            {{ authStore.isLoading ? 'Processing' : 'Log out' }}
+            <span v-if="authStore.isLoading">Processing</span>
+            <Icon v-else icon="mdi:logout" />
           </AppButton>
         </div>
       </div>

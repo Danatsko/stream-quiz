@@ -415,7 +415,7 @@ const saveChanges = async (): Promise<void> => {
     <header class="header">
       <div class="header-content">
         <AppButton @click="goBack" :disabled="isSaving">
-          <span>Cancel</span>
+          <Icon icon="mdi:cancel-outline" />
         </AppButton>
 
         <div class="header-actions">
@@ -423,9 +423,12 @@ const saveChanges = async (): Promise<void> => {
             @click="saveChanges"
             :disabled="isSaving || !isFormValid || isLoading || !hasChanges"
           >
-            {{ isSaving ? 'Processing' : 'Save' }}
+            <span v-if="isSaving">Processing</span>
+            <Icon v-else icon="mdi:content-save-outline" />
           </AppButton>
-          <AppButton class="btn-delete" @click="openDeleteQuizDialog">Delete</AppButton>
+          <AppButton class="btn-delete" @click="openDeleteQuizDialog">
+            <Icon icon="mdi:delete-outline" />
+          </AppButton>
         </div>
       </div>
     </header>
@@ -549,7 +552,7 @@ const saveChanges = async (): Promise<void> => {
                       class="btn-delete"
                       @click="removeOption(question.uiUuid, option.uiUuid)"
                     >
-                      <span>Delete</span>
+                      <Icon icon="mdi:cancel-outline" />
                     </AppButton>
                   </template>
                 </AppListCard>
@@ -569,7 +572,7 @@ const saveChanges = async (): Promise<void> => {
 
             <template v-slot:actions>
               <AppButton class="btn-delete" @click="removeQuestion(question.uiUuid)">
-                <span>Delete</span>
+                <Icon icon="mdi:cancel-outline" />
               </AppButton>
             </template>
           </AppListCard>

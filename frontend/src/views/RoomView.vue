@@ -274,12 +274,16 @@ const confirmDeleteSession = async (): Promise<void> => {
     <header class="header">
       <div class="header-content" :style="{ justifyContent: 'space-between' }">
         <AppButton @click="goBack">
-          <span>Back to rooms</span>
+          <Icon icon="mdi:chevron-left" />
         </AppButton>
 
         <div class="header-actions">
-          <AppButton @click="goToRoomEdit"> Edit </AppButton>
-          <AppButton class="btn-delete" @click="openDeleteRoomDialog">Delete</AppButton>
+          <AppButton @click="goToRoomEdit">
+            <Icon icon="mdi:edit-outline" />
+          </AppButton>
+          <AppButton class="btn-delete" @click="openDeleteRoomDialog">
+            <Icon icon="mdi:delete-outline" />
+          </AppButton>
         </div>
       </div>
     </header>
@@ -406,7 +410,9 @@ const confirmDeleteSession = async (): Promise<void> => {
               </template>
 
               <template v-slot:actions>
-                <AppButton @click="goToSession(session.uuid)">View</AppButton>
+                <AppButton @click="goToSession(session.uuid)">
+                  <Icon icon="mdi:eye-outline" />
+                </AppButton>
 
                 <div class="context-menu-wrapper" v-if="session.status === 'waiting'">
                   <AppButton @click.stop="toggleMenu(session.uuid)">
@@ -415,13 +421,13 @@ const confirmDeleteSession = async (): Promise<void> => {
 
                   <div class="dropdown-menu" v-if="activeMenuUuid === session.uuid" @click.stop>
                     <AppButton @click="goToSessionEdit(session.uuid)">
-                      <span>Edit</span>
+                      <Icon icon="mdi:edit-outline" />
                     </AppButton>
 
                     <div class="dropdown-divider"></div>
 
                     <AppButton class="btn-delete" @click="openDeleteSessionDialog(session.uuid)">
-                      <span>Delete</span>
+                      <Icon icon="mdi:delete-outline" />
                     </AppButton>
                   </div>
                 </div>
@@ -798,15 +804,18 @@ const confirmDeleteSession = async (): Promise<void> => {
   display: inline-block;
 }
 .dropdown-menu {
+  background: var(--color-background);
+  border-radius: 9px;
   position: absolute;
   right: 0;
   top: 100%;
   margin-top: 0.5rem;
-  min-width: 100px;
   z-index: 50;
   display: flex;
   flex-direction: column;
+  align-items: center;
   animation: dropdownFadeIn 0.15s ease-out;
+  gap: 0.15rem;
 }
 @keyframes dropdownFadeIn {
   from {

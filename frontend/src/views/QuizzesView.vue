@@ -238,7 +238,9 @@ const confirmDeleteQuiz = async (): Promise<void> => {
           </template>
 
           <template v-slot:actions>
-            <AppButton @click="goToQuiz(quiz.uuid)">View</AppButton>
+            <AppButton @click="goToQuiz(quiz.uuid)">
+              <Icon icon="mdi:eye-outline" />
+            </AppButton>
 
             <div class="context-menu-wrapper" v-if="quiz.creator_uuid === currentUserUuid">
               <AppButton @click.stop="toggleMenu(quiz.uuid)">
@@ -247,13 +249,13 @@ const confirmDeleteQuiz = async (): Promise<void> => {
 
               <div class="dropdown-menu" v-if="activeMenuUuid === quiz.uuid" @click.stop>
                 <AppButton @click="goToEdit(quiz.uuid)">
-                  <span>Edit</span>
+                  <Icon icon="mdi:edit-outline" />
                 </AppButton>
 
                 <div class="dropdown-divider"></div>
 
                 <AppButton class="btn-delete" @click="openDeleteQuizDialog(quiz.uuid)">
-                  <span>Delete</span>
+                  <Icon icon="mdi:delete-outline" />
                 </AppButton>
               </div>
             </div>
@@ -492,15 +494,18 @@ const confirmDeleteQuiz = async (): Promise<void> => {
   display: inline-block;
 }
 .dropdown-menu {
+  background: var(--color-background);
+  border-radius: 9px;
   position: absolute;
   right: 0;
   top: 100%;
   margin-top: 0.5rem;
-  min-width: 100px;
   z-index: 50;
   display: flex;
   flex-direction: column;
+  align-items: center;
   animation: dropdownFadeIn 0.15s ease-out;
+  gap: 0.15rem;
 }
 @keyframes dropdownFadeIn {
   from {

@@ -70,7 +70,7 @@ const handleSubmit = async () => {
           id="email"
           type="email"
           label="Email"
-          placeholder="xxxxx@xxxxx.com"
+          placeholder="xxxxx@xxxxx.xxxxx"
           v-model="loginForm.email"
           :has-error="!!loginForm.email && !isEmailValid"
           error-message="Invalid email"

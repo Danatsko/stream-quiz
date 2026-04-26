@@ -197,7 +197,9 @@ const confirmDeleteRoom = async (): Promise<void> => {
           </template>
 
           <template v-slot:actions>
-            <AppButton @click="goToRoom(room.uuid)">View</AppButton>
+            <AppButton @click="goToRoom(room.uuid)">
+              <Icon icon="mdi:eye-outline" />
+            </AppButton>
 
             <div class="context-menu-wrapper">
               <AppButton @click.stop="toggleMenu(room.uuid)">
@@ -206,13 +208,13 @@ const confirmDeleteRoom = async (): Promise<void> => {
 
               <div class="dropdown-menu" v-if="activeMenuUuid === room.uuid" @click.stop>
                 <AppButton @click="goToEdit(room.uuid)">
-                  <span>Edit</span>
+                  <Icon icon="mdi:edit-outline" />
                 </AppButton>
 
                 <div class="dropdown-divider"></div>
 
                 <AppButton class="btn-delete" @click="openDeleteRoomDialog(room.uuid)">
-                  <span>Delete</span>
+                  <Icon icon="mdi:delete-outline" />
                 </AppButton>
               </div>
             </div>
@@ -380,15 +382,18 @@ const confirmDeleteRoom = async (): Promise<void> => {
   display: inline-block;
 }
 .dropdown-menu {
+  background: var(--color-background);
+  border-radius: 9px;
   position: absolute;
   right: 0;
   top: 100%;
   margin-top: 0.5rem;
-  min-width: 100px;
   z-index: 50;
   display: flex;
   flex-direction: column;
+  align-items: center;
   animation: dropdownFadeIn 0.15s ease-out;
+  gap: 0.15rem;
 }
 @keyframes dropdownFadeIn {
   from {

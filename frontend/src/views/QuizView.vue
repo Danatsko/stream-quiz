@@ -100,12 +100,16 @@ const confirmDeleteQuiz = async (): Promise<void> => {
     <header class="header">
       <div class="header-content">
         <AppButton @click="goBack">
-          <span>Back to quizzes</span>
+          <Icon icon="mdi:chevron-left" />
         </AppButton>
 
         <div class="header-actions" v-if="isCreator && quiz">
-          <AppButton @click="goToEdit"> Edit </AppButton>
-          <AppButton class="btn-delete" @click="openDeleteQuizDialog">Delete</AppButton>
+          <AppButton @click="goToEdit">
+            <Icon icon="mdi:edit-outline" />
+          </AppButton>
+          <AppButton class="btn-delete" @click="openDeleteQuizDialog">
+            <Icon icon="mdi:delete-outline" />
+          </AppButton>
         </div>
       </div>
     </header>

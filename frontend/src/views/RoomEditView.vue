@@ -171,7 +171,7 @@ const confirmDeleteRoom = async (): Promise<void> => {
     <header class="header">
       <div class="header-content" :style="{ justifyContent: 'space-between' }">
         <AppButton @click="goBack">
-          <span>Cancel</span>
+          <Icon icon="mdi:cancel-outline" />
         </AppButton>
 
         <div class="header-actions">
@@ -179,9 +179,12 @@ const confirmDeleteRoom = async (): Promise<void> => {
             @click="saveChanges"
             :disabled="isSaving || !isFormValid || isLoading || !hasChanges"
           >
-            {{ isSaving ? 'Processing' : 'Save' }}
+            <span v-if="isSaving">Processing</span>
+            <Icon v-else icon="mdi:content-save-outline" />
           </AppButton>
-          <AppButton class="btn-delete" @click="openDeleteRoomDialog">Delete</AppButton>
+          <AppButton class="btn-delete" @click="openDeleteRoomDialog">
+            <Icon icon="mdi:delete-outline" />
+          </AppButton>
         </div>
       </div>
     </header>

@@ -115,7 +115,7 @@ const handleSubmit = async () => {
           id="email"
           type="email"
           label="Email"
-          placeholder="xxxxx@xxxxx.com"
+          placeholder="xxxxx@xxxxx.xxxxx"
           v-model="registrationForm.email"
           :minlength="MIN_USERNAME_LENGTH"
           :maxLength="MAX_USERNAME_LENGTH"

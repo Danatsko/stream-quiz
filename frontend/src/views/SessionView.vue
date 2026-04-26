@@ -128,14 +128,18 @@ const toggleMemberExpansion = (uuid: string | null): void => {
     <header class="header">
       <div class="header-content">
         <AppButton @click="goBack">
-          <span>Back to room</span>
+          <Icon icon="mdi:chevron-left" />
         </AppButton>
 
         <div class="header-actions" v-if="session">
           <template v-if="session.status === 'waiting'">
             <AppButton @click="startSession"> Start session </AppButton>
-            <AppButton @click="goToEdit"> Edit </AppButton>
-            <AppButton class="btn-delete" @click="openDeleteSessionDialog"> Delete </AppButton>
+            <AppButton @click="goToEdit">
+              <Icon icon="mdi:edit-outline" />
+            </AppButton>
+            <AppButton class="btn-delete" @click="openDeleteSessionDialog">
+              <Icon icon="mdi:delete-outline" />
+            </AppButton>
           </template>
         </div>
       </div>

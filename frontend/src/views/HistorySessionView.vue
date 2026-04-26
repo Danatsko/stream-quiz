@@ -76,7 +76,7 @@ const getOptionClass = (questionUuid: string, optionUuid: string): string => {
     <header class="header">
       <div class="header-content">
         <AppButton @click="goBack">
-          <span>Back to history</span>
+          <Icon icon="mdi:chevron-left" />
         </AppButton>
       </div>
     </header>

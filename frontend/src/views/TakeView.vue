@@ -72,7 +72,8 @@ const handleTake = async () => {
         </AppInput>
 
         <AppButton class="btn-take" type="submit" :disabled="!isUuidValid || isLoading">
-          {{ isLoading ? 'Processing' : 'Take' }}
+          <span v-if="isLoading">Processing</span>
+          <Icon v-else icon="mdi:play-outline" />
         </AppButton>
       </form>
     </div>

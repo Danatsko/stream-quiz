@@ -181,7 +181,7 @@ const handleExit = async (): Promise<void> => {
     <header class="header">
       <div class="header-content">
         <AppButton @click="handleExit" variant="secondary">
-          <span>Exit session</span>
+          <Icon icon="mdi:logout" />
         </AppButton>
 
         <div class="header-actions">
@@ -263,11 +263,11 @@ const handleExit = async (): Promise<void> => {
 
           <div class="actions">
             <AppButton v-if="canSkip" class="btn-skip" @click="handleSkip">
-              Skip for now
+              <Icon icon="mdi:skip-next-outline" />
             </AppButton>
             <div class="flex-spacer" v-else></div>
             <AppButton :disabled="selectedOptions.length === 0" @click="handleSubmit">
-              Submit answer
+              <Icon icon="mdi:success-bold" />
             </AppButton>
           </div>
         </div>
