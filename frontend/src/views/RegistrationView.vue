@@ -161,7 +161,13 @@ const handleSubmit = async () => {
           </template>
         </AppInput>
 
-        <AppButton class="btn-signup" type="submit" :disabled="!isFormValid || authStore.isLoading">
+        <AppButton
+          class="btn-signup"
+          type="submit"
+          :disabled="!isFormValid || authStore.isLoading"
+          title="Sign up"
+          aria-label="Sign up"
+        >
           {{ authStore.isLoading ? 'Processing' : 'Sign up' }}
         </AppButton>
       </form>

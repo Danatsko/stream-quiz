@@ -99,15 +99,20 @@ const confirmDeleteQuiz = async (): Promise<void> => {
   <div class="layout">
     <header class="header">
       <div class="header-content">
-        <AppButton @click="goBack">
+        <AppButton @click="goBack" title="Back to quizzes" aria-label="Back to quizzes">
           <Icon icon="mdi:chevron-left" />
         </AppButton>
 
         <div class="header-actions" v-if="isCreator && quiz">
-          <AppButton @click="goToEdit">
+          <AppButton @click="goToEdit" title="Edit" aria-label="Edit">
             <Icon icon="mdi:edit-outline" />
           </AppButton>
-          <AppButton class="btn-delete" @click="openDeleteQuizDialog">
+          <AppButton
+            class="btn-delete"
+            @click="openDeleteQuizDialog"
+            title="Delete"
+            aria-label="Delete"
+          >
             <Icon icon="mdi:delete-outline" />
           </AppButton>
         </div>
@@ -230,8 +235,16 @@ const confirmDeleteQuiz = async (): Promise<void> => {
     </template>
 
     <template v-slot:footer>
-      <AppButton @click="closeDeleteQuizDialog">Cancel</AppButton>
-      <AppButton class="btn-delete" @click="confirmDeleteQuiz" :disabled="quizzesStore.isLoading">
+      <AppButton @click="closeDeleteQuizDialog" title="Cancel" aria-label="Cancel"
+        >Cancel</AppButton
+      >
+      <AppButton
+        class="btn-delete"
+        @click="confirmDeleteQuiz"
+        :disabled="quizzesStore.isLoading"
+        title="Delete"
+        aria-label="Delete"
+      >
         {{ quizzesStore.isLoading ? 'Processing' : 'Delete' }}
       </AppButton>
     </template>

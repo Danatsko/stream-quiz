@@ -98,7 +98,7 @@ onBeforeUnmount(() => {
           </template>
 
           <template v-slot:actions>
-            <AppButton @click="goToSession(session.uuid)">
+            <AppButton @click="goToSession(session.uuid)" title="View" aria-label="View">
               <Icon icon="mdi:eye-outline" />
             </AppButton>
           </template>

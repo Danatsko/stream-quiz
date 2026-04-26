@@ -71,7 +71,13 @@ const handleTake = async () => {
           </template>
         </AppInput>
 
-        <AppButton class="btn-take" type="submit" :disabled="!isUuidValid || isLoading">
+        <AppButton
+          class="btn-take"
+          type="submit"
+          :disabled="!isUuidValid || isLoading"
+          title="Take"
+          aria-label="Take"
+        >
           <span v-if="isLoading">Processing</span>
           <Icon v-else icon="mdi:play-outline" />
         </AppButton>

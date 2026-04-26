@@ -180,7 +180,7 @@ const handleExit = async (): Promise<void> => {
   <div class="layout">
     <header class="header">
       <div class="header-content">
-        <AppButton @click="handleExit" variant="secondary">
+        <AppButton @click="handleExit" variant="secondary" title="Exit" aria-label="Exit">
           <Icon icon="mdi:logout" />
         </AppButton>
 
@@ -207,7 +207,14 @@ const handleExit = async (): Promise<void> => {
           <h2 class="completed-title">Session completed</h2>
           <p class="completed-text" v-if="isTimeUp">Time is up</p>
           <p class="completed-text" v-else>You have answered all questions</p>
-          <AppButton class="btn-exit" @click="handleExit">Return to home</AppButton>
+          <AppButton
+            class="btn-exit"
+            @click="handleExit"
+            title="Return to home"
+            aria-label="Return to home"
+          >
+            Return to home
+          </AppButton>
         </div>
 
         <div v-else-if="currentQuestion" class="question-container">
@@ -262,11 +269,22 @@ const handleExit = async (): Promise<void> => {
           </AppListCard>
 
           <div class="actions">
-            <AppButton v-if="canSkip" class="btn-skip" @click="handleSkip">
+            <AppButton
+              v-if="canSkip"
+              class="btn-skip"
+              @click="handleSkip"
+              title="Skip"
+              aria-label="Skip"
+            >
               <Icon icon="mdi:skip-next-outline" />
             </AppButton>
             <div class="flex-spacer" v-else></div>
-            <AppButton :disabled="selectedOptions.length === 0" @click="handleSubmit">
+            <AppButton
+              :disabled="selectedOptions.length === 0"
+              @click="handleSubmit"
+              title="Submit"
+              aria-label="Submit"
+            >
               <Icon icon="mdi:success-bold" />
             </AppButton>
           </div>

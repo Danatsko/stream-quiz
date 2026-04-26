@@ -127,17 +127,24 @@ const toggleMemberExpansion = (uuid: string | null): void => {
   <div class="layout">
     <header class="header">
       <div class="header-content">
-        <AppButton @click="goBack">
+        <AppButton @click="goBack" title="Back to room" aria-label="Back to room">
           <Icon icon="mdi:chevron-left" />
         </AppButton>
 
         <div class="header-actions" v-if="session">
           <template v-if="session.status === 'waiting'">
-            <AppButton @click="startSession"> Start session </AppButton>
-            <AppButton @click="goToEdit">
+            <AppButton @click="startSession" title="Start session" aria-label="Start session">
+              Start session
+            </AppButton>
+            <AppButton @click="goToEdit" title="Edit" aria-label="Edit">
               <Icon icon="mdi:edit-outline" />
             </AppButton>
-            <AppButton class="btn-delete" @click="openDeleteSessionDialog">
+            <AppButton
+              class="btn-delete"
+              @click="openDeleteSessionDialog"
+              title="Delete"
+              aria-label="Delete"
+            >
               <Icon icon="mdi:delete-outline" />
             </AppButton>
           </template>
@@ -225,6 +232,8 @@ const toggleMemberExpansion = (uuid: string | null): void => {
               class="tab-btn"
               :class="{ active: activeTab === 'Questions' }"
               @click="activeTab = 'Questions'"
+              title="Questions"
+              aria-label="Questions"
             >
               Questions
             </AppButton>
@@ -233,6 +242,8 @@ const toggleMemberExpansion = (uuid: string | null): void => {
               class="tab-btn"
               :class="{ active: activeTab === 'Members' }"
               @click="activeTab = 'Members'"
+              title="Members"
+              aria-label="Members"
             >
               Members
             </AppButton>
@@ -418,8 +429,16 @@ const toggleMemberExpansion = (uuid: string | null): void => {
     </template>
 
     <template v-slot:footer>
-      <AppButton @click="closeDeleteSessionDialog">Cancel</AppButton>
-      <AppButton class="btn-delete" @click="confirmDeleteSession" :disabled="roomsStore.isLoading">
+      <AppButton @click="closeDeleteSessionDialog" title="Cancel" aria-label="Cancel"
+        >Cancel</AppButton
+      >
+      <AppButton
+        class="btn-delete"
+        @click="confirmDeleteSession"
+        :disabled="roomsStore.isLoading"
+        title="Delete"
+        aria-label="Delete"
+      >
         {{ roomsStore.isLoading ? 'Processing' : 'Delete' }}
       </AppButton>
     </template>

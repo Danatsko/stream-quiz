@@ -170,7 +170,9 @@ const confirmDeleteQuiz = async (): Promise<void> => {
   <div class="layout">
     <header class="header">
       <div class="header-content">
-        <AppButton @click="openCreateQuizDialog">Create quiz</AppButton>
+        <AppButton @click="openCreateQuizDialog" title="Create quiz" aria-label="Create quiz"
+          >Create quiz</AppButton
+        >
       </div>
     </header>
 
@@ -183,6 +185,8 @@ const confirmDeleteQuiz = async (): Promise<void> => {
             class="tab-btn"
             :class="{ active: activeTab === tab.name }"
             @click="activeTab = tab.name"
+            :title="tab.label"
+            :aria-label="tab.label"
           >
             {{ tab.label }}
           </AppButton>
@@ -238,23 +242,32 @@ const confirmDeleteQuiz = async (): Promise<void> => {
           </template>
 
           <template v-slot:actions>
-            <AppButton @click="goToQuiz(quiz.uuid)">
+            <AppButton @click="goToQuiz(quiz.uuid)" title="View" aria-label="View">
               <Icon icon="mdi:eye-outline" />
             </AppButton>
 
             <div class="context-menu-wrapper" v-if="quiz.creator_uuid === currentUserUuid">
-              <AppButton @click.stop="toggleMenu(quiz.uuid)">
+              <AppButton
+                @click.stop="toggleMenu(quiz.uuid)"
+                title="Other actions"
+                aria-label="Other actions"
+              >
                 <Icon icon="mdi:dots-vertical" />
               </AppButton>
 
               <div class="dropdown-menu" v-if="activeMenuUuid === quiz.uuid" @click.stop>
-                <AppButton @click="goToEdit(quiz.uuid)">
+                <AppButton @click="goToEdit(quiz.uuid)" title="Edit" aria-label="Edit">
                   <Icon icon="mdi:edit-outline" />
                 </AppButton>
 
                 <div class="dropdown-divider"></div>
 
-                <AppButton class="btn-delete" @click="openDeleteQuizDialog(quiz.uuid)">
+                <AppButton
+                  class="btn-delete"
+                  @click="openDeleteQuizDialog(quiz.uuid)"
+                  title="Delete"
+                  aria-label="Delete"
+                >
                   <Icon icon="mdi:delete-outline" />
                 </AppButton>
               </div>
@@ -298,8 +311,15 @@ const confirmDeleteQuiz = async (): Promise<void> => {
     </template>
 
     <template v-slot:footer>
-      <AppButton @click="closeCreateQuizDialog">Cancel</AppButton>
-      <AppButton @click="handleCreateQuiz" :disabled="!isFormValid || quizzesStore.isLoading">
+      <AppButton @click="closeCreateQuizDialog" title="Cancel" aria-label="Cancel"
+        >Cancel</AppButton
+      >
+      <AppButton
+        @click="handleCreateQuiz"
+        :disabled="!isFormValid || quizzesStore.isLoading"
+        title="Create"
+        aria-label="Create"
+      >
         {{ quizzesStore.isLoading ? 'Processing' : 'Create' }}
       </AppButton>
     </template>
@@ -316,8 +336,16 @@ const confirmDeleteQuiz = async (): Promise<void> => {
     </template>
 
     <template v-slot:footer>
-      <AppButton @click="closeDeleteQuizDialog">Cancel</AppButton>
-      <AppButton class="btn-delete" @click="confirmDeleteQuiz" :disabled="quizzesStore.isLoading">
+      <AppButton @click="closeDeleteQuizDialog" title="Cancel" aria-label="Cancel"
+        >Cancel</AppButton
+      >
+      <AppButton
+        class="btn-delete"
+        @click="confirmDeleteQuiz"
+        :disabled="quizzesStore.isLoading"
+        title="Delete"
+        aria-label="Delete"
+      >
         {{ quizzesStore.isLoading ? 'Processing' : 'Delete' }}
       </AppButton>
     </template>

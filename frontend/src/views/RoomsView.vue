@@ -151,7 +151,9 @@ const confirmDeleteRoom = async (): Promise<void> => {
   <div class="layout">
     <header class="header">
       <div class="header-content">
-        <AppButton @click="openCreateRoomDialog">Create room</AppButton>
+        <AppButton @click="openCreateRoomDialog" title="Create room" aria-label="Create room"
+          >Create room</AppButton
+        >
       </div>
     </header>
 
@@ -197,23 +199,32 @@ const confirmDeleteRoom = async (): Promise<void> => {
           </template>
 
           <template v-slot:actions>
-            <AppButton @click="goToRoom(room.uuid)">
+            <AppButton @click="goToRoom(room.uuid)" title="View" aria-label="View">
               <Icon icon="mdi:eye-outline" />
             </AppButton>
 
             <div class="context-menu-wrapper">
-              <AppButton @click.stop="toggleMenu(room.uuid)">
+              <AppButton
+                @click.stop="toggleMenu(room.uuid)"
+                title="Other actions"
+                aria-label="Other actions"
+              >
                 <Icon icon="mdi:dots-vertical" />
               </AppButton>
 
               <div class="dropdown-menu" v-if="activeMenuUuid === room.uuid" @click.stop>
-                <AppButton @click="goToEdit(room.uuid)">
+                <AppButton @click="goToEdit(room.uuid)" title="Edit" aria-label="Edit">
                   <Icon icon="mdi:edit-outline" />
                 </AppButton>
 
                 <div class="dropdown-divider"></div>
 
-                <AppButton class="btn-delete" @click="openDeleteRoomDialog(room.uuid)">
+                <AppButton
+                  class="btn-delete"
+                  @click="openDeleteRoomDialog(room.uuid)"
+                  title="Delete"
+                  aria-label="Delete"
+                >
                   <Icon icon="mdi:delete-outline" />
                 </AppButton>
               </div>
@@ -257,8 +268,15 @@ const confirmDeleteRoom = async (): Promise<void> => {
     </template>
 
     <template v-slot:footer>
-      <AppButton @click="closeCreateRoomDialog">Cancel</AppButton>
-      <AppButton @click="handleCreateRoom" :disabled="!isFormValid || roomsStore.isLoading">
+      <AppButton @click="closeCreateRoomDialog" title="Cancel" aria-label="Cancel"
+        >Cancel</AppButton
+      >
+      <AppButton
+        @click="handleCreateRoom"
+        :disabled="!isFormValid || roomsStore.isLoading"
+        title="Create"
+        aria-label="Create"
+      >
         {{ roomsStore.isLoading ? 'Processing' : 'Create' }}
       </AppButton>
     </template>
@@ -275,8 +293,16 @@ const confirmDeleteRoom = async (): Promise<void> => {
     </template>
 
     <template v-slot:footer>
-      <AppButton @click="closeDeleteRoomDialog">Cancel</AppButton>
-      <AppButton class="btn-delete" @click="confirmDeleteRoom" :disabled="roomsStore.isLoading">
+      <AppButton @click="closeDeleteRoomDialog" title="Cancel" aria-label="Cancel"
+        >Cancel</AppButton
+      >
+      <AppButton
+        class="btn-delete"
+        @click="confirmDeleteRoom"
+        :disabled="roomsStore.isLoading"
+        title="Delete"
+        aria-label="Delete"
+      >
         {{ roomsStore.isLoading ? 'Processing' : 'Delete' }}
       </AppButton>
     </template>

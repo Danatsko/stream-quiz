@@ -414,7 +414,7 @@ const saveChanges = async (): Promise<void> => {
   <div class="layout">
     <header class="header">
       <div class="header-content">
-        <AppButton @click="goBack" :disabled="isSaving">
+        <AppButton @click="goBack" :disabled="isSaving" title="Cancel" aria-label="Cancel">
           <Icon icon="mdi:cancel-outline" />
         </AppButton>
 
@@ -422,11 +422,18 @@ const saveChanges = async (): Promise<void> => {
           <AppButton
             @click="saveChanges"
             :disabled="isSaving || !isFormValid || isLoading || !hasChanges"
+            title="Save"
+            aria-label="Save"
           >
             <span v-if="isSaving">Processing</span>
             <Icon v-else icon="mdi:content-save-outline" />
           </AppButton>
-          <AppButton class="btn-delete" @click="openDeleteQuizDialog">
+          <AppButton
+            class="btn-delete"
+            @click="openDeleteQuizDialog"
+            title="Delete"
+            aria-label="Delete"
+          >
             <Icon icon="mdi:delete-outline" />
           </AppButton>
         </div>
@@ -465,7 +472,12 @@ const saveChanges = async (): Promise<void> => {
                 </template>
               </AppInput>
 
-              <div class="clickable-badge" @click="toggleIsPublic">
+              <div
+                class="clickable-badge"
+                @click="toggleIsPublic"
+                title="Change visibility"
+                aria-label="Change visibility"
+              >
                 <AppBadge :class="{ 'badge-public': editableQuiz.is_public }">
                   {{ editableQuiz.is_public ? 'Public' : 'Private' }}
                 </AppBadge>
@@ -502,7 +514,12 @@ const saveChanges = async (): Promise<void> => {
                   :error-message="`Minimum ${MIN_QUESTION_TEXT_LENGTH} characters`"
                 />
 
-                <div class="clickable-badge" @click="toggleMultipleAnswers(question.uiUuid)">
+                <div
+                  class="clickable-badge"
+                  @click="toggleMultipleAnswers(question.uiUuid)"
+                  title="Change question type"
+                  aria-label="Change question type"
+                >
                   <AppBadge>
                     {{ question.is_multiple_answers ? 'Multiple choice' : 'Single choice' }}
                   </AppBadge>
@@ -551,13 +568,19 @@ const saveChanges = async (): Promise<void> => {
                     <AppButton
                       class="btn-delete"
                       @click="removeOption(question.uiUuid, option.uiUuid)"
+                      title="Remove option"
+                      aria-label="Remove option"
                     >
                       <Icon icon="mdi:cancel-outline" />
                     </AppButton>
                   </template>
                 </AppListCard>
 
-                <AppButton @click="addOption(question.uiUuid)">
+                <AppButton
+                  @click="addOption(question.uiUuid)"
+                  title="Add option"
+                  aria-label="Add option"
+                >
                   <span>Add option</span>
                 </AppButton>
               </div>
@@ -571,13 +594,18 @@ const saveChanges = async (): Promise<void> => {
             </template>
 
             <template v-slot:actions>
-              <AppButton class="btn-delete" @click="removeQuestion(question.uiUuid)">
+              <AppButton
+                class="btn-delete"
+                @click="removeQuestion(question.uiUuid)"
+                title="Remove question"
+                aria-label="Remove question"
+              >
                 <Icon icon="mdi:cancel-outline" />
               </AppButton>
             </template>
           </AppListCard>
 
-          <AppButton @click="addQuestion">
+          <AppButton @click="addQuestion" title="Add question" aria-label="Add question">
             <span>Add question</span>
           </AppButton>
         </div>
@@ -596,8 +624,16 @@ const saveChanges = async (): Promise<void> => {
     </template>
 
     <template v-slot:footer>
-      <AppButton @click="closeDeleteQuizDialog">Cancel</AppButton>
-      <AppButton class="btn-delete" @click="confirmDeleteQuiz" :disabled="quizzesStore.isLoading">
+      <AppButton @click="closeDeleteQuizDialog" title="Cancel" aria-label="Cancel"
+        >Cancel</AppButton
+      >
+      <AppButton
+        class="btn-delete"
+        @click="confirmDeleteQuiz"
+        :disabled="quizzesStore.isLoading"
+        title="Delete"
+        aria-label="Delete"
+      >
         {{ quizzesStore.isLoading ? 'Processing' : 'Delete' }}
       </AppButton>
     </template>

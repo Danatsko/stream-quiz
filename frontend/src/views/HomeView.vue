@@ -19,8 +19,15 @@ const goToRegistration = async (): Promise<void> => {
   <div class="layout">
     <AppHeader>
       <nav class="header-nav-actions">
-        <AppButton @click="goToLogin">Sign in</AppButton>
-        <AppButton class="header-btn-signup" @click="goToRegistration">Sign up</AppButton>
+        <AppButton @click="goToLogin" title="Sign in" aria-label="Sign in"> Sign in </AppButton>
+        <AppButton
+          class="header-btn-signup"
+          @click="goToRegistration"
+          title="Sign up"
+          aria-label="Sign up"
+        >
+          Sign up
+        </AppButton>
       </nav>
     </AppHeader>
 

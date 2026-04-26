@@ -170,7 +170,7 @@ const confirmDeleteRoom = async (): Promise<void> => {
   <div class="layout">
     <header class="header">
       <div class="header-content" :style="{ justifyContent: 'space-between' }">
-        <AppButton @click="goBack">
+        <AppButton @click="goBack" title="Cancel" aria-label="Cancel">
           <Icon icon="mdi:cancel-outline" />
         </AppButton>
 
@@ -178,11 +178,18 @@ const confirmDeleteRoom = async (): Promise<void> => {
           <AppButton
             @click="saveChanges"
             :disabled="isSaving || !isFormValid || isLoading || !hasChanges"
+            title="Save"
+            aria-label="Save"
           >
             <span v-if="isSaving">Processing</span>
             <Icon v-else icon="mdi:content-save-outline" />
           </AppButton>
-          <AppButton class="btn-delete" @click="openDeleteRoomDialog">
+          <AppButton
+            class="btn-delete"
+            @click="openDeleteRoomDialog"
+            title="Delete"
+            aria-label="Delete"
+          >
             <Icon icon="mdi:delete-outline" />
           </AppButton>
         </div>
@@ -246,8 +253,16 @@ const confirmDeleteRoom = async (): Promise<void> => {
     </template>
 
     <template v-slot:footer>
-      <AppButton @click="closeDeleteRoomDialog">Cancel</AppButton>
-      <AppButton class="btn-delete" @click="confirmDeleteRoom" :disabled="roomsStore.isLoading">
+      <AppButton @click="closeDeleteRoomDialog" title="Cancel" aria-label="Cancel"
+        >Cancel</AppButton
+      >
+      <AppButton
+        class="btn-delete"
+        @click="confirmDeleteRoom"
+        :disabled="roomsStore.isLoading"
+        title="Delete"
+        aria-label="Delete"
+      >
         {{ roomsStore.isLoading ? 'Processing' : 'Delete' }}
       </AppButton>
     </template>
