@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import AppButton from '@/components/AppButton.vue'
-import AppErrorMessage from '@/components/AppErrorMessage.vue'
 import { ref, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import useAuthStore from '@/stores/auth.ts'
 import { useRouter } from 'vue-router'
+import AppInput from '@/components/AppInput.vue'
 
 interface RegistrationFormState {
   username: string
@@ -92,84 +92,74 @@ const handleSubmit = async () => {
 
     <div class="main">
       <form class="form" @submit.prevent="handleSubmit">
-        <div class="form-group">
-          <label for="username">Username</label>
-          <div class="input-wrapper">
-            <Icon icon="mdi:user-outline" class="input-icon" />
-            <input
-              class="input"
-              :class="{ 'input-error': registrationForm.username && !isUsernameValid }"
-              id="username"
-              type="text"
-              placeholder="Username"
-              v-model="registrationForm.username"
-              :minlength="MIN_USERNAME_LENGTH"
-              :maxLength="MAX_USERNAME_LENGTH"
-              required
-            />
-          </div>
-          <AppErrorMessage v-if="registrationForm.username && !isUsernameValid">
-            Minimum {{ MIN_USERNAME_LENGTH }} characters
-          </AppErrorMessage>
-        </div>
+        <AppInput
+          :style="{ color: 'black' }"
+          id="username"
+          type="text"
+          label="Username"
+          placeholder="Username"
+          v-model="registrationForm.username"
+          :minlength="MIN_USERNAME_LENGTH"
+          :maxLength="MAX_USERNAME_LENGTH"
+          :has-error="!!registrationForm.username && !isUsernameValid"
+          :error-message="`Minimum ${MIN_USERNAME_LENGTH} characters`"
+          required
+        >
+          <template v-slot:icon>
+            <Icon icon="mdi:user-outline" />
+          </template>
+        </AppInput>
 
-        <div class="form-group">
-          <label for="email">Email</label>
-          <div class="input-wrapper">
-            <Icon icon="mdi:email-outline" class="input-icon" />
-            <input
-              class="input"
-              :class="{ 'input-error': registrationForm.email && !isEmailValid }"
-              id="email"
-              type="email"
-              placeholder="example@example.com"
-              v-model="registrationForm.email"
-              required
-            />
-          </div>
-          <AppErrorMessage v-if="registrationForm.email && !isEmailValid">
-            Invalid email
-          </AppErrorMessage>
-        </div>
+        <AppInput
+          :style="{ color: 'black' }"
+          id="email"
+          type="email"
+          label="Email"
+          placeholder="xxxxx@xxxxx.com"
+          v-model="registrationForm.email"
+          :minlength="MIN_USERNAME_LENGTH"
+          :maxLength="MAX_USERNAME_LENGTH"
+          :has-error="!!registrationForm.email && !isEmailValid"
+          error-message="Invalid email"
+          required
+        >
+          <template v-slot:icon>
+            <Icon icon="mdi:email-outline" />
+          </template>
+        </AppInput>
 
-        <div class="form-group">
-          <label for="password">Password</label>
-          <div class="input-wrapper">
-            <Icon icon="mdi:password-outline" class="input-icon" />
-            <input
-              class="input"
-              :class="{ 'input-error': registrationForm.password && !isPasswordValid }"
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              v-model="registrationForm.password"
-              :minlength="MIN_PASSWORD_LENGTH"
-              required
-            />
-          </div>
-          <AppErrorMessage v-if="registrationForm.password && !isPasswordValid">
-            Minimum {{ MIN_PASSWORD_LENGTH }} characters
-          </AppErrorMessage>
-        </div>
+        <AppInput
+          :style="{ color: 'black' }"
+          id="password"
+          type="password"
+          label="Password"
+          placeholder="••••••••"
+          v-model="registrationForm.password"
+          :minlength="MIN_PASSWORD_LENGTH"
+          :has-error="!!registrationForm.password && !isPasswordValid"
+          :error-message="`Minimum ${MIN_PASSWORD_LENGTH} characters`"
+          required
+        >
+          <template v-slot:icon>
+            <Icon icon="mdi:password-outline" />
+          </template>
+        </AppInput>
 
-        <div class="form-group">
-          <label for="confirm-password">Confirm password</label>
-          <div class="input-wrapper">
-            <Icon icon="mdi:password-outline" class="input-icon" />
-            <input
-              class="input"
-              :class="{ 'input-error': registrationForm.confirmPassword && !isPasswordMatched }"
-              id="confirm-password"
-              type="password"
-              placeholder="••••••••"
-              v-model="registrationForm.confirmPassword"
-              required
-            />
-          </div>
-          <AppErrorMessage v-if="registrationForm.confirmPassword && !isPasswordMatched">
-            Passwords do not match
-          </AppErrorMessage>
-        </div>
+        <AppInput
+          :style="{ color: 'black' }"
+          id="confirm-password"
+          type="password"
+          label="Confirm password"
+          placeholder="••••••••"
+          v-model="registrationForm.confirmPassword"
+          :has-error="!!registrationForm.confirmPassword && !isPasswordMatched"
+          error-message="Passwords do not match"
+          required
+        >
+          <template v-slot:icon>
+            <Icon icon="mdi:password-outline" />
+          </template>
+        </AppInput>
 
         <AppButton class="btn-signup" type="submit" :disabled="!isFormValid || authStore.isLoading">
           {{ authStore.isLoading ? 'Processing' : 'Sign up' }}
@@ -222,46 +212,7 @@ const handleSubmit = async () => {
   align-items: stretch;
   gap: 0.5rem;
 }
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  margin: 0.3rem 0;
-}
-.input-wrapper {
-  position: relative;
-  width: 100%;
-  display: flex;
-  align-items: center;
-}
-.input-icon {
-  position: absolute;
-  left: 10px;
-  font-size: 1.2rem;
-  pointer-events: none;
-  z-index: 1;
-}
-.input {
-  width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.5rem;
-  box-sizing: border-box;
-  border: 1px solid #000000;
-  border-radius: 8px;
-  font-size: 1rem;
-  outline: none;
-  transition:
-    border-color 0.3s,
-    box-shadow 0.3s;
-}
-.input:focus {
-  border-color: var(--color-primary);
-  box-shadow:
-    0 0 1px 1px var(--color-primary),
-    0 0 10px 1px var(--color-secondary);
-}
-.input-error {
-  border-color: red;
-}
+
 .btn-signup {
   align-self: center;
 }

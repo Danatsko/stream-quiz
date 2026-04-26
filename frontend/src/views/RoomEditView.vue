@@ -2,12 +2,13 @@
 import AppButton from '@/components/AppButton.vue'
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { Icon } from '@iconify/vue'
-import AppErrorMessage from '@/components/AppErrorMessage.vue'
 import useAuthStore from '@/stores/auth'
 import useRoomsStore from '@/stores/rooms'
 import { useRoute, useRouter } from 'vue-router'
 import AppModal from '@/components/AppModal.vue'
 import AppListCard from '@/components/AppListCard.vue'
+import AppInput from '@/components/AppInput.vue'
+import AppTextarea from '@/components/AppTextarea.vue'
 
 interface EditRoom {
   title: string
@@ -201,35 +202,30 @@ const confirmDeleteRoom = async (): Promise<void> => {
 
           <template v-slot:content>
             <div class="hero-top">
-              <div class="form-group flex-1">
-                <label for="room-title">Title</label>
-                <input
-                  id="room-title"
-                  class="edit-input"
-                  :class="{ 'input-error': editableRoom.title && !isTitleValid }"
-                  type="text"
-                  placeholder="Title"
-                  v-model="editableRoom.title"
-                  :minlength="MIN_TITLE_LENGTH"
-                  :maxLength="MAX_TITLE_LENGTH"
-                />
-                <AppErrorMessage v-if="editableRoom.title && !isTitleValid">
-                  Minimum {{ MIN_TITLE_LENGTH }} characters
-                </AppErrorMessage>
-              </div>
+              <AppInput
+                id="room-title"
+                type="text"
+                label="Title"
+                placeholder="Title"
+                v-model="editableRoom.title"
+                :minlength="MIN_TITLE_LENGTH"
+                :maxLength="MAX_TITLE_LENGTH"
+                :has-error="!!editableRoom.title && !isTitleValid"
+                :error-message="`Minimum ${MIN_TITLE_LENGTH} characters`"
+              >
+                <template v-slot:icon>
+                  <Icon icon="mdi:format-align-left" />
+                </template>
+              </AppInput>
             </div>
 
-            <div class="form-group">
-              <label for="room-description">Description</label>
-              <textarea
-                id="room-description"
-                class="edit-input textarea"
-                placeholder="Description"
-                v-model="editableRoom.description"
-                :maxLength="MAX_DESCRIPTION_LENGTH"
-                rows="5"
-              ></textarea>
-            </div>
+            <AppTextarea
+              id="room-description"
+              label="Description"
+              placeholder="Description"
+              v-model="editableRoom.description"
+              :maxLength="MAX_DESCRIPTION_LENGTH"
+            />
           </template>
         </AppListCard>
       </div>
@@ -305,57 +301,6 @@ const confirmDeleteRoom = async (): Promise<void> => {
   font-weight: 900;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-.flex-1 {
-  flex: 1;
-}
-.edit-input {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  box-sizing: border-box;
-  background-color: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 1rem;
-  color: var(--color-text);
-  outline: none;
-  font-family: inherit;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-}
-.edit-input:focus {
-  border-color: var(--color-primary);
-  box-shadow:
-    0 0 1px 1px var(--color-primary),
-    0 0 10px 1px var(--color-secondary);
-}
-
-.edit-input.textarea {
-  resize: unset;
-  font-family: inherit;
-}
-.edit-input.textarea::-webkit-scrollbar {
-  width: 8px;
-  cursor: pointer;
-}
-.edit-input.textarea::-webkit-scrollbar-track {
-  background: transparent;
-  cursor: pointer;
-}
-.edit-input.textarea::-webkit-scrollbar-thumb {
-  background-color: var(--color-border);
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.input-error {
-  border-color: red;
-}
 .modal-text {
   font-size: 1rem;
   line-height: 1.5;

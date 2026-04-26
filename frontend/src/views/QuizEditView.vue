@@ -10,6 +10,8 @@ import AppBadge from '@/components/AppBadge.vue'
 import type { FullUpdateQuizPayload } from '@/types/quizzes'
 import AppErrorMessage from '@/components/AppErrorMessage.vue'
 import AppListCard from '@/components/AppListCard.vue'
+import AppInput from '@/components/AppInput.vue'
+import AppTextarea from '@/components/AppTextarea.vue'
 
 interface EditOption {
   uiUuid: string
@@ -444,22 +446,21 @@ const saveChanges = async (): Promise<void> => {
 
           <template v-slot:content>
             <div class="hero-top">
-              <div class="form-group flex-1">
-                <label for="quiz-title">Title</label>
-                <input
-                  id="quiz-title"
-                  class="edit-input"
-                  :class="{ 'input-error': editableQuiz.title && !isQuizTitleValid }"
-                  type="text"
-                  placeholder="Title"
-                  v-model="editableQuiz.title"
-                  :minlength="MIN_QUIZ_TITLE_LENGTH"
-                  :maxLength="MAX_QUIZ_TITLE_LENGTH"
-                />
-                <AppErrorMessage v-if="editableQuiz.title && !isQuizTitleValid">
-                  Minimum {{ MIN_QUIZ_TITLE_LENGTH }} characters
-                </AppErrorMessage>
-              </div>
+              <AppInput
+                id="quiz-title"
+                type="text"
+                label="Title"
+                placeholder="Title"
+                v-model="editableQuiz.title"
+                :minlength="MIN_QUIZ_TITLE_LENGTH"
+                :maxLength="MAX_QUIZ_TITLE_LENGTH"
+                :has-error="!!editableQuiz.title && !isQuizTitleValid"
+                :error-message="`Minimum ${MIN_QUIZ_TITLE_LENGTH} characters`"
+              >
+                <template v-slot:icon>
+                  <Icon icon="mdi:format-align-left" />
+                </template>
+              </AppInput>
 
               <div class="clickable-badge" @click="toggleIsPublic">
                 <AppBadge :class="{ 'badge-public': editableQuiz.is_public }">
@@ -468,17 +469,14 @@ const saveChanges = async (): Promise<void> => {
               </div>
             </div>
 
-            <div class="form-group">
-              <label for="quiz-description">Description</label>
-              <textarea
-                id="quiz-description"
-                class="edit-input textarea"
-                placeholder="Description"
-                v-model="editableQuiz.description"
-                :maxLength="MAX_QUIZ_DESCRIPTION_LENGTH"
-                rows="5"
-              ></textarea>
-            </div>
+            <AppTextarea
+              id="quiz-description"
+              type="text"
+              label="Description"
+              placeholder="Description"
+              v-model="editableQuiz.description"
+              :maxLength="MAX_QUIZ_DESCRIPTION_LENGTH"
+            />
           </template>
         </AppListCard>
 
@@ -490,23 +488,17 @@ const saveChanges = async (): Promise<void> => {
 
             <template v-slot:content>
               <div class="question-header">
-                <div class="form-group flex-1">
-                  <label :for="'question-' + question.uiUuid">Question text</label>
-                  <textarea
-                    :id="'question-' + question.uiUuid"
-                    class="edit-input textarea"
-                    :class="{ 'input-error': question.text && !isQuestionTextValid(question) }"
-                    type="text"
-                    placeholder="Question text"
-                    v-model="question.text"
-                    :minlength="MIN_QUESTION_TEXT_LENGTH"
-                    :maxLength="MAX_QUESTION_TEXT_LENGTH"
-                    rows="5"
-                  ></textarea>
-                  <AppErrorMessage v-if="question.text && !isQuestionTextValid(question)">
-                    Minimum {{ MIN_QUESTION_TEXT_LENGTH }} characters
-                  </AppErrorMessage>
-                </div>
+                <AppTextarea
+                  :id="'question-' + question.uiUuid"
+                  label="Question text"
+                  placeholder="Question text"
+                  v-model="question.text"
+                  :minlength="MIN_QUESTION_TEXT_LENGTH"
+                  :maxLength="MAX_QUESTION_TEXT_LENGTH"
+                  :has-error="!!question.text && !isQuestionTextValid(question)"
+                  :error-message="`Minimum ${MIN_QUESTION_TEXT_LENGTH} characters`"
+                />
+
                 <div class="clickable-badge" @click="toggleMultipleAnswers(question.uiUuid)">
                   <AppBadge>
                     {{ question.is_multiple_answers ? 'Multiple choice' : 'Single choice' }}
@@ -540,23 +532,16 @@ const saveChanges = async (): Promise<void> => {
                   </template>
 
                   <template v-slot:content>
-                    <div class="form-group">
-                      <label :for="'option-' + option.uiUuid">Option text</label>
-                      <textarea
-                        :id="'option-' + option.uiUuid"
-                        class="edit-input textarea"
-                        :class="{ 'input-error': option.text && !isOptionTextValid(option) }"
-                        type="text"
-                        placeholder="Option text"
-                        v-model="option.text"
-                        :minlength="MIN_OPTION_TEXT_LENGTH"
-                        :maxLength="MAX_OPTION_TEXT_LENGTH"
-                        rows="5"
-                      ></textarea>
-                      <AppErrorMessage v-if="option.text && !isOptionTextValid(option)">
-                        Minimum {{ MIN_OPTION_TEXT_LENGTH }} characters
-                      </AppErrorMessage>
-                    </div>
+                    <AppTextarea
+                      :id="'option-' + option.uiUuid"
+                      label="Option text"
+                      placeholder="Option text"
+                      v-model="option.text"
+                      :minlength="MIN_OPTION_TEXT_LENGTH"
+                      :maxLength="MAX_OPTION_TEXT_LENGTH"
+                      :has-error="!!option.text && !isOptionTextValid(option)"
+                      :error-message="`Minimum ${MIN_OPTION_TEXT_LENGTH} characters`"
+                    />
                   </template>
 
                   <template v-slot:actions>
@@ -763,66 +748,12 @@ const saveChanges = async (): Promise<void> => {
   }
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  width: 100%;
-}
-.flex-1 {
-  flex: 1;
-}
-
-.edit-input {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  box-sizing: border-box;
-  background-color: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 1rem;
-  color: var(--color-text);
-  outline: none;
-  font-family: inherit;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-}
-.edit-input:focus {
-  border-color: var(--color-primary);
-  box-shadow:
-    0 0 1px 1px var(--color-primary),
-    0 0 10px 1px var(--color-secondary);
-}
-
-.edit-input.textarea {
-  resize: unset;
-  font-family: inherit;
-}
-.edit-input.textarea::-webkit-scrollbar {
-  width: 8px;
-  cursor: pointer;
-}
-.edit-input.textarea::-webkit-scrollbar-track {
-  background: transparent;
-  cursor: pointer;
-}
-.edit-input.textarea::-webkit-scrollbar-thumb {
-  background-color: var(--color-border);
-  border-radius: 10px;
-  cursor: pointer;
-}
-
 .clickable-badge {
   cursor: pointer;
   user-select: none;
 }
 .clickable-badge:hover {
   opacity: 0.8;
-}
-
-.input-error {
-  border-color: red;
 }
 
 .modal-header-title {

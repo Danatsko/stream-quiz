@@ -2,8 +2,9 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppButton from '@/components/AppButton.vue'
-import AppErrorMessage from '@/components/AppErrorMessage.vue'
 import useTakeStore from '@/stores/take'
+import { Icon } from '@iconify/vue'
+import AppInput from '@/components/AppInput.vue'
 
 const UUID_LENGTH = 36
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -53,22 +54,22 @@ const handleTake = async () => {
 
     <div class="main">
       <form class="form" @submit.prevent="handleTake">
-        <div class="form-group">
-          <input
-            class="input"
-            :class="{ 'input-error': sessionUuid && !isUuidValid }"
-            id="session-uuid"
-            type="text"
-            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-            v-model="sessionUuid"
-            :minlength="UUID_LENGTH"
-            :maxLength="UUID_LENGTH"
-            required
-          />
-          <AppErrorMessage v-if="sessionUuid && !isUuidValid">
-            Invalid uuid format
-          </AppErrorMessage>
-        </div>
+        <AppInput
+          id="session-uuid"
+          type="text"
+          label=""
+          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+          v-model="sessionUuid"
+          :minlength="UUID_LENGTH"
+          :maxLength="UUID_LENGTH"
+          :has-error="!!sessionUuid && !isUuidValid"
+          error-message="Invalid uuid format"
+          required
+        >
+          <template v-slot:icon>
+            <Icon icon="mdi:identifier" />
+          </template>
+        </AppInput>
 
         <AppButton class="btn-take" type="submit" :disabled="!isUuidValid || isLoading">
           {{ isLoading ? 'Processing' : 'Take' }}
@@ -117,40 +118,12 @@ const handleTake = async () => {
   gap: 1rem;
   width: 100%;
 }
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
+
 label {
   font-size: 0.9rem;
   font-weight: 600;
 }
-.input {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  box-sizing: border-box;
-  background-color: transparent;
-  text-align: center;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 1rem;
-  color: var(--color-text);
-  outline: none;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-}
 
-.input:focus {
-  border-color: var(--color-primary);
-  box-shadow:
-    0 0 1px 1px var(--color-primary),
-    0 0 10px 1px var(--color-secondary);
-}
-.input-error {
-  border-color: red;
-}
 .btn-take {
   align-self: center;
   width: 100%;

@@ -2,7 +2,6 @@
 import AppButton from '@/components/AppButton.vue'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
-import AppErrorMessage from '@/components/AppErrorMessage.vue'
 import useAuthStore from '@/stores/auth'
 import useRoomsStore from '@/stores/rooms'
 import { useRouter } from 'vue-router'
@@ -10,6 +9,8 @@ import AppModal from '@/components/AppModal.vue'
 import AppAsyncList from '@/components/AppAsyncList.vue'
 import AppListCard from '@/components/AppListCard.vue'
 import { formatDateTime } from '@/utils/formatters'
+import AppInput from '@/components/AppInput.vue'
+import AppTextarea from '@/components/AppTextarea.vue'
 
 interface CreateRoomFormState {
   title: string
@@ -227,35 +228,30 @@ const confirmDeleteRoom = async (): Promise<void> => {
     </template>
 
     <template v-slot:body>
-      <div class="form-group">
-        <label for="room-title">Title</label>
-        <input
-          class="modal-input"
-          :class="{ 'input-error': createRoomForm.title && !isTitleValid }"
-          id="room-title"
-          type="text"
-          placeholder="Title"
-          v-model="createRoomForm.title"
-          :minlength="MIN_TITLE_LENGTH"
-          :maxLength="MAX_TITLE_LENGTH"
-          required
-        />
-        <AppErrorMessage v-if="createRoomForm.title && !isTitleValid">
-          Minimum {{ MIN_TITLE_LENGTH }} characters
-        </AppErrorMessage>
-      </div>
+      <AppInput
+        id="room-title"
+        type="text"
+        label="Title"
+        placeholder="Title"
+        v-model="createRoomForm.title"
+        :minlength="MIN_TITLE_LENGTH"
+        :maxLength="MAX_TITLE_LENGTH"
+        :has-error="!!createRoomForm.title && !isTitleValid"
+        :error-message="`Minimum ${MIN_TITLE_LENGTH} characters`"
+        required
+      >
+        <template v-slot:icon>
+          <Icon icon="mdi:format-align-left" />
+        </template>
+      </AppInput>
 
-      <div class="form-group">
-        <label for="room-description">Description</label>
-        <textarea
-          class="modal-input textarea"
-          id="room-description"
-          placeholder="Description"
-          v-model="createRoomForm.description"
-          :maxLength="MAX_DESCRIPTION_LENGTH"
-          rows="5"
-        ></textarea>
-      </div>
+      <AppTextarea
+        id="room-description"
+        label="Description"
+        placeholder="Description"
+        v-model="createRoomForm.description"
+        :maxLength="MAX_DESCRIPTION_LENGTH"
+      />
     </template>
 
     <template v-slot:footer>
@@ -416,51 +412,6 @@ const confirmDeleteRoom = async (): Promise<void> => {
   font-weight: 900;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-.modal-input {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  box-sizing: border-box;
-  background-color: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 1rem;
-  color: var(--color-text);
-  outline: none;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-}
-.modal-input:focus {
-  border-color: var(--color-primary);
-  box-shadow:
-    0 0 1px 1px var(--color-primary),
-    0 0 10px 1px var(--color-secondary);
-}
-.modal-input.textarea {
-  resize: unset;
-  font-family: inherit;
-}
-.input-error {
-  border-color: red;
-}
-.modal-input.textarea::-webkit-scrollbar {
-  width: 8px;
-  cursor: pointer;
-}
-.modal-input.textarea::-webkit-scrollbar-track {
-  background: transparent;
-  cursor: pointer;
-}
-.modal-input.textarea::-webkit-scrollbar-thumb {
-  background-color: var(--color-border);
-  border-radius: 10px;
-  cursor: pointer;
-}
 .modal-text {
   font-size: 1rem;
   line-height: 1.5;

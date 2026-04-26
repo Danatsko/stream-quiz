@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import AppButton from '@/components/AppButton.vue'
-import AppErrorMessage from '@/components/AppErrorMessage.vue'
 import { ref, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import useAuthStore from '@/stores/auth.ts'
 import { useRouter } from 'vue-router'
+import AppInput from '@/components/AppInput.vue'
 
 interface LoginFormState {
   email: string
@@ -65,42 +65,38 @@ const handleSubmit = async () => {
 
     <div class="main">
       <form class="form" @submit.prevent="handleSubmit">
-        <div class="form-group">
-          <label for="email">Email</label>
-          <div class="input-wrapper">
-            <Icon icon="mdi:email-outline" class="input-icon" />
-            <input
-              class="input"
-              :class="{ 'input-error': loginForm.email && !isEmailValid }"
-              id="email"
-              type="email"
-              placeholder="example@example.com"
-              v-model="loginForm.email"
-              required
-            />
-          </div>
-          <AppErrorMessage v-if="loginForm.email && !isEmailValid"> Invalid email </AppErrorMessage>
-        </div>
+        <AppInput
+          :style="{ color: 'black' }"
+          id="email"
+          type="email"
+          label="Email"
+          placeholder="xxxxx@xxxxx.com"
+          v-model="loginForm.email"
+          :has-error="!!loginForm.email && !isEmailValid"
+          error-message="Invalid email"
+          required
+        >
+          <template v-slot:icon>
+            <Icon icon="mdi:email-outline" />
+          </template>
+        </AppInput>
 
-        <div class="form-group">
-          <label for="password">Password</label>
-          <div class="input-wrapper">
-            <Icon icon="mdi:password-outline" class="input-icon" />
-            <input
-              class="input"
-              :class="{ 'input-error': loginForm.password && !isPasswordValid }"
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              v-model="loginForm.password"
-              :minlength="MIN_PASSWORD_LENGTH"
-              required
-            />
-          </div>
-          <AppErrorMessage v-if="loginForm.password && !isPasswordValid">
-            Minimum {{ MIN_PASSWORD_LENGTH }} characters
-          </AppErrorMessage>
-        </div>
+        <AppInput
+          :style="{ color: 'black' }"
+          id="password"
+          type="password"
+          label="Password"
+          placeholder="••••••••"
+          v-model="loginForm.password"
+          :minlength="MIN_PASSWORD_LENGTH"
+          :has-error="!!loginForm.password && !isPasswordValid"
+          :error-message="`Minimum ${MIN_PASSWORD_LENGTH} characters`"
+          required
+        >
+          <template v-slot:icon>
+            <Icon icon="mdi:password-outline" />
+          </template>
+        </AppInput>
 
         <AppButton class="btn-signin" type="submit" :disabled="!isFormValid || authStore.isLoading">
           {{ authStore.isLoading ? 'Processing' : 'Sign in' }}
@@ -152,46 +148,6 @@ const handleSubmit = async () => {
   flex-direction: column;
   align-items: stretch;
   gap: 0.5rem;
-}
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  margin: 0.3rem 0;
-}
-.input-wrapper {
-  position: relative;
-  width: 100%;
-  display: flex;
-  align-items: center;
-}
-.input-icon {
-  position: absolute;
-  left: 10px;
-  font-size: 1.2rem;
-  pointer-events: none;
-  z-index: 1;
-}
-.input {
-  width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.5rem;
-  box-sizing: border-box;
-  border: 1px solid black;
-  border-radius: 8px;
-  font-size: 1rem;
-  outline: none;
-  transition:
-    border-color 0.3s,
-    box-shadow 0.3s;
-}
-.input:focus {
-  border-color: var(--color-primary);
-  box-shadow:
-    0 0 1px 1px var(--color-primary),
-    0 0 10px 1px var(--color-secondary);
-}
-.input-error {
-  border-color: red;
 }
 .btn-signin {
   align-self: center;

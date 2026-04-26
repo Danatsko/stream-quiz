@@ -2,7 +2,6 @@
 import AppButton from '@/components/AppButton.vue'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
-import AppErrorMessage from '@/components/AppErrorMessage.vue'
 import useAuthStore from '@/stores/auth'
 import useRoomsStore from '@/stores/rooms'
 import { useRoute, useRouter } from 'vue-router'
@@ -12,6 +11,8 @@ import AppListCard from '@/components/AppListCard.vue'
 import AppBadge from '@/components/AppBadge.vue'
 import { formatDateTime, formatDuration } from '@/utils/formatters'
 import AppDurationInput from '@/components/AppDurationInput.vue'
+import AppInput from '@/components/AppInput.vue'
+import AppTextarea from '@/components/AppTextarea.vue'
 
 interface CreateSessionFormState {
   title: string
@@ -361,6 +362,7 @@ const confirmDeleteSession = async (): Promise<void> => {
               <template v-slot:content>
                 <div class="info-top">
                   <h3 class="item-title">{{ session.title }}</h3>
+
                   <AppBadge :class="`badge-${session.status}`">
                     {{ sessionStatusLabels[session.status] }}
                   </AppBadge>
@@ -437,65 +439,59 @@ const confirmDeleteSession = async (): Promise<void> => {
     </template>
 
     <template v-slot:body>
-      <div class="form-group">
-        <label for="session-title">Title</label>
-        <input
-          class="modal-input"
-          :class="{ 'input-error': createSessionForm.title && !isTitleValid }"
-          id="session-title"
-          type="text"
-          placeholder="Title"
-          v-model="createSessionForm.title"
-          :minlength="MIN_TITLE_LENGTH"
-          :maxLength="MAX_TITLE_LENGTH"
-          required
-        />
-        <AppErrorMessage v-if="createSessionForm.title && !isTitleValid">
-          Minimum {{ MIN_TITLE_LENGTH }} characters
-        </AppErrorMessage>
-      </div>
+      <AppInput
+        id="session-title"
+        type="text"
+        label="Title"
+        placeholder="Title"
+        v-model="createSessionForm.title"
+        :minlength="MIN_TITLE_LENGTH"
+        :maxLength="MAX_TITLE_LENGTH"
+        :has-error="!!createSessionForm.title && !isTitleValid"
+        :error-message="`Minimum ${MIN_TITLE_LENGTH} characters`"
+        required
+      >
+        <template v-slot:icon>
+          <Icon icon="mdi:format-align-left" />
+        </template>
+      </AppInput>
 
-      <div class="form-group">
-        <label for="session-description">Description</label>
-        <textarea
-          class="modal-input textarea"
-          id="session-description"
-          placeholder="Description"
-          v-model="createSessionForm.description"
-          :maxLength="MAX_DESCRIPTION_LENGTH"
-          rows="5"
-        ></textarea>
-      </div>
+      <AppTextarea
+        id="session-description"
+        label="Description"
+        placeholder="Description"
+        v-model="createSessionForm.description"
+        :maxLength="MAX_DESCRIPTION_LENGTH"
+      />
 
-      <div class="form-group">
-        <label for="session-time">Time</label>
-        <AppDurationInput
-          :class="{ 'input-error': createSessionForm.time_seconds !== null && !isTimeSecondsValid }"
-          id="session-time"
-          v-model="createSessionForm.time_seconds"
-        />
-        <AppErrorMessage v-if="createSessionForm.time_seconds !== null && !isTimeSecondsValid">
-          Invalid duration limits
-        </AppErrorMessage>
-      </div>
+      <AppDurationInput
+        id="session-time"
+        label="Time"
+        v-model="createSessionForm.time_seconds"
+        :has-error="createSessionForm.time_seconds !== null && !isTimeSecondsValid"
+        error-message="Invalid duration limits"
+      >
+        <template v-slot:icon>
+          <Icon icon="mdi:timer-outline" />
+        </template>
+      </AppDurationInput>
 
-      <div class="form-group">
-        <label for="quiz-uuid">Quiz uuid</label>
-        <input
-          class="modal-input"
-          :class="{ 'input-error': createSessionForm.quiz_uuid && !isQuizUuidValid }"
-          id="quiz-uuid"
-          type="text"
-          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-          v-model="createSessionForm.quiz_uuid"
-          :minlength="QUIZ_UUID_LENGTH"
-          :maxLength="QUIZ_UUID_LENGTH"
-          required
-        />
-        <AppErrorMessage v-if="createSessionForm.quiz_uuid && !isQuizUuidValid">
-          Invalid uuid format
-        </AppErrorMessage>
-      </div>
+      <AppInput
+        id="quiz-uuid"
+        type="text"
+        label="Quiz uuid"
+        placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+        v-model="createSessionForm.quiz_uuid"
+        :minlength="QUIZ_UUID_LENGTH"
+        :maxLength="QUIZ_UUID_LENGTH"
+        :has-error="!!createSessionForm.quiz_uuid && !isQuizUuidValid"
+        error-message="Invalid uuid format"
+        required
+      >
+        <template v-slot:icon>
+          <Icon icon="mdi:identifier" />
+        </template>
+      </AppInput>
     </template>
 
     <template v-slot:footer>
@@ -834,51 +830,6 @@ const confirmDeleteSession = async (): Promise<void> => {
   font-weight: 900;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-.modal-input {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  box-sizing: border-box;
-  background-color: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 1rem;
-  color: var(--color-text);
-  outline: none;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-}
-.modal-input:focus {
-  border-color: var(--color-primary);
-  box-shadow:
-    0 0 1px 1px var(--color-primary),
-    0 0 10px 1px var(--color-secondary);
-}
-.modal-input.textarea {
-  resize: unset;
-  font-family: inherit;
-}
-.input-error {
-  border-color: red;
-}
-.modal-input.textarea::-webkit-scrollbar {
-  width: 8px;
-  cursor: pointer;
-}
-.modal-input.textarea::-webkit-scrollbar-track {
-  background: transparent;
-  cursor: pointer;
-}
-.modal-input.textarea::-webkit-scrollbar-thumb {
-  background-color: var(--color-border);
-  border-radius: 10px;
-  cursor: pointer;
-}
 .modal-text {
   font-size: 1rem;
   line-height: 1.5;
