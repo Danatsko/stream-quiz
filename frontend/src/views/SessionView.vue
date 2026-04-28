@@ -666,6 +666,12 @@ const toggleMemberExpansion = (uuid: string | null): void => {
     border-color 0.2s,
     background-color 0.2s;
 }
+.option-item:hover {
+  border-color: #4b5563 !important;
+  box-shadow:
+    0 0 1px 1px #4b5563,
+    0 0 10px 1px rgba(75, 85, 99, 0.5) !important;
+}
 .option-item.is-correct {
   border-color: #10b981;
   background-color: rgba(16, 185, 129, 0.05);
