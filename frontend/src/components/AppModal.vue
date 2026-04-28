@@ -138,7 +138,7 @@ watch(
 .modal-footer {
   padding: 1.5rem;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 1rem;
   align-items: center;
 }

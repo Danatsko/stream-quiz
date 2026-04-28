@@ -1,21 +1,87 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import useAuthStore from '@/stores/auth'
 import AppButton from '@/components/AppButton.vue'
 import AppListCard from '@/components/AppListCard.vue'
+import AppInput from '@/components/AppInput.vue'
+import AppModal from '@/components/AppModal.vue'
+
+const MIN_USERNAME_LENGTH = 3
+const MAX_USERNAME_LENGTH = 30
 
 const authStore = useAuthStore()
 const router = useRouter()
 
 const user = computed(() => authStore.user)
 
+const editableUsername = ref('')
+const isUpdatingUsername = ref(false)
+const isDeleteModalOpen = ref(false)
+const isDeleting = ref(false)
+
+const initEditableUsername = (): void => {
+  if (user.value) {
+    editableUsername.value = user.value.username
+  }
+}
+
+watch(user, initEditableUsername, { immediate: true })
+
+const isUsernameValid = computed((): boolean => {
+  const username = editableUsername.value
+
+  return (
+    !!username && username.length >= MIN_USERNAME_LENGTH && username.length <= MAX_USERNAME_LENGTH
+  )
+})
+
+const hasUsernameChanges = computed((): boolean => {
+  return user.value?.username !== editableUsername.value
+})
+
+const handleUpdateUsername = async (): Promise<void> => {
+  if (!hasUsernameChanges.value || !isUsernameValid.value) {
+    return
+  }
+
+  try {
+    isUpdatingUsername.value = true
+
+    await authStore.updateMe({ username: editableUsername.value })
+  } catch (error) {
+  } finally {
+    isUpdatingUsername.value = false
+  }
+}
+
 const handleLogout = async (): Promise<void> => {
   try {
     await authStore.logout()
     await router.push({ name: 'Home' })
   } catch (error) {}
+}
+
+const openDeleteModal = (): void => {
+  isDeleteModalOpen.value = true
+}
+
+const closeDeleteModal = (): void => {
+  isDeleteModalOpen.value = false
+}
+
+const confirmDeleteAccount = async (): Promise<void> => {
+  try {
+    isDeleting.value = true
+
+    await authStore.deleteMe()
+    closeDeleteModal()
+    await router.push({ name: 'Home' })
+  } catch (error) {
+  } finally {
+    isDeleting.value = false
+  }
 }
 
 const copyToClipboard = (text: string): void => {
@@ -55,10 +121,34 @@ const copyToClipboard = (text: string): void => {
             </div>
 
             <div class="info-bottom">
-              <span class="meta-item">
-                <Icon icon="mdi:account-outline" />
-                <span class="meta-value">{{ user.username }}</span>
-              </span>
+              <div class="username-update-wrapper">
+                <AppInput
+                  id="username"
+                  type="text"
+                  label="Username"
+                  placeholder="Username"
+                  v-model="editableUsername"
+                  :minlength="MIN_USERNAME_LENGTH"
+                  :maxLength="MAX_USERNAME_LENGTH"
+                  :has-error="!!editableUsername && !isUsernameValid"
+                  :error-message="`Minimum ${MIN_USERNAME_LENGTH} characters`"
+                >
+                  <template v-slot:icon>
+                    <Icon icon="mdi:account-outline" />
+                  </template>
+                </AppInput>
+
+                <AppButton
+                  class="btn-save-username"
+                  @click="handleUpdateUsername"
+                  :disabled="!hasUsernameChanges || !isUsernameValid || isUpdatingUsername"
+                  title="Save username"
+                  aria-label="Save username"
+                >
+                  <span v-if="isUpdatingUsername">Saving</span>
+                  <Icon v-else icon="mdi:content-save-outline" />
+                </AppButton>
+              </div>
 
               <span class="meta-item">
                 <Icon icon="mdi:email-outline" />
@@ -75,9 +165,64 @@ const copyToClipboard = (text: string): void => {
             </div>
           </template>
         </AppListCard>
+
+        <AppListCard class="danger-card">
+          <template v-slot:icon>
+            <Icon icon="mdi:alert-outline" class="danger-icon" />
+          </template>
+
+          <template v-slot:content>
+            <div class="info-top">
+              <h3 class="item-title">Danger zone</h3>
+            </div>
+
+            <div class="info-bottom">
+              <span class="meta-value"> Deleting your account is permanent </span>
+              <AppButton
+                class="btn-delete"
+                @click="openDeleteModal"
+                title="Delete account"
+                aria-label="Delete account"
+              >
+                Delete account
+              </AppButton>
+            </div>
+          </template>
+        </AppListCard>
       </div>
     </main>
   </div>
+
+  <AppModal :is-open="isDeleteModalOpen" @close="closeDeleteModal">
+    <template v-slot:header>
+      <h1 class="modal-header-title">Delete account</h1>
+    </template>
+
+    <template v-slot:body>
+      <p class="modal-text">Are you sure you want to delete your account?</p>
+      <p class="modal-text">This action cannot be undone.</p>
+    </template>
+
+    <template v-slot:footer>
+      <AppButton
+        @click="closeDeleteModal"
+        title="Cancel"
+        aria-label="Cancel"
+        :disabled="isDeleting"
+      >
+        Cancel
+      </AppButton>
+      <AppButton
+        class="btn-delete"
+        @click="confirmDeleteAccount"
+        :disabled="isDeleting"
+        title="Delete"
+        aria-label="Delete"
+      >
+        {{ isDeleting ? 'Processing' : 'Delete' }}
+      </AppButton>
+    </template>
+  </AppModal>
 </template>
 
 <style scoped>
@@ -139,6 +284,20 @@ const copyToClipboard = (text: string): void => {
   font-size: 0.9rem;
   color: var(--color-text-secondary);
 }
+
+.username-update-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 1rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+.btn-save-username {
+  margin-top: 1.65rem;
+}
+
 .meta-item {
   display: flex;
   align-items: center;
@@ -174,12 +333,41 @@ const copyToClipboard = (text: string): void => {
   font-size: 0.9rem;
 }
 
-.btn-logout {
+.danger-card {
+  transition: border-color 0.2s;
+}
+
+.danger-card:hover {
+  border-color: red !important;
+  box-shadow:
+    0 0 1px 1px red,
+    0 0 1px 3px color-mix(in srgb, red 50%, transparent) !important;
+}
+
+.danger-icon {
+  color: red;
+}
+
+.modal-header-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+.modal-text {
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0;
+  text-align: center;
+}
+
+.btn-logout,
+.btn-delete {
   color: red;
   border-color: red;
   background-color: color-mix(in srgb, red 10%, black);
 }
-.btn-logout:hover {
+.btn-logout:hover,
+.btn-delete:hover {
   background-color: color-mix(in srgb, red 20%, black);
   border-color: red;
   box-shadow:

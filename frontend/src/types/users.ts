@@ -5,3 +5,7 @@ export interface User {
 }
 
 export interface GetMeResponse extends User {}
+
+export interface UpdateMePayload {
+  username?: string
+}
