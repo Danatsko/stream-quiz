@@ -328,7 +328,7 @@ const confirmDeleteSession = async (): Promise<void> => {
               <div class="meta-item" v-if="room.uuid">
                 <Icon icon="mdi:identifier" />
 
-                <div class="item-id" @click="copyToClipboard(room.uuid)" title="Copy uuid">
+                <div class="item-id" @click="copyToClipboard(room.uuid)" title="Copy UUID">
                   {{ room.uuid }}
                   <Icon icon="mdi:content-copy" class="copy-icon" />
                 </div>
@@ -394,7 +394,11 @@ const confirmDeleteSession = async (): Promise<void> => {
                   <div class="meta-item" v-if="session.quiz_uuid">
                     <Icon icon="mdi:book-open-variant-outline" />
 
-                    <div class="item-id" @click="copyToClipboard(session.quiz_uuid)">
+                    <div
+                      class="item-id"
+                      @click="copyToClipboard(session.quiz_uuid)"
+                      title="Copy UUID"
+                    >
                       {{ session.quiz_uuid }}
                       <Icon icon="mdi:content-copy" class="copy-icon" />
                     </div>
@@ -413,7 +417,7 @@ const confirmDeleteSession = async (): Promise<void> => {
                   <div class="meta-item" v-if="session.uuid">
                     <Icon icon="mdi:identifier" />
 
-                    <div class="item-id" @click="copyToClipboard(session.uuid)">
+                    <div class="item-id" @click="copyToClipboard(session.uuid)" title="Copy UUID">
                       {{ session.uuid }}
                       <Icon icon="mdi:content-copy" class="copy-icon" />
                     </div>
@@ -510,13 +514,13 @@ const confirmDeleteSession = async (): Promise<void> => {
       <AppInput
         id="quiz-uuid"
         type="text"
-        label="Quiz uuid"
+        label="Quiz UUID"
         placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
         v-model="createSessionForm.quiz_uuid"
         :minlength="QUIZ_UUID_LENGTH"
         :maxLength="QUIZ_UUID_LENGTH"
         :has-error="!!createSessionForm.quiz_uuid && !isQuizUuidValid"
-        error-message="Invalid uuid format"
+        error-message="Invalid UUID format"
         required
       >
         <template v-slot:icon>
@@ -547,7 +551,7 @@ const confirmDeleteSession = async (): Promise<void> => {
 
     <template v-slot:body>
       <p class="modal-text">Are you sure you want to delete this room?</p>
-      <p class="modal-text">This action cannot be undone.</p>
+      <p class="modal-text">This action cannot be undone</p>
     </template>
 
     <template v-slot:footer>
@@ -573,7 +577,7 @@ const confirmDeleteSession = async (): Promise<void> => {
 
     <template v-slot:body>
       <p class="modal-text">Are you sure you want to delete this session?</p>
-      <p class="modal-text">This action cannot be undone.</p>
+      <p class="modal-text">This action cannot be undone</p>
     </template>
 
     <template v-slot:footer>

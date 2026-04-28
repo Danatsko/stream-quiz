@@ -249,7 +249,7 @@ const confirmDeleteRoom = async (): Promise<void> => {
 
     <template v-slot:body>
       <p class="modal-text">Are you sure you want to delete this room?</p>
-      <p class="modal-text">This action cannot be undone.</p>
+      <p class="modal-text">This action cannot be undone</p>
     </template>
 
     <template v-slot:footer>

@@ -195,7 +195,7 @@ const toggleMemberExpansion = (uuid: string | null): void => {
               <div class="meta-item" v-if="session.quiz_uuid">
                 <Icon icon="mdi:book-open-variant-outline" />
 
-                <div class="item-id" @click="copyToClipboard(session.uuid)">
+                <div class="item-id" @click="copyToClipboard(session.uuid)" title="Copy UUID">
                   {{ session.quiz_uuid }}
                   <Icon icon="mdi:content-copy" class="copy-icon" />
                 </div>
@@ -213,11 +213,7 @@ const toggleMemberExpansion = (uuid: string | null): void => {
 
               <div class="meta-item" v-if="session.uuid">
                 <Icon icon="mdi:identifier" />
-                <div
-                  class="item-id"
-                  @click="copyToClipboard(session.uuid)"
-                  title="Copy session uuid"
-                >
+                <div class="item-id" @click="copyToClipboard(session.uuid)" title="Copy UUID">
                   {{ session.uuid }}
                   <Icon icon="mdi:content-copy" class="copy-icon" />
                 </div>
@@ -252,7 +248,8 @@ const toggleMemberExpansion = (uuid: string | null): void => {
 
         <div class="empty-state-small" v-if="session.status === 'waiting'">
           <Icon icon="mdi:timer-sand" class="empty-icon-small" />
-          <p>This session is waiting to start. Questions will appear once active.</p>
+          <p>This session is waiting to start</p>
+          <p>Questions will appear once active</p>
         </div>
 
         <div
@@ -425,7 +422,7 @@ const toggleMemberExpansion = (uuid: string | null): void => {
 
     <template v-slot:body>
       <p class="modal-text">Are you sure you want to delete this session?</p>
-      <p class="modal-text">This action cannot be undone.</p>
+      <p class="modal-text">This action cannot be undone</p>
     </template>
 
     <template v-slot:footer>

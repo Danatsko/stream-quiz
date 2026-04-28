@@ -162,7 +162,7 @@ const confirmDeleteQuiz = async (): Promise<void> => {
               <div class="meta-item" v-if="quiz.uuid">
                 <Icon icon="mdi:identifier" />
 
-                <div class="quiz-id" @click="copyToClipboard(quiz.uuid)" title="Copy uuid">
+                <div class="quiz-id" @click="copyToClipboard(quiz.uuid)" title="Copy UUID">
                   {{ quiz.uuid }}
                   <Icon icon="mdi:content-copy" class="copy-icon" />
                 </div>
@@ -231,7 +231,7 @@ const confirmDeleteQuiz = async (): Promise<void> => {
 
     <template v-slot:body>
       <p class="modal-text">Are you sure you want to delete this quiz?</p>
-      <p class="modal-text">This action cannot be undone.</p>
+      <p class="modal-text">This action cannot be undone</p>
     </template>
 
     <template v-slot:footer>

@@ -80,7 +80,7 @@ onBeforeUnmount(() => {
               <div class="meta-item" v-if="session.quiz_uuid">
                 <Icon icon="mdi:book-open-variant-outline" />
 
-                <div class="room-id" @click="copyToClipboard(session.quiz_uuid)">
+                <div class="room-id" @click="copyToClipboard(session.quiz_uuid)" title="Copy UUID">
                   {{ session.quiz_uuid }}
                   <Icon icon="mdi:content-copy" class="copy-icon" />
                 </div>
@@ -89,7 +89,7 @@ onBeforeUnmount(() => {
               <div class="meta-item" v-if="session.uuid">
                 <Icon icon="mdi:identifier" />
 
-                <div class="room-id" @click="copyToClipboard(session.uuid)">
+                <div class="room-id" @click="copyToClipboard(session.uuid)" title="Copy UUID">
                   {{ session.uuid }}
                   <Icon icon="mdi:content-copy" class="copy-icon" />
                 </div>

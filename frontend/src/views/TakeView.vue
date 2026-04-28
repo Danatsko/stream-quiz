@@ -49,7 +49,7 @@ const handleTake = async () => {
   <div class="layout">
     <div class="header">
       <h1 class="header-title">Take</h1>
-      <p class="header-subtitle">Enter the session uuid to participate</p>
+      <p class="header-subtitle">Enter the session UUID to participate</p>
     </div>
 
     <div class="main">
@@ -63,7 +63,7 @@ const handleTake = async () => {
           :minlength="UUID_LENGTH"
           :maxLength="UUID_LENGTH"
           :has-error="!!sessionUuid && !isUuidValid"
-          error-message="Invalid uuid format"
+          error-message="Invalid UUID format"
           required
         >
           <template v-slot:icon>

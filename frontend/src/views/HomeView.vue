@@ -38,11 +38,11 @@ const goToRegistration = async (): Promise<void> => {
       <div class="container main-content">
         <div class="main-text-block">
           <h1 class="main-title">Learn & Quiz</h1>
-          <p class="main-subtitle">The ultimate quiz platform for students and teachers.</p>
+          <p class="main-subtitle">The ultimate quiz platform for students and teachers</p>
           <p class="main-description">
-            Join thousands of students and teachers on the ultimate quiz platform. Test your
-            knowledge and compete with peers.
+            Join thousands of students and teachers on the ultimate quiz platform
           </p>
+          <p class="main-description">Test your knowledge and compete with peers</p>
         </div>
       </div>
       <img :src="homeVector" class="main-vector main-vector-bottom" alt="" />

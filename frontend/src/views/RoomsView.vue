@@ -190,7 +190,7 @@ const confirmDeleteRoom = async (): Promise<void> => {
               <div class="meta-item" v-if="room.uuid">
                 <Icon icon="mdi:identifier" />
 
-                <div class="room-id" @click="copyToClipboard(room.uuid)">
+                <div class="room-id" @click="copyToClipboard(room.uuid)" title="Copy UUID">
                   {{ room.uuid }}
                   <Icon icon="mdi:content-copy" class="copy-icon" />
                 </div>
@@ -289,7 +289,7 @@ const confirmDeleteRoom = async (): Promise<void> => {
 
     <template v-slot:body>
       <p class="modal-text">Are you sure you want to delete this room?</p>
-      <p class="modal-text">This action cannot be undone.</p>
+      <p class="modal-text">This action cannot be undone</p>
     </template>
 
     <template v-slot:footer>

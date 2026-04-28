@@ -296,13 +296,13 @@ const confirmDeleteSession = async (): Promise<void> => {
             <AppInput
               id="quiz-uuid"
               type="text"
-              label="Quiz uuid"
+              label="Quiz UUID"
               placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
               v-model="editableSession.quiz_uuid"
               :minlength="QUIZ_UUID_LENGTH"
               :maxLength="QUIZ_UUID_LENGTH"
               :has-error="!!editableSession.quiz_uuid && !isQuizUuidValid"
-              error-message="Invalid uuid format"
+              error-message="Invalid UUID format"
             >
               <template v-slot:icon>
                 <Icon icon="mdi:identifier" />
@@ -321,7 +321,7 @@ const confirmDeleteSession = async (): Promise<void> => {
 
     <template v-slot:body>
       <p class="modal-text">Are you sure you want to delete this session?</p>
-      <p class="modal-text">This action cannot be undone.</p>
+      <p class="modal-text">This action cannot be undone</p>
     </template>
 
     <template v-slot:footer>

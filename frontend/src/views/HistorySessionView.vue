@@ -124,7 +124,7 @@ const getOptionClass = (questionUuid: string, optionUuid: string): string => {
               <div class="meta-item" v-if="session.quiz_uuid">
                 <Icon icon="mdi:book-open-variant-outline" />
 
-                <div class="item-id" @click="copyToClipboard(session.quiz_uuid)">
+                <div class="item-id" @click="copyToClipboard(session.quiz_uuid)" title="Copy UUID">
                   {{ session.quiz_uuid }}
                   <Icon icon="mdi:content-copy" class="copy-icon" />
                 </div>
@@ -132,11 +132,7 @@ const getOptionClass = (questionUuid: string, optionUuid: string): string => {
 
               <div class="meta-item" v-if="session.uuid">
                 <Icon icon="mdi:identifier" />
-                <div
-                  class="item-id"
-                  @click="copyToClipboard(session.uuid)"
-                  title="Copy session uuid"
-                >
+                <div class="item-id" @click="copyToClipboard(session.uuid)" title="Copy UUID">
                   {{ session.uuid }}
                   <Icon icon="mdi:content-copy" class="copy-icon" />
                 </div>
@@ -147,7 +143,8 @@ const getOptionClass = (questionUuid: string, optionUuid: string): string => {
 
         <div class="empty-state-small" v-if="session.status === 'waiting'">
           <Icon icon="mdi:timer-sand" class="empty-icon-small" />
-          <p>This session is waiting to start. Questions will appear once active.</p>
+          <p>This session is waiting to start</p>
+          <p>Questions will appear once active</p>
         </div>
 
         <div class="questions-list" v-if="session.status !== 'waiting'">

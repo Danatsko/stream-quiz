@@ -38,7 +38,7 @@ useInfiniteScroll(
     <div v-else-if="!isLoading && items.length === 0" class="empty-state">
       <Icon :icon="emptyIcon || 'mdi:database-remove-outline'" class="empty-icon" />
       <h1 class="empty-title">{{ emptyTitle || 'No items found' }}</h1>
-      <p class="empty-text">{{ emptyText || 'Adjust your filters or create a new item.' }}</p>
+      <p class="empty-text">{{ emptyText || 'Adjust your filters or create a new item' }}</p>
     </div>
 
     <template v-else>

@@ -157,7 +157,7 @@ const copyToClipboard = (text: string): void => {
 
               <div class="meta-item" v-if="user.uuid">
                 <Icon icon="mdi:identifier" />
-                <div class="item-id" @click="copyToClipboard(user.uuid)" title="Copy uuid">
+                <div class="item-id" @click="copyToClipboard(user.uuid)" title="Copy UUID">
                   {{ user.uuid }}
                   <Icon icon="mdi:content-copy" class="copy-icon" />
                 </div>
@@ -200,7 +200,7 @@ const copyToClipboard = (text: string): void => {
 
     <template v-slot:body>
       <p class="modal-text">Are you sure you want to delete your account?</p>
-      <p class="modal-text">This action cannot be undone.</p>
+      <p class="modal-text">This action cannot be undone</p>
     </template>
 
     <template v-slot:footer>
