@@ -903,6 +903,6 @@ const confirmDeleteSession = async (): Promise<void> => {
   border-color: red;
   box-shadow:
     0 0 1px 1px red,
-    0 0 1px 3px color-mix(in srgb, red 50%, transparent);
+    0 0 10px 1px color-mix(in srgb, red 50%, transparent);
 }
 </style>

@@ -41,7 +41,7 @@ const props = withDefaults(
   border-color: var(--color-primary);
   box-shadow:
     0 0 1px 1px var(--color-primary),
-    0 0 1px 3px var(--color-secondary);
+    0 0 10px 1px var(--color-secondary);
 }
 .card-icon-wrapper {
   display: flex;

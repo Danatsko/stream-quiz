@@ -420,7 +420,7 @@ const handleExit = async (): Promise<void> => {
   border-color: var(--color-primary) !important;
   box-shadow:
     0 0 1px 1px var(--color-primary),
-    0 0 1px 3px color-mix(in srgb, var(--color-primary) 20%, transparent) !important;
+    0 0 10px 1px color-mix(in srgb, var(--color-primary) 20%, transparent) !important;
 }
 
 .option-icon {

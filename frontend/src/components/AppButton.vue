@@ -26,8 +26,8 @@
 .btn:hover {
   border-color: var(--color-primary);
   box-shadow:
-    0 0 1px 1px color-mix(in srgb, var(--color-primary) 90%, transparent),
-    0 0 1px 3px color-mix(in srgb, var(--color-secondary) 90%, transparent);
+    0 0 1px 1px var(--color-primary),
+    0 0 10px 1px var(--color-secondary);
 }
 .btn:active {
   transform: scale(0.95);

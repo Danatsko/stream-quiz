@@ -752,7 +752,7 @@ const saveChanges = async (): Promise<void> => {
   border-color: #10b981 !important;
   box-shadow:
     0 0 1px 1px #10b981,
-    0 0 1px 3px rgba(16, 185, 129, 0.5) !important;
+    0 0 10px 1px rgba(16, 185, 129, 0.5) !important;
 }
 .option-icon {
   font-size: 1.25rem;
@@ -817,6 +817,6 @@ const saveChanges = async (): Promise<void> => {
   border-color: red;
   box-shadow:
     0 0 1px 1px red,
-    0 0 1px 3px color-mix(in srgb, red 50%, transparent);
+    0 0 10px 1px color-mix(in srgb, red 50%, transparent);
 }
 </style>
