@@ -69,6 +69,16 @@ const getOptionClass = (questionUuid: string, optionUuid: string): string => {
   const correct = isOptionCorrect(questionUuid, optionUuid)
   return correct ? 'is-correct-selected' : 'is-incorrect-selected'
 }
+
+const getQuestionScore = (questionUuid: string): number => {
+  if (!session.value) {
+    return 0
+  }
+
+  const answer = session.value.answers.find((a) => a.question_uuid === questionUuid)
+
+  return answer?.score ?? 0
+}
 </script>
 
 <template>
@@ -101,6 +111,9 @@ const getOptionClass = (questionUuid: string, optionUuid: string): string => {
               <AppBadge :class="`badge-${session.status}`">
                 {{ sessionStatusLabels[session.status] }}
               </AppBadge>
+              <AppBadge v-if="session.status === 'completed'">
+                Score: {{ session.score }} / {{ session.total_score }}
+              </AppBadge>
             </div>
 
             <p class="hero-description">{{ session.description }}</p>
@@ -114,11 +127,6 @@ const getOptionClass = (questionUuid: string, optionUuid: string): string => {
               <span class="meta-item" v-if="session.status !== 'waiting'">
                 <Icon icon="mdi:help-circle-outline" />
                 {{ session.total_questions }} questions
-              </span>
-
-              <span class="meta-item" v-if="session.status === 'completed'">
-                <Icon icon="mdi:star-outline" />
-                Score: {{ session.score }} / {{ session.total_score }}
               </span>
 
               <div class="meta-item" v-if="session.quiz_uuid">
@@ -165,6 +173,9 @@ const getOptionClass = (questionUuid: string, optionUuid: string): string => {
                 </div>
                 <AppBadge>
                   {{ question.is_multiple_answers ? 'Multiple choice' : 'Single choice' }}
+                </AppBadge>
+                <AppBadge v-if="session.status === 'completed'">
+                  Score: {{ getQuestionScore(question.uuid) }}
                 </AppBadge>
               </div>
 

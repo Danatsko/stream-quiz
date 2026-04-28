@@ -9,7 +9,11 @@ import AppModal from '@/components/AppModal.vue'
 import AppBadge from '@/components/AppBadge.vue'
 import AppListCard from '@/components/AppListCard.vue'
 import { formatDateTime, formatDuration } from '@/utils/formatters'
-import type { SessionMemberBase } from '@/types/rooms'
+import type {
+  SessionMemberBase,
+  SessionQuestionBase,
+  SessionQuestionOptionBase,
+} from '@/types/rooms'
 
 const route = useRoute()
 const router = useRouter()
@@ -113,13 +117,42 @@ const isOptionSelected = (
   return answer?.selected_option_uuids.includes(optionUuid) ?? false
 }
 
-const toggleMemberExpansion = (uuid: string | null): void => {
-  const id = uuid || 'anon'
-  if (expandedMembers.value.has(id)) {
-    expandedMembers.value.delete(id)
+const toggleMemberExpansion = (uuid: string): void => {
+  if (expandedMembers.value.has(uuid)) {
+    expandedMembers.value.delete(uuid)
   } else {
-    expandedMembers.value.add(id)
+    expandedMembers.value.add(uuid)
   }
+}
+
+const getMemberUUID = (member: SessionMemberBase, index: string | number): string => {
+  return member.user_uuid || `anon-${index}`
+}
+
+const getMemberQuestionScore = (member: SessionMemberBase, questionUuid: string): number => {
+  const answer = member.answers.find((a) => a.question_uuid === questionUuid)
+
+  return answer?.score ?? 0
+}
+
+const getMemberOptionClass = (
+  member: SessionMemberBase,
+  questionUuid: string,
+  option: SessionQuestionOptionBase,
+): string => {
+  const selected = isOptionSelected(member, questionUuid, option.uuid)
+
+  if (selected && option.is_correct) {
+    return 'is-correct-selected'
+  }
+  if (selected && !option.is_correct) {
+    return 'is-incorrect-selected'
+  }
+  if (!selected && option.is_correct) {
+    return 'is-correct-unselected'
+  }
+
+  return ''
 }
 </script>
 
@@ -313,8 +346,8 @@ const toggleMemberExpansion = (uuid: string | null): void => {
 
           <div
             class="member-card-wrapper"
-            v-for="member in session.members"
-            :key="member.user_uuid || 'anon'"
+            v-for="(member, index) in session.members"
+            :key="getMemberUUID(member, index)"
           >
             <AppListCard>
               <template v-slot:icon>
@@ -324,17 +357,31 @@ const toggleMemberExpansion = (uuid: string | null): void => {
               <template v-slot:content>
                 <div
                   class="member-header"
-                  :class="{ 'is-expanded': expandedMembers.has(member.user_uuid || 'anon') }"
-                  @click="toggleMemberExpansion(member.user_uuid)"
+                  :class="{ 'is-expanded': expandedMembers.has(getMemberUUID(member, index)) }"
+                  @click="toggleMemberExpansion(getMemberUUID(member, index))"
                 >
                   <div class="member-header-left">
-                    <h3 class="member-title">{{ member.username }}</h3>
+                    <div class="member-info">
+                      <h3 class="member-title">{{ member.username }}</h3>
+
+                      <div class="member-uuid-text" v-if="member.user_uuid">
+                        <Icon icon="mdi:identifier" />
+                        <div
+                          class="item-id"
+                          @click="copyToClipboard(member.user_uuid)"
+                          title="Copy UUID"
+                        >
+                          {{ member.user_uuid }}
+                          <Icon icon="mdi:content-copy" class="copy-icon" />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <div class="member-header-right">
-                    <span class="member-score">{{ member.score }} / {{ session.total_score }}</span>
+                    <AppBadge>Score: {{ member.score }} / {{ session.total_score }}</AppBadge>
                     <Icon
                       :icon="
-                        expandedMembers.has(member.user_uuid || 'anon')
+                        expandedMembers.has(getMemberUUID(member, index))
                           ? 'mdi:chevron-up'
                           : 'mdi:chevron-down'
                       "
@@ -345,65 +392,71 @@ const toggleMemberExpansion = (uuid: string | null): void => {
 
                 <div
                   class="member-questions"
-                  v-show="expandedMembers.has(member.user_uuid || 'anon')"
+                  v-show="expandedMembers.has(getMemberUUID(member, index))"
                 >
                   <div
                     class="member-question-item"
                     v-for="question in session.questions"
                     :key="question.uuid"
                   >
-                    <p class="member-question-text">{{ question.text }}</p>
+                    <div class="question-header">
+                      <div class="question-title-wrapper">
+                        <h3 class="question-text">{{ question.text }}</h3>
+                      </div>
+                      <AppBadge>
+                        {{ question.is_multiple_answers ? 'Multiple choice' : 'Single choice' }}
+                      </AppBadge>
+                      <AppBadge>
+                        Score: {{ getMemberQuestionScore(member, question.uuid) }}
+                      </AppBadge>
+                    </div>
 
                     <div class="options-list">
-                      <div
+                      <AppListCard
                         v-for="option in question.options"
                         :key="option.uuid"
-                        class="member-option-item"
-                        :class="{
-                          'member-correct-selected':
-                            option.is_correct &&
-                            isOptionSelected(member, question.uuid, option.uuid),
-                          'member-incorrect-selected':
-                            !option.is_correct &&
-                            isOptionSelected(member, question.uuid, option.uuid),
-                          'member-correct-unselected':
-                            option.is_correct &&
-                            !isOptionSelected(member, question.uuid, option.uuid),
-                        }"
+                        :class="[
+                          'option-item',
+                          getMemberOptionClass(member, question.uuid, option),
+                        ]"
                       >
-                        <Icon
-                          v-if="
-                            option.is_correct &&
-                            isOptionSelected(member, question.uuid, option.uuid)
-                          "
-                          icon="mdi:check-circle"
-                          class="member-option-icon correct"
-                        />
-                        <Icon
-                          v-else-if="
-                            !option.is_correct &&
-                            isOptionSelected(member, question.uuid, option.uuid)
-                          "
-                          icon="mdi:close-circle"
-                          class="member-option-icon incorrect"
-                        />
-                        <Icon
-                          v-else-if="
-                            option.is_correct &&
-                            !isOptionSelected(member, question.uuid, option.uuid)
-                          "
-                          icon="mdi:check-circle-outline"
-                          class="member-option-icon missed"
-                        />
-                        <Icon
-                          v-else-if="question.is_multiple_answers"
-                          icon="mdi:checkbox-blank-outline"
-                          class="member-option-icon neutral"
-                        />
-                        <Icon v-else icon="mdi:circle-outline" class="member-option-icon neutral" />
+                        <template v-slot:icon>
+                          <Icon
+                            v-if="
+                              option.is_correct &&
+                              isOptionSelected(member, question.uuid, option.uuid)
+                            "
+                            icon="mdi:check-circle"
+                            class="option-icon correct"
+                          />
+                          <Icon
+                            v-else-if="
+                              !option.is_correct &&
+                              isOptionSelected(member, question.uuid, option.uuid)
+                            "
+                            icon="mdi:close-circle"
+                            class="option-icon incorrect"
+                          />
+                          <Icon
+                            v-else-if="
+                              option.is_correct &&
+                              !isOptionSelected(member, question.uuid, option.uuid)
+                            "
+                            icon="mdi:check-circle-outline"
+                            class="option-icon missed"
+                          />
+                          <Icon
+                            v-else-if="question.is_multiple_answers"
+                            icon="mdi:checkbox-blank-outline"
+                            class="option-icon neutral"
+                          />
+                          <Icon v-else icon="mdi:circle-outline" class="option-icon neutral" />
+                        </template>
 
-                        <span class="option-text">{{ option.text }}</span>
-                      </div>
+                        <template v-slot:content>
+                          <span class="option-text">{{ option.text }}</span>
+                        </template>
+                      </AppListCard>
                     </div>
                   </div>
                 </div>
@@ -708,7 +761,7 @@ const toggleMemberExpansion = (uuid: string | null): void => {
 .member-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   cursor: pointer;
   user-select: none;
   transition: opacity 0.2s;
@@ -739,58 +792,68 @@ const toggleMemberExpansion = (uuid: string | null): void => {
   font-weight: 700;
   margin: 0;
 }
-.member-score {
-  font-size: 1rem;
-  font-weight: 600;
-  background: var(--linear-gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+
+.member-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
 }
+
+.member-uuid-text {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--color-text-secondary);
+}
+
+.member-question-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.option-item.is-correct-selected {
+  border-color: #10b981;
+  background-color: rgba(16, 185, 129, 0.05);
+}
+.option-item.is-correct-selected:hover {
+  border-color: #10b981 !important;
+  box-shadow:
+    0 0 1px 1px #10b981,
+    0 0 10px 1px rgba(16, 185, 129, 0.5) !important;
+}
+.option-item.is-incorrect-selected {
+  border-color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.05);
+}
+.option-item.is-incorrect-selected:hover {
+  border-color: #ef4444 !important;
+  box-shadow:
+    0 0 1px 1px #ef4444,
+    0 0 10px 1px rgba(239, 68, 68, 0.5) !important;
+}
+.option-item.is-correct-unselected {
+  border-color: rgba(16, 185, 129, 0.5);
+  border-style: dashed;
+}
+.option-item.is-correct-unselected:hover {
+  border-color: rgba(16, 185, 129, 0.8) !important;
+  box-shadow:
+    0 0 1px 1px rgba(16, 185, 129, 0.5),
+    0 0 10px 1px rgba(16, 185, 129, 0.2) !important;
+}
+.option-icon.incorrect {
+  color: #ef4444;
+}
+.option-icon.missed {
+  color: rgba(16, 185, 129, 0.8);
+}
+
 .member-questions {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-}
-.member-question-text {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0 0 0.5rem 0;
-}
-.member-option-item {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  padding: 0.5rem 0.8rem;
-  border-radius: 8px;
-  background-color: var(--color-background-secondary);
-  border: 1px solid transparent;
-}
-.member-option-item.member-correct-selected {
-  border-color: #10b981;
-  background-color: rgba(16, 185, 129, 0.05);
-}
-.member-option-item.member-incorrect-selected {
-  border-color: #ef4444;
-  background-color: rgba(239, 68, 68, 0.05);
-}
-.member-option-item.member-correct-unselected {
-  border-color: rgba(16, 185, 129, 0.5);
-  border-style: dashed;
-}
-.member-option-icon {
-  font-size: 1.25rem;
-}
-.member-option-icon.correct {
-  color: #10b981;
-}
-.member-option-icon.incorrect {
-  color: #ef4444;
-}
-.member-option-icon.missed {
-  color: rgba(16, 185, 129, 0.8);
-}
-.member-option-icon.neutral {
-  color: #4b5563;
 }
 
 .empty-state {
