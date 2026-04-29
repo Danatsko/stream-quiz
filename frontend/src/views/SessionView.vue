@@ -220,7 +220,7 @@ const getMemberOptionClass = (
                 {{ session.total_questions }} questions
               </span>
 
-              <span class="meta-item" v-if="session.status === 'completed'">
+              <span class="meta-item" v-if="session.status !== 'waiting'">
                 <Icon icon="mdi:account-group-outline" />
                 {{ session.total_members }} members
               </span>
@@ -267,7 +267,7 @@ const getMemberOptionClass = (
               Questions
             </AppButton>
             <AppButton
-              v-if="session.status === 'completed'"
+              v-if="session.status !== 'waiting'"
               class="tab-btn"
               :class="{ active: activeTab === 'Members' }"
               @click="activeTab = 'Members'"
@@ -338,7 +338,7 @@ const getMemberOptionClass = (
           </AppListCard>
         </div>
 
-        <div class="members-list" v-if="activeTab === 'Members' && session.status === 'completed'">
+        <div class="members-list" v-if="activeTab === 'Members' && session.status !== 'waiting'">
           <div v-if="session.members.length === 0" class="empty-state-small">
             <Icon icon="mdi:account-group-outline" class="empty-icon-small" />
             <p>No members participated in this session</p>
