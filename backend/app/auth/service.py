@@ -24,10 +24,10 @@ from app.auth.redis_store import (
 from app.core.config import settings
 from app.users.service import create_user, get_user_by_email, get_user_by_id
 
-password_hash = PasswordHash.recommended()
+_password_hash = PasswordHash.recommended()
 
 
-async def generate_access_token(user_uuid: UUID) -> str:
+async def _generate_access_token(user_uuid: UUID) -> str:
     iat = datetime.now(tz=timezone.utc)
     exp = iat + timedelta(seconds=settings.auth.access_token_expire_seconds)
     data_to_encode = {
@@ -45,13 +45,13 @@ async def generate_access_token(user_uuid: UUID) -> str:
     return token
 
 
-async def generate_refresh_token() -> str:
+async def _generate_refresh_token() -> str:
     token = secrets.token_hex(nbytes=32)
 
     return token
 
 
-async def pepper_refresh_token(token: str) -> str:
+async def _pepper_refresh_token(token: str) -> str:
     token_bytes = token.encode(encoding="utf-8")
     pepper_bytes = settings.auth.refresh_token_pepper.get_secret_value().encode(
         encoding="utf-8"
@@ -65,7 +65,7 @@ async def pepper_refresh_token(token: str) -> str:
     return peppered_token
 
 
-async def hash_password(password: str) -> str:
+async def _hash_password(password: str) -> str:
     password_bytes = password.encode(encoding="utf-8")
     pepper_bytes = settings.auth.password_pepper.get_secret_value().encode(
         encoding="utf-8"
@@ -75,12 +75,12 @@ async def hash_password(password: str) -> str:
         msg=password_bytes,
         digestmod=hashlib.sha256,
     ).hexdigest()
-    hashed_password = password_hash.hash(password=peppered_password)
+    hashed_password = _password_hash.hash(password=peppered_password)
 
     return hashed_password
 
 
-async def verify_password(
+async def _verify_password(
     password: str,
     hashed_password: str,
 ) -> bool:
@@ -93,7 +93,7 @@ async def verify_password(
         msg=password_bytes,
         digestmod=hashlib.sha256,
     ).hexdigest()
-    is_verified = password_hash.verify(
+    is_verified = _password_hash.verify(
         password=peppered_password,
         hash=hashed_password,
     )
@@ -130,16 +130,16 @@ async def registration(
     password: str,
     db_session: AsyncSession,
 ) -> dict[str, Any]:
-    hashed_password = await hash_password(password=password)
+    hashed_password = await _hash_password(password=password)
     user_db = await create_user(
         username=username,
         email=email,
         password=hashed_password,
         db_session=db_session,
     )
-    access_token = await generate_access_token(user_uuid=user_db.uuid)
-    refresh_token = await generate_refresh_token()
-    peppered_refresh_token = await pepper_refresh_token(token=refresh_token)
+    access_token = await _generate_access_token(user_uuid=user_db.uuid)
+    refresh_token = await _generate_refresh_token()
+    peppered_refresh_token = await _pepper_refresh_token(token=refresh_token)
     refresh_token_expires_at = datetime.now(tz=timezone.utc) + timedelta(
         seconds=settings.auth.refresh_token_expire_seconds
     )
@@ -175,7 +175,7 @@ async def login(
             detail="Incorrect credentials",
         )
 
-    is_valid_password = await verify_password(
+    is_valid_password = await _verify_password(
         password=password,
         hashed_password=user_db.password,
     )
@@ -186,9 +186,9 @@ async def login(
             detail="Incorrect credentials",
         )
 
-    access_token = await generate_access_token(user_uuid=user_db.uuid)
-    refresh_token = await generate_refresh_token()
-    peppered_refresh_token = await pepper_refresh_token(token=refresh_token)
+    access_token = await _generate_access_token(user_uuid=user_db.uuid)
+    refresh_token = await _generate_refresh_token()
+    peppered_refresh_token = await _pepper_refresh_token(token=refresh_token)
     refresh_token_expires_at = datetime.now(tz=timezone.utc) + timedelta(
         seconds=settings.auth.refresh_token_expire_seconds
     )
@@ -215,7 +215,7 @@ async def logout(
     db_session: AsyncSession,
     redis_client: Redis,
 ) -> None:
-    peppered_refresh_token = await pepper_refresh_token(token=refresh_token)
+    peppered_refresh_token = await _pepper_refresh_token(token=refresh_token)
 
     await revoke_refresh_token_by_token(
         token=peppered_refresh_token,
@@ -252,7 +252,7 @@ async def refresh(
                 redis_client=redis_client,
             )
 
-    peppered_refresh_token = await pepper_refresh_token(token=refresh_token)
+    peppered_refresh_token = await _pepper_refresh_token(token=refresh_token)
     refresh_token_db = await get_refresh_token_by_token(
         token=peppered_refresh_token,
         db_session=db_session,
@@ -291,7 +291,7 @@ async def refresh(
             detail="User not found or deleted",
         )
 
-    new_access_token = await generate_access_token(user_uuid=user_db.uuid)
+    new_access_token = await _generate_access_token(user_uuid=user_db.uuid)
     result = {
         "access_token": new_access_token,
     }

@@ -6,14 +6,24 @@ from uuid import UUID
 from redis.asyncio import Redis
 
 
-async def get_session_info_key(uuid: UUID | str) -> str:
+async def _get_session_info_key(uuid: UUID | str) -> str:
     key = f"session:{str(uuid)}:info"
 
     return key
 
 
-async def get_session_answers_key(uuid: UUID | str) -> str:
+async def _get_session_answers_key(uuid: UUID | str) -> str:
     key = f"session:{uuid}:answers"
+
+    return key
+
+
+async def _get_user_answers_key(
+    session_uuid: UUID | str,
+    user_uuid: UUID | str,
+) -> str:
+    session_answers_key = await _get_session_answers_key(uuid=session_uuid)
+    key = f"{session_answers_key}:{user_uuid}"
 
     return key
 
@@ -22,16 +32,6 @@ async def get_session_events_channel(uuid: UUID | str) -> str:
     channel = f"session:{str(uuid)}:events"
 
     return channel
-
-
-async def get_user_answers_key(
-    session_uuid: UUID | str,
-    user_uuid: UUID | str,
-) -> str:
-    session_answers_key = await get_session_answers_key(uuid=session_uuid)
-    key = f"{session_answers_key}:{user_uuid}"
-
-    return key
 
 
 async def set_session_info(
@@ -50,7 +50,7 @@ async def set_session_info(
         "questions": questions_data,
     }
     ttl = time_seconds + 300
-    key = await get_session_info_key(uuid=session_uuid)
+    key = await _get_session_info_key(uuid=session_uuid)
     value = await redis_client.set(
         name=key,
         value=json.dumps(redis_session_info),
@@ -64,7 +64,7 @@ async def get_session_info(
     session_uuid: UUID,
     redis_client: Redis,
 ) -> dict[str, str]:
-    key = await get_session_info_key(uuid=session_uuid)
+    key = await _get_session_info_key(uuid=session_uuid)
     session_info = await redis_client.get(name=key)
 
     return session_info
@@ -74,8 +74,10 @@ async def clear_session_data(
     session_uuid: UUID,
     redis_client: Redis,
 ) -> bool:
-    session_info_key = await get_session_info_key(uuid=session_uuid)
-    match_pattern = await get_user_answers_key(session_uuid=session_uuid, user_uuid="*")
+    session_info_key = await _get_session_info_key(uuid=session_uuid)
+    match_pattern = await _get_user_answers_key(
+        session_uuid=session_uuid, user_uuid="*"
+    )
     keys = [session_info_key]
     cursor = 0
 
@@ -103,7 +105,7 @@ async def save_user_answer(
     answer_data: list[str],
     redis_client: Redis,
 ) -> bool:
-    key = await get_user_answers_key(
+    key = await _get_user_answers_key(
         session_uuid=session_uuid,
         user_uuid=user_uuid,
     )
@@ -129,7 +131,7 @@ async def get_user_answered_question_uuids(
     user_uuid: UUID,
     redis_client: Redis,
 ) -> list[str]:
-    key = await get_user_answers_key(
+    key = await _get_user_answers_key(
         session_uuid=session_uuid,
         user_uuid=user_uuid,
     )
@@ -142,7 +144,9 @@ async def get_session_answers(
     session_uuid: UUID,
     redis_client: Redis,
 ) -> dict[str, dict[str, str]]:
-    match_pattern = await get_user_answers_key(session_uuid=session_uuid, user_uuid="*")
+    match_pattern = await _get_user_answers_key(
+        session_uuid=session_uuid, user_uuid="*"
+    )
     keys = []
     cursor = 0
 

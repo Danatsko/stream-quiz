@@ -6,7 +6,7 @@ from fastapi import WebSocket
 
 class SessionConnectionManager:
     def __init__(self) -> None:
-        self.active_connections: dict[UUID, dict[UUID, WebSocket]] = {}
+        self._active_connections: dict[UUID, dict[UUID, WebSocket]] = {}
 
     async def connect(
         self,
@@ -14,10 +14,10 @@ class SessionConnectionManager:
         user_uuid: UUID,
         websocket: WebSocket,
     ) -> None:
-        if session_uuid not in self.active_connections:
-            self.active_connections[session_uuid] = {}
+        if session_uuid not in self._active_connections:
+            self._active_connections[session_uuid] = {}
 
-        existing_ws = self.active_connections[session_uuid].get(user_uuid)
+        existing_ws = self._active_connections[session_uuid].get(user_uuid)
 
         if existing_ws:
             try:
@@ -25,21 +25,21 @@ class SessionConnectionManager:
             except Exception:
                 pass
 
-        self.active_connections[session_uuid][user_uuid] = websocket
+        self._active_connections[session_uuid][user_uuid] = websocket
 
     async def disconnect(
         self,
         session_uuid: UUID,
         user_uuid: UUID,
     ) -> None:
-        if session_uuid in self.active_connections:
-            self.active_connections[session_uuid].pop(
+        if session_uuid in self._active_connections:
+            self._active_connections[session_uuid].pop(
                 user_uuid,
                 None,
             )
 
-            if not self.active_connections[session_uuid]:
-                self.active_connections.pop(
+            if not self._active_connections[session_uuid]:
+                self._active_connections.pop(
                     session_uuid,
                     None,
                 )
@@ -50,8 +50,8 @@ class SessionConnectionManager:
         code: int,
         reason: str,
     ) -> None:
-        if session_uuid in self.active_connections:
-            connections = list(self.active_connections[session_uuid].values())
+        if session_uuid in self._active_connections:
+            connections = list(self._active_connections[session_uuid].values())
 
             for connection in connections:
                 try:
@@ -62,7 +62,7 @@ class SessionConnectionManager:
                 except Exception:
                     pass
 
-            self.active_connections.pop(
+            self._active_connections.pop(
                 session_uuid,
                 None,
             )
@@ -72,8 +72,8 @@ class SessionConnectionManager:
         session_uuid: UUID,
         message: dict[str, Any],
     ) -> None:
-        if session_uuid in self.active_connections:
-            for connection in self.active_connections[session_uuid].values():
+        if session_uuid in self._active_connections:
+            for connection in self._active_connections[session_uuid].values():
                 try:
                     await connection.send_json(message)
                 except Exception:
