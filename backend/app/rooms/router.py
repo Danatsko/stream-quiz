@@ -231,6 +231,7 @@ async def get_session(
     session_uuid: UUID,
     auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
     db_session: Annotated[AsyncSession, Depends(get_db_session)],
+    redis_client: Annotated[Redis, Depends(get_redis_client)],
 ) -> GetSessionResponse:
     user_uuid = auth_context["user_uuid"]
     result = await service_get_session(
@@ -238,6 +239,7 @@ async def get_session(
         session_uuid=session_uuid,
         user_uuid=user_uuid,
         db_session=db_session,
+        redis_client=redis_client,
     )
 
     return GetSessionResponse(

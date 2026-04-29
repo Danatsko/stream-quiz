@@ -41,6 +41,64 @@ from app.sessions.redis_store import (
 from app.users.service import get_users_by_ids, get_user_ids_by_uuids
 
 
+def _calculate_member_score(
+    grouped_answers: dict[int, list[int]],
+    scoring_map: dict[int, dict[str, Any]],
+    option_id_to_uuid_map: dict[int, UUID],
+) -> tuple[list[dict[str, Any]], int, float]:
+    member_answers_data = []
+    member_total_score = 0.0
+    member_total_answers = 0
+
+    for question_id, question_scoring in scoring_map.items():
+        selected_option_ids = set(grouped_answers.get(question_id, []))
+
+        if not selected_option_ids:
+            member_answers_data.append(
+                {
+                    "question_uuid": question_scoring["question_uuid"],
+                    "selected_option_uuids": [],
+                    "score": 0.00,
+                }
+            )
+            continue
+
+        member_total_answers += 1
+        correct_selected = selected_option_ids.intersection(
+            question_scoring["correct_opts"]
+        )
+        wrong_selected = selected_option_ids.intersection(
+            question_scoring["wrong_opts"]
+        )
+        total_correct = len(question_scoring["correct_opts"])
+        total_wrong = len(question_scoring["wrong_opts"])
+        correct_ratio = (
+            len(correct_selected) / total_correct if total_correct > 0 else 0.0
+        )
+        wrong_ratio = len(wrong_selected) / total_wrong if total_wrong > 0 else 0.0
+        question_score = correct_ratio - wrong_ratio
+
+        if question_score < 0:
+            question_score = 0.0
+
+        member_total_score += question_score
+        selected_uuids = [
+            option_id_to_uuid_map[option_id]
+            for option_id in selected_option_ids
+            if option_id in option_id_to_uuid_map
+        ]
+
+        member_answers_data.append(
+            {
+                "question_uuid": question_scoring["question_uuid"],
+                "selected_option_uuids": selected_uuids,
+                "score": round(question_score, 2),
+            }
+        )
+
+    return member_answers_data, member_total_answers, member_total_score
+
+
 async def create_session(
     title: str,
     description: str,
@@ -213,6 +271,7 @@ async def get_session(
     room_uuid: UUID,
     session_uuid: UUID,
     db_session: AsyncSession,
+    redis_client: Redis,
 ) -> dict[str, Any]:
     session_db = await get_session_with_relations_by_uuid(
         uuid=session_uuid,
@@ -294,110 +353,111 @@ async def get_session(
 
     total_questions = len(questions)
     total_score = float(total_questions)
+    members = []
 
     if session_db.status == SessionStatus.active:
-        result = {
-            "uuid": session_db.uuid,
-            "room_uuid": room_uuid,
-            "quiz_uuid": quiz_uuid,
-            "title": session_db.title,
-            "description": session_db.description,
-            "time_seconds": session_db.time_seconds,
-            "status": session_db.status,
-            "members": [],
-            "total_members": 0,
-            "questions": questions,
-            "total_questions": total_questions,
-            "total_score": total_score,
-            "created_at": session_db.created_at,
-            "updated_at": session_db.updated_at,
-        }
-
-        return result
-
-    members = []
-    member_user_ids = {member_db.user_id for member_db in session_db.members}
-    users_mapping = {}
-
-    if member_user_ids:
-        users_mapping = await get_users_by_ids(
-            ids=member_user_ids,
-            db_session=db_session,
+        answers_data = await get_session_answers(
+            session_uuid=session_db.uuid,
+            redis_client=redis_client,
         )
 
-    for member_db in session_db.members:
-        member_answers_data = []
-        member_total_score = 0.0
-        member_total_answers = 0
-        grouped_answers = {}
+        if answers_data:
+            user_uuids = {UUID(user_uuid_str) for user_uuid_str in answers_data.keys()}
+            users_mapping_ids = await get_user_ids_by_uuids(
+                uuids=user_uuids,
+                db_session=db_session,
+            )
+            users_mapping = await get_users_by_ids(
+                ids=set(users_mapping_ids.values()),
+                db_session=db_session,
+            )
+            question_uuids_to_ids = {
+                str(question_db.uuid): question_db.id
+                for question_db in session_db.questions
+            }
+            option_uuids_to_ids = {
+                str(option_db.uuid): option_db.id
+                for question_db in session_db.questions
+                for option_db in question_db.options
+            }
 
-        for answer_db in member_db.answers:
-            question_db_id = answer_db.session_question_id
+            for user_uuid_str, user_answers in answers_data.items():
+                user_id = users_mapping_ids.get(UUID(user_uuid_str))
+                user = users_mapping.get(user_id) if user_id else None
+                grouped_answers = {}
 
-            if question_db_id not in grouped_answers:
-                grouped_answers[question_db_id] = []
+                for question_uuid_str, options_json in user_answers.items():
+                    question_id = question_uuids_to_ids.get(question_uuid_str)
 
-            grouped_answers[question_db_id].append(answer_db.session_question_option_id)
+                    if not question_id:
+                        continue
 
-        for question_id, question_scoring in scoring_map.items():
-            selected_option_ids = set(grouped_answers.get(question_id, []))
+                    selected_options = json.loads(options_json)
+                    grouped_answers[question_id] = [
+                        option_uuids_to_ids.get(option_str)
+                        for option_str in selected_options
+                        if option_str in option_uuids_to_ids
+                    ]
 
-            if not selected_option_ids:
-                member_answers_data.append(
+                member_answers_data, member_total_answers, member_total_score = (
+                    _calculate_member_score(
+                        grouped_answers=grouped_answers,
+                        scoring_map=scoring_map,
+                        option_id_to_uuid_map=option_id_to_uuid_map,
+                    )
+                )
+
+                members.append(
                     {
-                        "question_uuid": question_scoring["question_uuid"],
-                        "selected_option_uuids": [],
-                        "score": 0.00,
+                        "user_uuid": user.uuid if user else UUID(user_uuid_str),
+                        "username": user.username if user else "Unknown",
+                        "answers": member_answers_data,
+                        "total_answers": member_total_answers,
+                        "score": round(member_total_score, 2),
                     }
                 )
-                continue
 
-            member_total_answers += 1
+    elif session_db.status == SessionStatus.completed:
+        member_user_ids = {member_db.user_id for member_db in session_db.members}
+        users_mapping = {}
 
-            correct_selected = selected_option_ids.intersection(
-                question_scoring["correct_opts"]
+        if member_user_ids:
+            users_mapping = await get_users_by_ids(
+                ids=member_user_ids,
+                db_session=db_session,
             )
-            wrong_selected = selected_option_ids.intersection(
-                question_scoring["wrong_opts"]
+
+        for member_db in session_db.members:
+            grouped_answers = {}
+
+            for answer_db in member_db.answers:
+                question_db_id = answer_db.session_question_id
+
+                if question_db_id not in grouped_answers:
+                    grouped_answers[question_db_id] = []
+
+                grouped_answers[question_db_id].append(
+                    answer_db.session_question_option_id
+                )
+
+            member_answers_data, member_total_answers, member_total_score = (
+                _calculate_member_score(
+                    grouped_answers=grouped_answers,
+                    scoring_map=scoring_map,
+                    option_id_to_uuid_map=option_id_to_uuid_map,
+                )
             )
-            total_correct = len(question_scoring["correct_opts"])
-            total_wrong = len(question_scoring["wrong_opts"])
-            correct_ratio = (
-                len(correct_selected) / total_correct if total_correct > 0 else 0.0
-            )
-            wrong_ratio = len(wrong_selected) / total_wrong if total_wrong > 0 else 0.0
-            question_score = correct_ratio - wrong_ratio
+            user = users_mapping.get(member_db.user_id)
 
-            if question_score < 0:
-                question_score = 0.0
-
-            member_total_score += question_score
-
-            selected_uuids = [
-                option_id_to_uuid_map[option_id]
-                for option_id in selected_option_ids
-                if option_id in option_id_to_uuid_map
-            ]
-
-            member_answers_data.append(
+            members.append(
                 {
-                    "question_uuid": question_scoring["question_uuid"],
-                    "selected_option_uuids": selected_uuids,
-                    "score": round(question_score, 2),
+                    "user_uuid": user.uuid if user else None,
+                    "username": user.username if user else "Unknown",
+                    "answers": member_answers_data,
+                    "total_answers": member_total_answers,
+                    "score": round(member_total_score, 2),
                 }
             )
-
-        user = users_mapping.get(member_db.user_id)
-
-        members.append(
-            {
-                "user_uuid": user.uuid if user else None,
-                "username": user.username if user else "Unknown",
-                "answers": member_answers_data,
-                "total_answers": member_total_answers,
-                "score": round(member_total_score, 2),
-            }
-        )
 
     total_members = len(members)
     result = {

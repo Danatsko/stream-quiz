@@ -314,6 +314,7 @@ async def get_session(
     session_uuid: UUID,
     user_uuid: UUID,
     db_session: AsyncSession,
+    redis_client: Redis,
 ) -> dict[str, Any]:
     user_db = await get_user_by_uuid(
         uuid=user_uuid,
@@ -344,6 +345,7 @@ async def get_session(
         room_uuid=room_db.uuid,
         session_uuid=session_uuid,
         db_session=db_session,
+        redis_client=redis_client,
     )
 
     return result
