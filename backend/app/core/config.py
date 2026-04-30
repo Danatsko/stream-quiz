@@ -116,12 +116,25 @@ class AuthSettings(CustomBaseSettings):
     password_pepper: SecretStr
 
 
+class ResendSettings(CustomBaseSettings):
+    model_config = SettingsConfigDict(
+        **{
+            **CustomBaseSettings.model_config,
+            "env_prefix": "RESEND_",
+        }
+    )
+
+    api_key: str
+    from_email: str
+
+
 class Settings(CustomBaseSettings):
     app: AppSettings = Field(default_factory=AppSettings)
     db: DBSettings = Field(default_factory=DBSettings)
     redis: RedisSettings = Field(default_factory=RedisSettings)
     cors: CORSSettings = Field(default_factory=CORSSettings)
     auth: AuthSettings = Field(default_factory=AuthSettings)
+    resend: ResendSettings = Field(default_factory=ResendSettings)
 
 
 settings = Settings()
