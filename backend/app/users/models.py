@@ -1,4 +1,4 @@
-from sqlalchemy import text, String, Index
+from sqlalchemy import text, String, Index, Boolean, false
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.models import Base, UUIDMixin, SoftDeleteMixin
@@ -18,6 +18,11 @@ class User(Base, UUIDMixin, SoftDeleteMixin):
     password: Mapped[str] = mapped_column(
         String(),
         nullable=False,
+    )
+    is_verified: Mapped[bool] = mapped_column(
+        Boolean(),
+        nullable=False,
+        server_default=false(),
     )
 
     __table_args__ = (
