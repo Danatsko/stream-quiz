@@ -5,6 +5,7 @@ from datetime import datetime, timezone, timedelta
 import secrets
 from typing import Any
 
+from arq import ArqRedis
 from fastapi import HTTPException, status
 import jwt
 from pwdlib import PasswordHash
@@ -20,11 +21,26 @@ from app.auth.db_repository import (
 from app.auth.redis_store import (
     blacklist_access_token,
     blacklist_user as redis_store_blacklist_user,
+    set_verification_token,
+    get_verification_token,
+    mark_verification_token_as_used,
 )
 from app.core.config import settings
-from app.users.service import create_user, get_user_by_email, get_user_by_id
+from app.users.service import (
+    create_user,
+    get_user_by_email,
+    get_user_by_id,
+    verify_user_by_uuid,
+    get_user_by_uuid,
+)
 
 _password_hash = PasswordHash.recommended()
+
+
+async def _generate_verification_token() -> str:
+    token = secrets.token_hex(nbytes=32)
+
+    return token
 
 
 async def _generate_access_token(user_uuid: UUID) -> str:
@@ -129,7 +145,9 @@ async def registration(
     email: str,
     password: str,
     db_session: AsyncSession,
-) -> dict[str, Any]:
+    redis_client: Redis,
+    arq_pool: ArqRedis,
+) -> None:
     hashed_password = await _hash_password(password=password)
     user_db = await create_user(
         username=username,
@@ -137,26 +155,20 @@ async def registration(
         password=hashed_password,
         db_session=db_session,
     )
-    access_token = await _generate_access_token(user_uuid=user_db.uuid)
-    refresh_token = await _generate_refresh_token()
-    peppered_refresh_token = await _pepper_refresh_token(token=refresh_token)
-    refresh_token_expires_at = datetime.now(tz=timezone.utc) + timedelta(
-        seconds=settings.auth.refresh_token_expire_seconds
+    verification_token = await _generate_verification_token()
+
+    await set_verification_token(
+        token=verification_token,
+        user_uuid=user_db.uuid,
+        ttl=settings.auth.verification_token_expire_seconds,
+        redis_client=redis_client,
     )
 
-    await create_refresh_token(
-        user_id=user_db.id,
-        token=peppered_refresh_token,
-        expires_at=refresh_token_expires_at,
-        db_session=db_session,
+    await arq_pool.enqueue_job(
+        "send_verification_email",
+        email=user_db.email,
+        token=verification_token,
     )
-
-    result = {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-    }
-
-    return result
 
 
 async def login(
@@ -184,6 +196,12 @@ async def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect credentials",
+        )
+
+    if not user_db.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is not verified",
         )
 
     access_token = await _generate_access_token(user_uuid=user_db.uuid)
@@ -297,3 +315,111 @@ async def refresh(
     }
 
     return result
+
+
+async def verify_account(
+    token: str,
+    db_session: AsyncSession,
+    redis_client: Redis,
+) -> dict[str, Any]:
+    token_value = await get_verification_token(
+        token=token,
+        redis_client=redis_client,
+    )
+
+    if token_value is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification token",
+        )
+
+    if token_value == "used":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Account is already verified",
+        )
+
+    user_uuid = UUID(token_value)
+    user_db = await get_user_by_uuid(
+        uuid=user_uuid,
+        db_session=db_session,
+    )
+
+    if user_db is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    is_verified = await verify_user_by_uuid(
+        uuid=user_uuid,
+        db_session=db_session,
+    )
+
+    if not is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    await mark_verification_token_as_used(
+        token=token,
+        redis_client=redis_client,
+    )
+
+    access_token = await _generate_access_token(user_uuid=user_db.uuid)
+    refresh_token = await _generate_refresh_token()
+    peppered_refresh_token = await _pepper_refresh_token(token=refresh_token)
+    refresh_token_expires_at = datetime.now(tz=timezone.utc) + timedelta(
+        seconds=settings.auth.refresh_token_expire_seconds
+    )
+
+    await create_refresh_token(
+        user_id=user_db.id,
+        token=peppered_refresh_token,
+        expires_at=refresh_token_expires_at,
+        db_session=db_session,
+    )
+
+    result = {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+    }
+
+    return result
+
+
+async def resend_verification(
+    email: str,
+    redis_client: Redis,
+    arq_pool: ArqRedis,
+    db_session: AsyncSession,
+) -> None:
+    user_db = await get_user_by_email(
+        email=email,
+        db_session=db_session,
+    )
+
+    if user_db is None:
+        return
+
+    if user_db.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Account is already verified",
+        )
+
+    verification_token = await _generate_verification_token()
+
+    await set_verification_token(
+        token=verification_token,
+        user_uuid=user_db.uuid,
+        ttl=settings.auth.verification_token_expire_seconds,
+        redis_client=redis_client,
+    )
+
+    await arq_pool.enqueue_job(
+        "send_verification_email",
+        email=user_db.email,
+        token=verification_token,
+    )

@@ -5,6 +5,7 @@ from arq.connections import RedisSettings
 from app.core.config import settings
 from app.core.db import close_db_connection, init_db
 from app.core.redis import close_redis_connection, init_redis
+from app.auth.arq_tasks import send_verification_email
 from app.sessions.arq_tasks import auto_close_session
 
 
@@ -19,7 +20,10 @@ async def shutdown(ctx: dict[str, Any]) -> None:
 
 
 class WorkerSettings:
-    functions = [auto_close_session]
+    functions = [
+        auto_close_session,
+        send_verification_email,
+    ]
     redis_settings = RedisSettings.from_dsn(settings.redis.url)
     on_startup = startup
     on_shutdown = shutdown

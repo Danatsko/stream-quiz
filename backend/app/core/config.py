@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, computed_field, PostgresDsn, RedisDsn, SecretStr
+from pydantic import Field, computed_field, PostgresDsn, RedisDsn, SecretStr, HttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR_PATH = Path(__file__).resolve().parent.parent.parent
@@ -25,6 +25,7 @@ class AppSettings(CustomBaseSettings):
     )
 
     environment: Literal["development", "production", "testing"]
+    frontend_url: HttpUrl
 
     @computed_field
     @property
@@ -109,6 +110,7 @@ class AuthSettings(CustomBaseSettings):
 
     jwt_algorithm: str
     jwt_secret_key: SecretStr
+    verification_token_expire_seconds: int
     access_token_expire_seconds: int
     refresh_token_expire_seconds: int
     refresh_token_pepper: SecretStr

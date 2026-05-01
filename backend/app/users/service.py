@@ -15,6 +15,7 @@ from app.users.db_repository import (
     get_user_ids_by_uuids as db_repository_get_user_ids_by_uuids,
     get_users_by_ids as db_repository_get_users_by_ids,
     update_user_by_uuid,
+    verify_user_by_uuid as db_repository_verify_user_by_uuid,
     soft_delete_user_by_uuid,
 )
 from app.users.models import User
@@ -117,6 +118,18 @@ async def get_users_by_ids(
     )
 
     return users_db
+
+
+async def verify_user_by_uuid(
+    uuid: UUID,
+    db_session: AsyncSession,
+) -> bool:
+    is_verified = await db_repository_verify_user_by_uuid(
+        uuid=uuid,
+        db_session=db_session,
+    )
+
+    return is_verified
 
 
 async def get_me(

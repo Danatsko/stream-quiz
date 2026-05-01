@@ -138,6 +138,23 @@ async def update_user_by_uuid(
     return result.rowcount == 1
 
 
+async def verify_user_by_uuid(
+    uuid: UUID,
+    db_session: AsyncSession,
+) -> bool:
+    stmt = (
+        update(User)
+        .where(
+            User.uuid == uuid,
+            User.deleted_at.is_(None),
+        )
+        .values(is_verified=True)
+    )
+    result = await db_session.execute(stmt)
+
+    return result.rowcount == 1
+
+
 async def soft_delete_user_by_uuid(
     uuid: UUID,
     db_session: AsyncSession,

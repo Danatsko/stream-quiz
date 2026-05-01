@@ -1,6 +1,7 @@
 from uuid import UUID
 from typing import Annotated, Any
 
+from arq import ArqRedis
 from fastapi import APIRouter, status, Request, Response, Depends
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,14 +14,19 @@ from app.auth.dependencies import (
 from app.auth.schemas import (
     RegistrationRequest,
     LoginRequest,
+    ResendVerificationRequest,
+    VerifyRequest,
 )
 from app.auth.service import (
     registration as service_registration,
     login as service_login,
     logout as service_logout,
     refresh as service_refresh,
+    verify_account,
+    resend_verification as service_resend_verification,
 )
 from app.auth.web_utils import set_auth_cookies, clear_auth_cookies
+from app.core.arq import get_arq_pool
 from app.core.db import get_db_session
 from app.core.limiter import limiter
 from app.core.redis import get_redis_client
@@ -39,16 +45,14 @@ async def registration(
     response: Response,
     registration_data: RegistrationRequest,
     db_session: Annotated[AsyncSession, Depends(get_db_session)],
+    redis_client: Annotated[Redis, Depends(get_redis_client)],
+    arq_pool: Annotated[ArqRedis, Depends(get_arq_pool)],
 ) -> None:
-    result = await service_registration(
+    await service_registration(
         **registration_data.model_dump(),
         db_session=db_session,
-    )
-
-    await set_auth_cookies(
-        response=response,
-        access_token=result["access_token"],
-        refresh_token=result["refresh_token"],
+        redis_client=redis_client,
+        arq_pool=arq_pool,
     )
 
 
@@ -138,4 +142,51 @@ async def refresh(
     await set_auth_cookies(
         response=response,
         access_token=result["access_token"],
+    )
+
+
+@auth_router.post(
+    path="/verify",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(ensure_unauthenticated_user)],
+)
+@limiter.limit("5/minute")
+async def verify(
+    request: Request,
+    response: Response,
+    verify_data: VerifyRequest,
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
+    redis_client: Annotated[Redis, Depends(get_redis_client)],
+) -> None:
+    result = await verify_account(
+        **verify_data.model_dump(),
+        db_session=db_session,
+        redis_client=redis_client,
+    )
+
+    await set_auth_cookies(
+        response=response,
+        access_token=result["access_token"],
+        refresh_token=result["refresh_token"],
+    )
+
+
+@auth_router.post(
+    path="/resend-verification",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(ensure_unauthenticated_user)],
+)
+@limiter.limit("5/minute")
+async def resend_verification(
+    request: Request,
+    resend_verification_data: ResendVerificationRequest,
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
+    redis_client: Annotated[Redis, Depends(get_redis_client)],
+    arq_pool: Annotated[ArqRedis, Depends(get_arq_pool)],
+) -> None:
+    await service_resend_verification(
+        **resend_verification_data.model_dump(),
+        db_session=db_session,
+        redis_client=redis_client,
+        arq_pool=arq_pool,
     )

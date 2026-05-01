@@ -27,3 +27,17 @@ class RegistrationRequest(AuthBase):
 
 class LoginRequest(AuthBase):
     pass
+
+
+class VerifyRequest(Base):
+    token: Annotated[
+        str,
+        StringConstraints(
+            min_length=64,
+            max_length=64,
+        ),
+    ]
+
+
+class ResendVerificationRequest(Base):
+    email: EmailStr
