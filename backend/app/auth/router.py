@@ -49,7 +49,9 @@ async def registration(
     arq_pool: Annotated[ArqRedis, Depends(get_arq_pool)],
 ) -> None:
     await service_registration(
-        **registration_data.model_dump(),
+        username=registration_data.username,
+        email=registration_data.email,
+        password=registration_data.password,
         db_session=db_session,
         redis_client=redis_client,
         arq_pool=arq_pool,
@@ -69,7 +71,8 @@ async def login(
     db_session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> None:
     result = await service_login(
-        **login_data.model_dump(),
+        email=login_data.email,
+        password=login_data.password,
         db_session=db_session,
     )
 
@@ -159,7 +162,7 @@ async def verify(
     redis_client: Annotated[Redis, Depends(get_redis_client)],
 ) -> None:
     result = await verify_account(
-        **verify_data.model_dump(),
+        token=verify_data.token,
         db_session=db_session,
         redis_client=redis_client,
     )
@@ -185,7 +188,7 @@ async def resend_verification(
     arq_pool: Annotated[ArqRedis, Depends(get_arq_pool)],
 ) -> None:
     await service_resend_verification(
-        **resend_verification_data.model_dump(),
+        email=resend_verification_data.email,
         db_session=db_session,
         redis_client=redis_client,
         arq_pool=arq_pool,

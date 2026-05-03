@@ -41,7 +41,8 @@ async def create_quiz(
 ) -> CreateQuizResponse:
     user_uuid = auth_context["user_uuid"]
     result = await service_create_quiz(
-        **create_quiz_data.model_dump(),
+        title=create_quiz_data.title,
+        description=create_quiz_data.description,
         user_uuid=user_uuid,
         db_session=db_session,
     )

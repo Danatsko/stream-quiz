@@ -54,7 +54,8 @@ async def create_room(
 ) -> CreateRoomResponse:
     user_uuid = auth_context["user_uuid"]
     result = await service_create_room(
-        **create_room_data.model_dump(),
+        title=create_room_data.title,
+        description=create_room_data.description,
         user_uuid=user_uuid,
         db_session=db_session,
     )
@@ -178,7 +179,10 @@ async def create_session(
 ) -> CreateSessionResponse:
     user_uuid = auth_context["user_uuid"]
     result = await service_create_session(
-        **create_session_data.model_dump(),
+        title=create_session_data.title,
+        description=create_session_data.description,
+        time_seconds=create_session_data.time_seconds,
+        quiz_uuid=create_session_data.quiz_uuid,
         room_uuid=room_uuid,
         user_uuid=user_uuid,
         db_session=db_session,
