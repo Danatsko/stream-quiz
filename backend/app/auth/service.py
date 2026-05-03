@@ -6,7 +6,6 @@ import secrets
 from typing import Any
 
 from arq import ArqRedis
-from fastapi import HTTPException, status
 import jwt
 from pwdlib import PasswordHash
 from redis.asyncio import Redis
@@ -26,6 +25,13 @@ from app.auth.redis_store import (
     mark_verification_token_as_used,
 )
 from app.core.config import settings
+from app.core.exceptions import (
+    InvalidCredentialsError,
+    AccountNotVerifiedError,
+    InvalidTokenError,
+    AccountAlreadyVerifiedError,
+    UserNotFoundError,
+)
 from app.users.service import (
     create_user,
     get_user_by_email,
@@ -182,10 +188,7 @@ async def login(
     )
 
     if user_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect credentials",
-        )
+        raise InvalidCredentialsError()
 
     is_valid_password = await _verify_password(
         password=password,
@@ -193,16 +196,10 @@ async def login(
     )
 
     if not is_valid_password:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect credentials",
-        )
+        raise InvalidCredentialsError()
 
     if not user_db.is_verified:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account is not verified",
-        )
+        raise AccountNotVerifiedError()
 
     access_token = await _generate_access_token(user_uuid=user_db.uuid)
     refresh_token = await _generate_refresh_token()
@@ -277,10 +274,7 @@ async def refresh(
     )
 
     if refresh_token_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired refresh token",
-        )
+        raise InvalidTokenError(message="Invalid or expired refresh token")
 
     if refresh_token_db.expires_at < datetime.now(tz=timezone.utc):
         await revoke_refresh_token_by_token(
@@ -288,10 +282,7 @@ async def refresh(
             db_session=db_session,
         )
 
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired refresh token",
-        )
+        raise InvalidTokenError(message="Invalid or expired refresh token")
 
     user_db = await get_user_by_id(
         id=refresh_token_db.user_id,
@@ -304,10 +295,7 @@ async def refresh(
             db_session=db_session,
         )
 
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found or deleted",
-        )
+        raise InvalidTokenError(message="User not found or deleted")
 
     new_access_token = await _generate_access_token(user_uuid=user_db.uuid)
     result = {
@@ -328,16 +316,10 @@ async def verify_account(
     )
 
     if token_value is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired verification token",
-        )
+        raise InvalidTokenError(message="Invalid or expired verification token")
 
     if token_value == "used":
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Account is already verified",
-        )
+        raise AccountAlreadyVerifiedError()
 
     user_uuid = UUID(token_value)
     user_db = await get_user_by_uuid(
@@ -346,10 +328,7 @@ async def verify_account(
     )
 
     if user_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+        raise UserNotFoundError()
 
     is_verified = await verify_user_by_uuid(
         uuid=user_uuid,
@@ -357,10 +336,7 @@ async def verify_account(
     )
 
     if not is_verified:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+        raise UserNotFoundError()
 
     await mark_verification_token_as_used(
         token=token,
@@ -404,10 +380,7 @@ async def resend_verification(
         return
 
     if user_db.is_verified:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Account is already verified",
-        )
+        raise AccountAlreadyVerifiedError()
 
     verification_token = await _generate_verification_token()
 

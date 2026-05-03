@@ -3,10 +3,15 @@ from typing import Any
 from uuid import UUID
 
 from arq import ArqRedis
-from fastapi import HTTPException, status
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import (
+    QuizNotFoundError,
+    SessionNotFoundError,
+    SessionMemberNotFoundError,
+    SessionInvalidStateError,
+)
 from app.quizzes.service import (
     get_available_quiz_with_relations_by_id,
     get_available_quiz_by_uuid,
@@ -115,10 +120,7 @@ async def create_session(
     )
 
     if quiz_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Quiz not found",
-        )
+        raise QuizNotFoundError()
 
     session_db = await db_repository_create_session(
         title=title,
@@ -280,10 +282,7 @@ async def get_session(
     )
 
     if session_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Session not found",
-        )
+        raise SessionNotFoundError()
 
     quiz_db = await get_available_quiz_by_id(
         id=session_db.quiz_id,
@@ -492,10 +491,7 @@ async def get_user_session(
     )
 
     if session_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Session not found",
-        )
+        raise SessionNotFoundError()
 
     quiz_db = await get_available_quiz_by_id(
         id=session_db.quiz_id,
@@ -552,10 +548,7 @@ async def get_user_session(
     )
 
     if member_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Member not found for this session",
-        )
+        raise SessionMemberNotFoundError()
 
     answers = []
     score = 0.0
@@ -658,10 +651,7 @@ async def update_session(
         )
 
         if quiz_db is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Quiz not found",
-            )
+            raise QuizNotFoundError()
 
         update_session_data["quiz_id"] = quiz_db.id
 
@@ -672,15 +662,11 @@ async def update_session(
     )
 
     if session_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Session not found",
-        )
+        raise SessionNotFoundError()
 
     if session_db.status != SessionStatus.waiting:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot update a session that is already active or completed",
+        raise SessionInvalidStateError(
+            message="Cannot update a session that is already active or completed"
         )
 
     is_updated = await update_session_by_uuid(
@@ -691,10 +677,7 @@ async def update_session(
     )
 
     if not is_updated:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Session not found",
-        )
+        raise SessionNotFoundError()
 
 
 async def delete_session(
@@ -709,15 +692,11 @@ async def delete_session(
     )
 
     if session_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Session not found",
-        )
+        raise SessionNotFoundError()
 
     if session_db.status != SessionStatus.waiting:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot delete a session that is already active or completed",
+        raise SessionInvalidStateError(
+            message="Cannot delete a session that is already active or completed"
         )
 
     is_deleted = await soft_delete_session_by_uuid(
@@ -727,10 +706,7 @@ async def delete_session(
     )
 
     if not is_deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Session not found",
-        )
+        raise SessionNotFoundError()
 
 
 async def start_session(
@@ -749,15 +725,11 @@ async def start_session(
     )
 
     if session_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Session not found",
-        )
+        raise SessionNotFoundError()
 
     if session_db.status != SessionStatus.waiting:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot start a session that is already active or completed",
+        raise SessionInvalidStateError(
+            message="Cannot start a session that is already active or completed"
         )
 
     quiz_db = await get_available_quiz_with_relations_by_id(
@@ -767,10 +739,7 @@ async def start_session(
     )
 
     if quiz_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Quiz not found",
-        )
+        raise QuizNotFoundError()
 
     questions_to_create = [
         {

@@ -4,7 +4,6 @@ from typing import Annotated, Any
 import jwt
 from fastapi import (
     Cookie,
-    HTTPException,
     status,
     Depends,
     WebSocket,
@@ -14,6 +13,11 @@ from redis.asyncio import Redis
 
 from app.auth.redis_store import is_access_token_blacklisted, is_user_blacklisted
 from app.core.config import settings
+from app.core.exceptions import (
+    NotAuthenticatedError,
+    AlreadyAuthenticatedError,
+    InvalidTokenError,
+)
 from app.core.redis import get_redis_client
 
 
@@ -68,10 +72,7 @@ async def get_current_auth_context(
     auth_context: Annotated[dict[str, Any] | None, Depends(get_optional_auth_context)],
 ) -> dict[str, Any]:
     if auth_context is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-        )
+        raise NotAuthenticatedError()
 
     return auth_context
 
@@ -80,20 +81,14 @@ async def ensure_unauthenticated_user(
     auth_context: Annotated[dict[str, Any] | None, Depends(get_optional_auth_context)],
 ) -> None:
     if auth_context is not None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Already authenticated",
-        )
+        raise AlreadyAuthenticatedError()
 
 
 async def get_current_refresh_token(
     refresh_token: Annotated[str | None, Cookie(alias="refresh_token")] = None,
 ) -> str:
     if refresh_token is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token required",
-        )
+        raise InvalidTokenError(message="Refresh token required")
 
     return refresh_token
 

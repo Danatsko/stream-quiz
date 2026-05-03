@@ -1,9 +1,13 @@
 from uuid import UUID
 from typing import Any
 
-from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import (
+    UserNotFoundError,
+    QuizNotFoundError,
+    UnprocessableEntityError,
+)
 from app.quizzes.db_repository import (
     create_quiz as db_repository_create_quiz,
     get_available_quizzes_total_count,
@@ -95,10 +99,7 @@ async def create_quiz(
     )
 
     if user_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+        raise UserNotFoundError()
 
     quiz_db = await db_repository_create_quiz(
         title=title,
@@ -124,10 +125,7 @@ async def get_quizzes(
     )
 
     if user_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+        raise UserNotFoundError()
 
     total_quizzes_db = await get_available_quizzes_total_count(
         user_id=user_db.id,
@@ -197,10 +195,7 @@ async def get_quiz(
     )
 
     if user_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+        raise UserNotFoundError()
 
     quiz_db = await get_available_quiz_with_relations_by_uuid(
         uuid=quiz_uuid,
@@ -209,10 +204,7 @@ async def get_quiz(
     )
 
     if quiz_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Quiz not found",
-        )
+        raise QuizNotFoundError()
 
     is_owner = quiz_db.creator_id == user_db.id
 
@@ -279,10 +271,7 @@ async def update_quiz(
     )
 
     if user_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+        raise UserNotFoundError()
 
     is_updated = await update_quiz_by_uuid(
         uuid=quiz_uuid,
@@ -292,9 +281,8 @@ async def update_quiz(
     )
 
     if not is_updated:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Quiz not found, or you do not have permission to update it",
+        raise QuizNotFoundError(
+            message="Quiz not found, or you do not have permission to update it"
         )
 
 
@@ -310,10 +298,7 @@ async def full_update_quiz(
     )
 
     if user_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+        raise UserNotFoundError()
 
     quiz_db = await get_quiz_with_relations_by_uuid(
         uuid=quiz_uuid,
@@ -322,9 +307,8 @@ async def full_update_quiz(
     )
 
     if quiz_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Quiz not found, or you do not have permission to update it",
+        raise QuizNotFoundError(
+            message="Quiz not found, or you do not have permission to update it"
         )
 
     existing_questions_db_by_uuid = {
@@ -337,9 +321,8 @@ async def full_update_quiz(
             continue
 
         if question["uuid"] not in existing_questions_db_by_uuid:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Quiz question {question['uuid']} does not belong to this quiz",
+            raise UnprocessableEntityError(
+                message=f"Quiz question {question['uuid']} does not belong to this quiz"
             )
 
         incoming_question_uuids.add(question["uuid"])
@@ -352,11 +335,8 @@ async def full_update_quiz(
         for option in question["options"]:
             if option["uuid"] is not None:
                 if option["uuid"] not in existing_options_db_by_uuid:
-                    raise HTTPException(
-                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                        detail=(
-                            f"Quiz question option {option['uuid']} does not belong to quiz question {question['uuid']}"
-                        ),
+                    raise UnprocessableEntityError(
+                        message=f"Quiz question option {option['uuid']} does not belong to quiz question {question['uuid']}"
                     )
 
     update_quiz_data = {}
@@ -511,10 +491,7 @@ async def delete_quiz(
     )
 
     if user_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+        raise UserNotFoundError()
 
     is_deleted = await soft_delete_quiz_by_uuid(
         uuid=quiz_uuid,
@@ -523,7 +500,6 @@ async def delete_quiz(
     )
 
     if not is_deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Quiz not found, or you do not have permission to delete it",
+        raise QuizNotFoundError(
+            message="Quiz not found, or you do not have permission to delete it"
         )

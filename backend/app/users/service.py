@@ -1,11 +1,11 @@
 from uuid import UUID
 from typing import Any
 
-from fastapi import HTTPException, status
 from redis.asyncio import Redis
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import UserAlreadyExistsError, UserNotFoundError
 from app.users.db_repository import (
     create_user as db_repository_create_user,
     get_user_by_email as db_repository_get_user_by_email,
@@ -40,10 +40,7 @@ async def create_user(
         msg = str(exc.orig)
 
         if "Key (email)=" in msg:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="User already exists",
-            )
+            raise UserAlreadyExistsError()
         else:
             raise exc
 
@@ -142,10 +139,7 @@ async def get_me(
     )
 
     if user_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+        raise UserNotFoundError()
 
     result = {
         "uuid": user_db.uuid,
@@ -171,10 +165,7 @@ async def update_me(
     )
 
     if not is_updated:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+        raise UserNotFoundError()
 
 
 async def delete_me(
@@ -190,10 +181,7 @@ async def delete_me(
     )
 
     if user_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+        raise UserNotFoundError()
 
     is_deleted = await soft_delete_user_by_uuid(
         uuid=user_db.uuid,
@@ -201,10 +189,7 @@ async def delete_me(
     )
 
     if not is_deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+        raise UserNotFoundError()
 
     await revoke_all_refresh_tokens_by_user_id(
         user_id=user_db.id,
@@ -231,10 +216,7 @@ async def get_me_sessions(
     )
 
     if user_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+        raise UserNotFoundError()
 
     result = await get_user_sessions(
         page=page,
@@ -259,10 +241,7 @@ async def get_me_session(
     )
 
     if user_db is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+        raise UserNotFoundError()
 
     result = await get_user_session(
         user_id=user_db.id,

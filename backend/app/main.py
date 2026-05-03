@@ -16,6 +16,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.router import auth_router
 from app.core.arq import init_arq_pool, close_arq_pool
 from app.core.config import settings
+from app.core.exception_handlers import (
+    not_found_handler,
+    conflict_handler,
+    validation_handler,
+    unprocessable_entity_handler,
+    unauthorized_handler,
+    forbidden_handler,
+    domain_fallback_handler,
+)
+from app.core.exceptions import (
+    NotFoundError,
+    ConflictError,
+    ValidationError,
+    UnprocessableEntityError,
+    NotAuthenticatedError,
+    InvalidCredentialsError,
+    InvalidTokenError,
+    AccountNotVerifiedError,
+    AlreadyAuthenticatedError,
+    DomainException,
+)
 from app.core.health import perform_check
 from app.core.limiter import limiter
 from app.core.db import get_db_session, close_db_connection, init_db
@@ -53,6 +74,46 @@ app.state.limiter = limiter
 app.add_exception_handler(
     exc_class_or_status_code=RateLimitExceeded,
     handler=_rate_limit_exceeded_handler,
+)
+app.add_exception_handler(
+    exc_class_or_status_code=NotFoundError,
+    handler=not_found_handler,
+)
+app.add_exception_handler(
+    exc_class_or_status_code=ConflictError,
+    handler=conflict_handler,
+)
+app.add_exception_handler(
+    exc_class_or_status_code=ValidationError,
+    handler=validation_handler,
+)
+app.add_exception_handler(
+    exc_class_or_status_code=UnprocessableEntityError,
+    handler=unprocessable_entity_handler,
+)
+app.add_exception_handler(
+    exc_class_or_status_code=NotAuthenticatedError,
+    handler=unauthorized_handler,
+)
+app.add_exception_handler(
+    exc_class_or_status_code=InvalidCredentialsError,
+    handler=unauthorized_handler,
+)
+app.add_exception_handler(
+    exc_class_or_status_code=InvalidTokenError,
+    handler=unauthorized_handler,
+)
+app.add_exception_handler(
+    exc_class_or_status_code=AccountNotVerifiedError,
+    handler=forbidden_handler,
+)
+app.add_exception_handler(
+    exc_class_or_status_code=AlreadyAuthenticatedError,
+    handler=forbidden_handler,
+)
+app.add_exception_handler(
+    exc_class_or_status_code=DomainException,
+    handler=domain_fallback_handler,
 )
 app.add_middleware(middleware_class=SlowAPIMiddleware)
 app.add_middleware(
