@@ -116,6 +116,7 @@ class AuthSettings(CustomBaseSettings):
     refresh_token_pepper: SecretStr
     refresh_token_cookie_path: str = "/api/v1/auth"
     password_pepper: SecretStr
+    verification_path: str
 
 
 class ResendSettings(CustomBaseSettings):
