@@ -1,5 +1,10 @@
 import api from '@/services/api'
-import type { LoginPayload, RegistrationPayload } from '@/types/auth'
+import type {
+  LoginPayload,
+  RegistrationPayload,
+  ResendVerificationPayload,
+  VerifyPayload,
+} from '@/types/auth'
 
 export const authAPI = {
   async registration(payload: RegistrationPayload): Promise<void> {
@@ -12,5 +17,13 @@ export const authAPI = {
 
   async logout(): Promise<void> {
     await api.post('/auth/logout')
+  },
+
+  async verify(payload: VerifyPayload): Promise<void> {
+    await api.post('/auth/verify', payload)
+  },
+
+  async resendVerification(payload: ResendVerificationPayload): Promise<void> {
+    await api.post('/auth/resend-verification', payload)
   },
 }

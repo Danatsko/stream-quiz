@@ -37,6 +37,12 @@ const router = createRouter({
           component: () => import('@/views/LoginView.vue'),
           meta: { guestOnly: true },
         },
+        {
+          path: 'verify',
+          name: 'Verify',
+          component: () => import('@/views/VerifyView.vue'),
+          meta: { guestOnly: true },
+        },
       ],
     },
     {

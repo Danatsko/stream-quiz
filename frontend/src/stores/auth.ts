@@ -1,6 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { LoginPayload, RegistrationPayload } from '@/types/auth'
+import type {
+  LoginPayload,
+  RegistrationPayload,
+  ResendVerificationPayload,
+  VerifyPayload,
+} from '@/types/auth'
 import type { UpdateMePayload, User } from '../types/users'
 import { authAPI } from '@/api/auth'
 import { usersAPI } from '@/api/users'
@@ -19,8 +24,6 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       await authAPI.registration(payload)
-      isAuthChecked.value = false
-      await getMe()
     } catch (registrationError) {
       throw registrationError
     } finally {
@@ -55,6 +58,34 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = null
       isLoading.value = false
       isAuthChecked.value = true
+    }
+  }
+
+  const verify = async (payload: VerifyPayload): Promise<void> => {
+    isLoading.value = true
+
+    try {
+      await authAPI.verify(payload)
+
+      isAuthChecked.value = false
+
+      await getMe()
+    } catch (verifyError) {
+      throw verifyError
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const resendVerification = async (payload: ResendVerificationPayload): Promise<void> => {
+    isLoading.value = true
+
+    try {
+      await authAPI.resendVerification(payload)
+    } catch (resendVerificationError) {
+      throw resendVerificationError
+    } finally {
+      isLoading.value = false
     }
   }
 
@@ -118,6 +149,8 @@ export const useAuthStore = defineStore('auth', () => {
     registration,
     login,
     logout,
+    verify,
+    resendVerification,
     getMe,
     updateMe,
     deleteMe,

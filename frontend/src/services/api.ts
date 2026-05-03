@@ -27,7 +27,11 @@ api.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes('/auth/login')
+    ) {
       originalRequest._retry = true
 
       try {
@@ -39,26 +43,35 @@ api.interceptors.response.use(
         const authStore = useAuthStore()
 
         await authStore.logout(false)
-        await router.push({ name: 'Home' })
+        if (router.currentRoute.value.meta.requiresAuth) {
+          await router.push({ name: 'Home' })
+        }
 
         return Promise.reject(refreshError)
       }
     }
 
     let errorMessage = 'An unknown error occurred'
-    const detail = error.response?.data?.detail
+    const dataDetail = error.response?.data?.detail
+    const dataError = error.response?.data?.error
 
-    if (detail) {
-      if (Array.isArray(detail)) {
-        const isUuidError = detail.some((err: any) => err.type === 'uuid_parsing')
+    if (dataDetail) {
+      if (Array.isArray(dataDetail)) {
+        const isUuidError = dataDetail.some((err: any) => err.type === 'uuid_parsing')
 
         if (isUuidError) {
           errorMessage = 'Invalid identifier passed'
         } else {
-          errorMessage = detail.map((err: any) => err.msg).join(', ')
+          errorMessage = dataDetail.map((err: any) => err.msg).join(', ')
         }
-      } else if (typeof detail === 'string') {
-        errorMessage = detail
+      } else if (typeof dataDetail === 'string') {
+        errorMessage = dataDetail
+      }
+    } else if (dataError) {
+      if (Array.isArray(dataError)) {
+        errorMessage = dataError.map((err: any) => err.msg).join(', ')
+      } else if (typeof dataError === 'string') {
+        errorMessage = dataError
       }
     }
 

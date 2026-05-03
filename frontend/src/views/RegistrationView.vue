@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import AppButton from '@/components/AppButton.vue'
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import useAuthStore from '@/stores/auth.ts'
 import { useRouter } from 'vue-router'
 import AppInput from '@/components/AppInput.vue'
+import useNotificationsStore from '@/stores/notifications.ts'
 
 interface RegistrationFormState {
   username: string
@@ -19,12 +20,24 @@ const MAX_USERNAME_LENGTH = 30
 
 const authStore = useAuthStore()
 const router = useRouter()
+const notificationsStore = useNotificationsStore()
+const resendCooldown = ref(0)
+let resendTimer: number | ReturnType<typeof setInterval> | null = null
 
+const isRegistrationSuccessful = ref(false)
 const registrationForm = ref<RegistrationFormState>({
   username: '',
   email: '',
   password: '',
   confirmPassword: '',
+})
+
+onUnmounted(() => {
+  if (resendTimer) {
+    clearInterval(resendTimer)
+
+    resendTimer = null
+  }
 })
 
 const isUsernameValid = computed((): boolean => {
@@ -78,19 +91,48 @@ const handleSubmit = async () => {
       email: registrationForm.value.email,
       password: registrationForm.value.password,
     })
-    await router.push({ name: 'Take' })
+    isRegistrationSuccessful.value = true
+  } catch (error) {}
+}
+
+const handleResend = async () => {
+  if (resendCooldown.value > 0) {
+    return
+  }
+
+  try {
+    await authStore.resendVerification({ email: registrationForm.value.email })
+    notificationsStore.addNotification('Verification email resent successfully', 'success')
+
+    resendCooldown.value = 60
+
+    if (resendTimer) {
+      clearInterval(resendTimer)
+    }
+
+    resendTimer = setInterval(() => {
+      resendCooldown.value--
+
+      if (resendCooldown.value <= 0) {
+        if (resendTimer) {
+          clearInterval(resendTimer)
+        }
+
+        resendTimer = null
+      }
+    }, 1000)
   } catch (error) {}
 }
 </script>
 
 <template>
   <div class="layout">
-    <div class="header">
+    <div class="header" v-if="!isRegistrationSuccessful">
       <h1 class="header-title">Create account</h1>
       <p class="header-subtitle">Start your journey with us</p>
     </div>
 
-    <div class="main">
+    <div class="main" v-if="!isRegistrationSuccessful">
       <form class="form" @submit.prevent="handleSubmit">
         <AppInput
           :style="{ color: 'black' }"
@@ -117,8 +159,6 @@ const handleSubmit = async () => {
           label="Email"
           placeholder="xxxxx@xxxxx.xxxxx"
           v-model="registrationForm.email"
-          :minlength="MIN_USERNAME_LENGTH"
-          :maxLength="MAX_USERNAME_LENGTH"
           :has-error="!!registrationForm.email && !isEmailValid"
           error-message="Invalid email"
           required
@@ -173,11 +213,37 @@ const handleSubmit = async () => {
       </form>
     </div>
 
-    <div class="footer">
+    <div class="footer" v-if="!isRegistrationSuccessful">
       <p class="footer-subtitle">
         Already have an account?
         <RouterLink class="signin-link" :to="{ name: 'Login' }">Sign in</RouterLink>
       </p>
+    </div>
+
+    <div v-else class="success-message">
+      <h1 class="header-title">Check your email</h1>
+      <p class="header-subtitle">
+        We've sent a verification link to <b>{{ registrationForm.email }}</b>
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem">
+        <AppButton @click="router.push({ name: 'Login' })" title="Sign in" aria-label="Sign in"
+          >Sign in</AppButton
+        >
+
+        <AppButton
+          @click="handleResend"
+          :disabled="resendCooldown > 0 || authStore.isLoading"
+          title="Resend verification email"
+          aria-label="Resend verification email"
+        >
+          {{
+            resendCooldown > 0
+              ? `Resend available in ${resendCooldown}s`
+              : 'Resend verification email'
+          }}
+        </AppButton>
+      </div>
     </div>
   </div>
 </template>
@@ -245,5 +311,13 @@ const handleSubmit = async () => {
 .signin-link:hover {
   opacity: 0.5;
   text-decoration: underline;
+}
+
+.success-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
 }
 </style>
