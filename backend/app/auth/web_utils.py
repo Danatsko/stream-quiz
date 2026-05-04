@@ -19,15 +19,16 @@ async def set_auth_cookies(
         )
 
     if refresh_token is not None:
-        response.set_cookie(
-            key="refresh_token",
-            value=refresh_token,
-            httponly=True,
-            secure=(not settings.app.debug),
-            samesite="lax",
-            max_age=settings.auth.refresh_token_expire_seconds,
-            path=settings.auth.refresh_token_cookie_path,
-        )
+        for path in settings.auth.refresh_token_cookie_paths:
+            response.set_cookie(
+                key="refresh_token",
+                value=refresh_token,
+                httponly=True,
+                secure=(not settings.app.debug),
+                samesite="lax",
+                max_age=settings.auth.refresh_token_expire_seconds,
+                path=path,
+            )
 
 
 async def clear_auth_cookies(response: Response) -> None:
@@ -37,10 +38,12 @@ async def clear_auth_cookies(response: Response) -> None:
         secure=(not settings.app.debug),
         samesite="lax",
     )
-    response.delete_cookie(
-        key="refresh_token",
-        httponly=True,
-        secure=(not settings.app.debug),
-        samesite="lax",
-        path=settings.auth.refresh_token_cookie_path,
-    )
+
+    for path in settings.auth.refresh_token_cookie_paths:
+        response.delete_cookie(
+            key="refresh_token",
+            httponly=True,
+            secure=(not settings.app.debug),
+            samesite="lax",
+            path=path,
+        )
