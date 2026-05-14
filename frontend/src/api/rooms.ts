@@ -85,4 +85,8 @@ export const roomsAPI = {
   async startSession(roomUuid: string, uuid: string): Promise<void> {
     await api.post(`/rooms/${roomUuid}/sessions/${uuid}/start`)
   },
+
+  async stopSession(roomUuid: string, uuid: string): Promise<void> {
+    await api.post(`/rooms/${roomUuid}/sessions/${uuid}/stop`)
+  },
 }

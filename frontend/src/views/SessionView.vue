@@ -9,11 +9,7 @@ import AppModal from '@/components/AppModal.vue'
 import AppBadge from '@/components/AppBadge.vue'
 import AppListCard from '@/components/AppListCard.vue'
 import { formatDateTime, formatDuration } from '@/utils/formatters'
-import type {
-  SessionMemberBase,
-  SessionQuestionBase,
-  SessionQuestionOptionBase,
-} from '@/types/rooms'
+import type { SessionMemberBase, SessionQuestionOptionBase } from '@/types/rooms'
 
 const route = useRoute()
 const router = useRouter()
@@ -21,6 +17,7 @@ const authStore = useAuthStore()
 const roomsStore = useRoomsStore()
 
 const isDeleteSessionDialogOpen = ref(false)
+const isStopSessionDialogOpen = ref(false)
 const activeTab = ref('Questions')
 const expandedMembers = ref<Set<string>>(new Set())
 
@@ -77,7 +74,10 @@ const goToEdit = async (): Promise<void> => {
 }
 
 const startSession = async (): Promise<void> => {
-  if (!session.value?.uuid) return
+  if (!session.value?.uuid) {
+    return
+  }
+
   try {
     await roomsStore.startSession(roomUuid.value, session.value.uuid)
     await roomsStore.getSession(roomUuid.value, session.value.uuid)
@@ -96,6 +96,14 @@ const closeDeleteSessionDialog = (): void => {
   isDeleteSessionDialogOpen.value = false
 }
 
+const openStopSessionDialog = (): void => {
+  isStopSessionDialogOpen.value = true
+}
+
+const closeStopSessionDialog = (): void => {
+  isStopSessionDialogOpen.value = false
+}
+
 const confirmDeleteSession = async (): Promise<void> => {
   if (!session.value?.uuid) {
     return
@@ -105,6 +113,18 @@ const confirmDeleteSession = async (): Promise<void> => {
     await roomsStore.deleteSession(roomUuid.value, session.value.uuid)
     closeDeleteSessionDialog()
     await router.push({ name: 'Room', params: { uuid: roomUuid.value } })
+  } catch (error) {}
+}
+
+const confirmStopSession = async (): Promise<void> => {
+  if (!session.value?.uuid) {
+    return
+  }
+
+  try {
+    await roomsStore.stopSession(roomUuid.value, session.value.uuid)
+    await roomsStore.getSession(roomUuid.value, session.value.uuid)
+    closeStopSessionDialog()
   } catch (error) {}
 }
 
@@ -179,6 +199,16 @@ const getMemberOptionClass = (
               aria-label="Delete"
             >
               <Icon icon="mdi:delete-outline" />
+            </AppButton>
+          </template>
+          <template v-if="session.status === 'active'">
+            <AppButton
+              class="btn-stop"
+              @click="openStopSessionDialog"
+              title="Stop session"
+              aria-label="Stop session"
+            >
+              Stop session
             </AppButton>
           </template>
         </div>
@@ -490,6 +520,32 @@ const getMemberOptionClass = (
         aria-label="Delete"
       >
         {{ roomsStore.isLoading ? 'Processing' : 'Delete' }}
+      </AppButton>
+    </template>
+  </AppModal>
+
+  <AppModal :is-open="isStopSessionDialogOpen" @close="closeStopSessionDialog">
+    <template v-slot:header>
+      <h1 class="modal-header-title">Stop session</h1>
+    </template>
+
+    <template v-slot:body>
+      <p class="modal-text">Are you sure you want to stop this session?</p>
+      <p class="modal-text">This action cannot be undone</p>
+    </template>
+
+    <template v-slot:footer>
+      <AppButton @click="closeStopSessionDialog" title="Cancel" aria-label="Cancel"
+        >Cancel</AppButton
+      >
+      <AppButton
+        class="btn-stop"
+        @click="confirmStopSession"
+        :disabled="roomsStore.isLoading"
+        title="Stop"
+        aria-label="Stop"
+      >
+        {{ roomsStore.isLoading ? 'Processing' : 'Stop' }}
       </AppButton>
     </template>
   </AppModal>
@@ -899,12 +955,14 @@ const getMemberOptionClass = (
   margin: 0;
   text-align: center;
 }
-.btn-delete {
+.btn-delete,
+.btn-stop {
   color: red;
   border-color: red;
   background-color: color-mix(in srgb, red 10%, black);
 }
-.btn-delete:hover {
+.btn-delete:hover,
+.btn-stop:hover {
   background-color: color-mix(in srgb, red 20%, black);
   border-color: red;
   box-shadow:

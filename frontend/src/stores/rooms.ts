@@ -230,6 +230,18 @@ export const useRoomsStore = defineStore('rooms', () => {
     }
   }
 
+  const stopSession = async (roomUuid: string, uuid: string): Promise<void> => {
+    isLoading.value = true
+
+    try {
+      await roomsAPI.stopSession(roomUuid, uuid)
+    } catch (stopSessionError) {
+      throw stopSessionError
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   return {
     rooms,
     room,
@@ -259,6 +271,7 @@ export const useRoomsStore = defineStore('rooms', () => {
     updateSession,
     deleteSession,
     startSession,
+    stopSession,
   }
 })
 
