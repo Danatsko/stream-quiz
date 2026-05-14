@@ -34,7 +34,7 @@ from app.sessions.db_repository import (
     get_session_with_relations_by_user_id,
     get_unscoped_session_by_uuid,
 )
-from app.sessions.models import SessionStatus
+from app.sessions.models import SessionStatus, Session
 from app.sessions.redis_pubsub import (
     publish_session_closed_event,
     publish_session_host_event,
@@ -50,7 +50,7 @@ from app.sessions.redis_store import (
 from app.users.service import get_users_by_ids, get_user_ids_by_uuids, get_user_by_uuid
 
 
-def _calculate_member_score(
+async def _calculate_member_score(
     grouped_answers: dict[int, list[int]],
     scoring_map: dict[int, dict[str, Any]],
     option_id_to_uuid_map: dict[int, UUID],
@@ -106,6 +106,89 @@ def _calculate_member_score(
         )
 
     return member_answers_data, member_total_answers, member_total_score
+
+
+async def _process_session_completion(
+    session_db: Session,
+    room_id: int,
+    db_session: AsyncSession,
+    redis_client: Redis,
+) -> None:
+    await complete_session_by_id(
+        id=session_db.id,
+        room_id=room_id,
+        db_session=db_session,
+    )
+
+    await publish_session_closed_event(
+        session_uuid=session_db.uuid,
+        redis_client=redis_client,
+    )
+
+    answers_data = await get_session_answers(
+        session_uuid=session_db.uuid,
+        redis_client=redis_client,
+    )
+
+    if answers_data:
+        question_mapping = {
+            str(question_db.uuid): question_db.id
+            for question_db in session_db.questions
+        }
+        option_mapping = {
+            str(option_db.uuid): option_db.id
+            for question_db in session_db.questions
+            for option_db in question_db.options
+        }
+        user_uuids = {UUID(user_uuid) for user_uuid in answers_data.keys()}
+        users_mapping = await get_user_ids_by_uuids(
+            uuids=user_uuids,
+            db_session=db_session,
+        )
+        members_to_create = []
+
+        for user_uuid_str, user_answers in answers_data.items():
+            user_id = users_mapping.get(UUID(user_uuid_str))
+
+            if not user_id:
+                continue
+
+            member_data = {"user_id": user_id, "answers": []}
+
+            for question_uuid_str, selected_options_json in user_answers.items():
+                question_id = question_mapping.get(question_uuid_str)
+
+                if not question_id:
+                    continue
+
+                selected_options = set(json.loads(selected_options_json))
+
+                for option_uuid_str in selected_options:
+                    option_id = option_mapping.get(option_uuid_str)
+
+                    if not option_id:
+                        continue
+
+                    member_data["answers"].append(
+                        {
+                            "session_question_id": question_id,
+                            "session_question_option_id": option_id,
+                        }
+                    )
+
+            members_to_create.append(member_data)
+
+        if members_to_create:
+            await bulk_create_session_members(
+                session_id=session_db.id,
+                create_session_members_data=members_to_create,
+                db_session=db_session,
+            )
+
+    await clear_session_data(
+        session_uuid=session_db.uuid,
+        redis_client=redis_client,
+    )
 
 
 async def is_session_creator(
@@ -434,12 +517,14 @@ async def get_session(
                         if option_str in option_uuids_to_ids
                     ]
 
-                member_answers_data, member_total_answers, member_total_score = (
-                    _calculate_member_score(
-                        grouped_answers=grouped_answers,
-                        scoring_map=scoring_map,
-                        option_id_to_uuid_map=option_id_to_uuid_map,
-                    )
+                (
+                    member_answers_data,
+                    member_total_answers,
+                    member_total_score,
+                ) = await _calculate_member_score(
+                    grouped_answers=grouped_answers,
+                    scoring_map=scoring_map,
+                    option_id_to_uuid_map=option_id_to_uuid_map,
                 )
 
                 members.append(
@@ -475,12 +560,14 @@ async def get_session(
                     answer_db.session_question_option_id
                 )
 
-            member_answers_data, member_total_answers, member_total_score = (
-                _calculate_member_score(
-                    grouped_answers=grouped_answers,
-                    scoring_map=scoring_map,
-                    option_id_to_uuid_map=option_id_to_uuid_map,
-                )
+            (
+                member_answers_data,
+                member_total_answers,
+                member_total_score,
+            ) = await _calculate_member_score(
+                grouped_answers=grouped_answers,
+                scoring_map=scoring_map,
+                option_id_to_uuid_map=option_id_to_uuid_map,
             )
             user = users_mapping.get(member_db.user_id)
 
@@ -824,6 +911,34 @@ async def start_session(
     )
 
 
+async def stop_session(
+    session_uuid: UUID,
+    room_id: int,
+    db_session: AsyncSession,
+    redis_client: Redis,
+) -> None:
+    session_db = await get_session_with_relations_by_uuid(
+        uuid=session_uuid,
+        room_id=room_id,
+        db_session=db_session,
+    )
+
+    if session_db is None:
+        raise SessionNotFoundError()
+
+    if session_db.status != SessionStatus.active:
+        raise SessionInvalidStateError(
+            message="Cannot stop a session that is already waiting or completed"
+        )
+
+    await _process_session_completion(
+        session_db=session_db,
+        room_id=room_id,
+        db_session=db_session,
+        redis_client=redis_client,
+    )
+
+
 async def finalize_session(
     session_uuid: UUID,
     room_id: int,
@@ -839,79 +954,10 @@ async def finalize_session(
     if session_db is None or session_db.status != SessionStatus.active:
         return
 
-    await complete_session_by_id(
-        id=session_db.id,
+    await _process_session_completion(
+        session_db=session_db,
         room_id=room_id,
         db_session=db_session,
-    )
-
-    await publish_session_closed_event(
-        session_uuid=session_uuid,
-        redis_client=redis_client,
-    )
-
-    answers_data = await get_session_answers(
-        session_uuid=session_db.uuid,
-        redis_client=redis_client,
-    )
-
-    if answers_data:
-        question_mapping = {
-            str(question_db.uuid): question_db.id
-            for question_db in session_db.questions
-        }
-        option_mapping = {
-            str(option_db.uuid): option_db.id
-            for question_db in session_db.questions
-            for option_db in question_db.options
-        }
-        user_uuids = {UUID(user_uuid) for user_uuid in answers_data.keys()}
-        users_mapping = await get_user_ids_by_uuids(
-            uuids=user_uuids,
-            db_session=db_session,
-        )
-        members_to_create = []
-
-        for user_uuid_str, user_answers in answers_data.items():
-            user_id = users_mapping.get(UUID(user_uuid_str))
-
-            if not user_id:
-                continue
-
-            member_data = {"user_id": user_id, "answers": []}
-
-            for question_uuid_str, selected_options_json in user_answers.items():
-                question_id = question_mapping.get(question_uuid_str)
-
-                if not question_id:
-                    continue
-
-                selected_options = set(json.loads(selected_options_json))
-
-                for option_uuid_str in selected_options:
-                    option_id = option_mapping.get(option_uuid_str)
-
-                    if not option_id:
-                        continue
-
-                    member_data["answers"].append(
-                        {
-                            "session_question_id": question_id,
-                            "session_question_option_id": option_id,
-                        }
-                    )
-
-            members_to_create.append(member_data)
-
-        if members_to_create:
-            await bulk_create_session_members(
-                session_id=session_db.id,
-                create_session_members_data=members_to_create,
-                db_session=db_session,
-            )
-
-    await clear_session_data(
-        session_uuid=session_uuid,
         redis_client=redis_client,
     )
 

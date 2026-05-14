@@ -35,6 +35,7 @@ from app.rooms.service import (
     update_session as service_update_session,
     delete_session as service_delete_session,
     start_session as service_start_session,
+    stop_session as service_stop_session,
 )
 
 rooms_router = APIRouter()
@@ -333,4 +334,28 @@ async def start_session(
         db_session=db_session,
         redis_client=redis_client,
         arq_pool=arq_pool,
+    )
+
+
+@rooms_router.post(
+    path="/{room_uuid}/sessions/{session_uuid}/stop",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+@limiter.limit("300/minute")
+async def stop_session(
+    request: Request,
+    room_uuid: UUID,
+    session_uuid: UUID,
+    auth_context: Annotated[dict[str, Any], Depends(get_current_auth_context)],
+    db_session: Annotated[AsyncSession, Depends(get_db_session)],
+    redis_client: Annotated[Redis, Depends(get_redis_client)],
+) -> None:
+    user_uuid = auth_context["user_uuid"]
+
+    await service_stop_session(
+        room_uuid=room_uuid,
+        session_uuid=session_uuid,
+        user_uuid=user_uuid,
+        db_session=db_session,
+        redis_client=redis_client,
     )

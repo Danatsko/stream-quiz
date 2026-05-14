@@ -22,6 +22,7 @@ from app.sessions.service import (
     update_session as sessions_service_update_session,
     delete_session as sessions_service_delete_session,
     start_session as sessions_service_start_session,
+    stop_session as sessions_service_stop_session,
 )
 from app.users.service import get_user_by_uuid
 
@@ -423,4 +424,35 @@ async def start_session(
         db_session=db_session,
         redis_client=redis_client,
         arq_pool=arq_pool,
+    )
+
+
+async def stop_session(
+    room_uuid: UUID,
+    session_uuid: UUID,
+    user_uuid: UUID,
+    db_session: AsyncSession,
+    redis_client: Redis,
+) -> None:
+    user_db = await get_user_by_uuid(
+        uuid=user_uuid,
+        db_session=db_session,
+    )
+    if user_db is None:
+        raise UserNotFoundError()
+
+    room_db = await get_room_by_uuid(
+        uuid=room_uuid,
+        user_id=user_db.id,
+        db_session=db_session,
+    )
+
+    if room_db is None:
+        raise RoomNotFoundError()
+
+    await sessions_service_stop_session(
+        session_uuid=session_uuid,
+        room_id=room_db.id,
+        db_session=db_session,
+        redis_client=redis_client,
     )
