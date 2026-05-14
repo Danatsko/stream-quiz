@@ -120,3 +120,18 @@ async def soft_delete_room_by_uuid(
     result = await db_session.execute(stmt)
 
     return result.rowcount == 1
+
+
+async def check_is_room_creator(
+    room_id: int,
+    user_id: int,
+    db_session: AsyncSession,
+) -> bool:
+    stmt = select(Room.id).where(
+        Room.id == room_id,
+        Room.creator_id == user_id,
+        Room.deleted_at.is_(None),
+    )
+    result = await db_session.scalar(stmt)
+
+    return result is not None

@@ -13,6 +13,7 @@ from app.rooms.db_repository import (
     update_room_by_uuid,
     soft_delete_room_by_uuid,
     get_room_by_uuid,
+    check_is_room_creator as db_repository_check_is_room_creator,
 )
 from app.sessions.service import (
     create_session as sessions_service_create_session,
@@ -23,6 +24,20 @@ from app.sessions.service import (
     start_session as sessions_service_start_session,
 )
 from app.users.service import get_user_by_uuid
+
+
+async def check_is_room_creator(
+    room_id: int,
+    user_id: int,
+    db_session: AsyncSession,
+) -> bool:
+    is_creator = await db_repository_check_is_room_creator(
+        room_id=room_id,
+        user_id=user_id,
+        db_session=db_session,
+    )
+
+    return is_creator
 
 
 async def create_room(

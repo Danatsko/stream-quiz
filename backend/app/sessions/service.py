@@ -32,9 +32,13 @@ from app.sessions.db_repository import (
     get_sessions_total_count_by_user_id,
     get_sessions_list_by_user_id,
     get_session_with_relations_by_user_id,
+    get_unscoped_session_by_uuid,
 )
 from app.sessions.models import SessionStatus
-from app.sessions.redis_pubsub import publish_session_closed_event
+from app.sessions.redis_pubsub import (
+    publish_session_closed_event,
+    publish_session_host_event,
+)
 from app.sessions.redis_store import (
     set_session_info,
     get_session_info,
@@ -43,7 +47,7 @@ from app.sessions.redis_store import (
     clear_session_data,
     get_session_answers,
 )
-from app.users.service import get_users_by_ids, get_user_ids_by_uuids
+from app.users.service import get_users_by_ids, get_user_ids_by_uuids, get_user_by_uuid
 
 
 def _calculate_member_score(
@@ -102,6 +106,38 @@ def _calculate_member_score(
         )
 
     return member_answers_data, member_total_answers, member_total_score
+
+
+async def is_session_creator(
+    session_uuid: UUID,
+    user_uuid: UUID,
+    db_session: AsyncSession,
+) -> bool:
+    from app.rooms.service import check_is_room_creator
+
+    user_db = await get_user_by_uuid(
+        uuid=user_uuid,
+        db_session=db_session,
+    )
+
+    if user_db is None:
+        return False
+
+    session_db = await get_unscoped_session_by_uuid(
+        uuid=session_uuid,
+        db_session=db_session,
+    )
+
+    if session_db is None:
+        return False
+
+    is_creator = await check_is_room_creator(
+        room_id=session_db.room_id,
+        user_id=user_db.id,
+        db_session=db_session,
+    )
+
+    return is_creator
 
 
 async def create_session(
@@ -880,7 +916,7 @@ async def finalize_session(
     )
 
 
-async def get_ws_sync_state(
+async def get_ws_take_sync_state(
     session_uuid: UUID,
     user_uuid: UUID,
     redis_client: Redis,
@@ -917,7 +953,141 @@ async def get_ws_sync_state(
     }
 
 
-async def process_ws_event(
+async def get_ws_host_sync_state(
+    session_uuid: UUID,
+    db_session: AsyncSession,
+    redis_client: Redis,
+) -> dict[str, Any] | None:
+    session_info_raw = await get_session_info(
+        session_uuid=session_uuid,
+        redis_client=redis_client,
+    )
+
+    if not session_info_raw:
+        return None
+
+    session_info = json.loads(session_info_raw)
+    answers_data = await get_session_answers(
+        session_uuid=session_uuid,
+        redis_client=redis_client,
+    )
+
+    questions = session_info.get("questions", [])
+    total_questions = len(questions)
+    total_score = float(total_questions)
+
+    members = []
+
+    if answers_data:
+        user_uuids = {UUID(user_uuid_str) for user_uuid_str in answers_data.keys()}
+        users_mapping_ids = await get_user_ids_by_uuids(
+            uuids=user_uuids,
+            db_session=db_session,
+        )
+        users_mapping = await get_users_by_ids(
+            ids=set(users_mapping_ids.values()),
+            db_session=db_session,
+        )
+
+        scoring_map = {}
+        for question in session_info.get("questions", []):
+            question_uuid_str = str(question["uuid"])
+            correct_options = set()
+            wrong_options = set()
+
+            for option in question.get("options", []):
+                option_uuid_str = str(option["uuid"])
+                if option.get("is_correct"):
+                    correct_options.add(option_uuid_str)
+                else:
+                    wrong_options.add(option_uuid_str)
+
+            scoring_map[question_uuid_str] = {
+                "question_uuid": UUID(question_uuid_str),
+                "correct_options": correct_options,
+                "wrong_options": wrong_options,
+            }
+
+        for user_uuid_str, user_answers in answers_data.items():
+            user_id = users_mapping_ids.get(UUID(user_uuid_str))
+            user = users_mapping.get(user_id) if user_id else None
+
+            member_answers_data = []
+            member_total_score = 0.0
+            member_total_answers = 0
+
+            for question_uuid_str, question_scoring in scoring_map.items():
+                selected_options_json = user_answers.get(question_uuid_str)
+
+                if not selected_options_json:
+                    member_answers_data.append(
+                        {
+                            "question_uuid": str(question_scoring["question_uuid"]),
+                            "selected_option_uuids": [],
+                            "score": 0.00,
+                        }
+                    )
+                    continue
+
+                selected_option_uuids = set(json.loads(selected_options_json))
+                member_total_answers += 1
+
+                correct_selected = selected_option_uuids.intersection(
+                    question_scoring["correct_options"]
+                )
+                wrong_selected = selected_option_uuids.intersection(
+                    question_scoring["wrong_options"]
+                )
+
+                total_correct = len(question_scoring["correct_options"])
+                total_wrong = len(question_scoring["wrong_options"])
+
+                correct_ratio = (
+                    len(correct_selected) / total_correct if total_correct > 0 else 0.0
+                )
+                wrong_ratio = (
+                    len(wrong_selected) / total_wrong if total_wrong > 0 else 0.0
+                )
+                question_score = correct_ratio - wrong_ratio
+
+                if question_score < 0:
+                    question_score = 0.0
+
+                member_total_score += question_score
+
+                member_answers_data.append(
+                    {
+                        "question_uuid": str(question_scoring["question_uuid"]),
+                        "selected_option_uuids": [
+                            str(opt) for opt in selected_option_uuids
+                        ],
+                        "score": round(question_score, 2),
+                    }
+                )
+
+            members.append(
+                {
+                    "user_uuid": str(user.uuid) if user else user_uuid_str,
+                    "username": user.username if user else "Unknown",
+                    "answers": member_answers_data,
+                    "total_answers": member_total_answers,
+                    "score": round(member_total_score, 2),
+                    "total_score": total_score,
+                }
+            )
+
+    total_members = len(members)
+
+    return {
+        "end_time_ts": session_info.get("end_time_ts"),
+        "questions": questions,
+        "total_questions": total_questions,
+        "members": members,
+        "total_members": total_members,
+    }
+
+
+async def process_ws_take_event(
     event_data: dict[str, Any],
     session_uuid: UUID,
     user_uuid: UUID,
@@ -1006,6 +1176,19 @@ async def process_ws_event(
             redis_client=redis_client,
         )
 
+        host_event_payload = {
+            "event": "user_answered",
+            "user_uuid": str(user_uuid),
+            "question_uuid": str(question_uuid),
+            "answer_data": answer_data,
+        }
+
+        await publish_session_host_event(
+            session_uuid=session_uuid,
+            event_payload=host_event_payload,
+            redis_client=redis_client,
+        )
+
         return {
             "event": "answer_acknowledged",
             "question_uuid": str(question_uuid),
@@ -1014,4 +1197,28 @@ async def process_ws_event(
     return {
         "event": "error",
         "message": f"Unknown event type: {event_type}",
+    }
+
+
+async def process_ws_host_event(
+    event_data: dict[str, Any],
+    session_uuid: UUID,
+    redis_client: Redis,
+) -> dict[str, Any] | None:
+    session_info_raw = await get_session_info(
+        session_uuid=session_uuid,
+        redis_client=redis_client,
+    )
+
+    if not session_info_raw:
+        return {
+            "event": "error",
+            "message": "Session is not active",
+        }
+
+    event_type = event_data.get("event")
+
+    return {
+        "event": "error",
+        "message": f"Host event '{event_type}' is not supported yet",
     }

@@ -28,8 +28,14 @@ async def _get_user_answers_key(
     return key
 
 
-async def get_session_events_channel(uuid: UUID | str) -> str:
+async def get_session_take_events_channel(uuid: UUID | str) -> str:
     channel = f"session:{str(uuid)}:events"
+
+    return channel
+
+
+async def get_session_host_events_channel(uuid: UUID | str) -> str:
+    channel = f"session:host:{str(uuid)}:events"
 
     return channel
 

@@ -121,7 +121,7 @@ async def get_session_with_relations_by_uuid(
     uuid: UUID,
     room_id: int,
     db_session: AsyncSession,
-) -> Session:
+) -> Session | None:
     stmt = (
         select(Session)
         .where(
@@ -141,7 +141,7 @@ async def get_session_with_relations_by_user_id(
     uuid: UUID,
     user_id: int,
     db_session: AsyncSession,
-) -> Session:
+) -> Session | None:
     stmt = (
         select(Session)
         .join(Session.members)
@@ -152,6 +152,19 @@ async def get_session_with_relations_by_user_id(
         )
         .options(selectinload(Session.questions).selectinload(SessionQuestion.options))
         .options(selectinload(Session.members).selectinload(SessionMember.answers))
+    )
+    result = await db_session.scalar(stmt)
+
+    return result
+
+
+async def get_unscoped_session_by_uuid(
+    uuid: UUID,
+    db_session: AsyncSession,
+) -> Session | None:
+    stmt = select(Session).where(
+        Session.uuid == uuid,
+        Session.deleted_at.is_(None),
     )
     result = await db_session.scalar(stmt)
 
