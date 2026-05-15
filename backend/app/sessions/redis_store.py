@@ -13,7 +13,13 @@ async def _get_session_info_key(uuid: UUID | str) -> str:
 
 
 async def _get_session_answers_key(uuid: UUID | str) -> str:
-    key = f"session:{uuid}:answers"
+    key = f"session:{str(uuid)}:answers"
+
+    return key
+
+
+async def _get_session_members_key(uuid: UUID | str) -> str:
+    key = f"session:{str(uuid)}:members"
 
     return key
 
@@ -24,6 +30,12 @@ async def _get_user_answers_key(
 ) -> str:
     session_answers_key = await _get_session_answers_key(uuid=session_uuid)
     key = f"{session_answers_key}:{user_uuid}"
+
+    return key
+
+
+async def get_session_completion_lock_key(uuid: UUID | str) -> str:
+    key = f"session:{str(uuid)}:lock:completion"
 
     return key
 
@@ -81,10 +93,11 @@ async def clear_session_data(
     redis_client: Redis,
 ) -> bool:
     session_info_key = await _get_session_info_key(uuid=session_uuid)
+    session_members_key = await _get_session_members_key(uuid=session_uuid)
     match_pattern = await _get_user_answers_key(
         session_uuid=session_uuid, user_uuid="*"
     )
-    keys = [session_info_key]
+    keys = [session_info_key, session_members_key]
     cursor = 0
 
     while True:
@@ -99,22 +112,28 @@ async def clear_session_data(
         if cursor == 0:
             break
 
-    value = await redis_client.delete(*keys)
+    if keys:
+        value = await redis_client.delete(*keys)
 
-    return value is not None
+        return value is not None
+
+    return False
 
 
-async def save_user_answer(
+async def set_user_answer(
     session_uuid: UUID,
     user_uuid: UUID,
     question_uuid: UUID,
     answer_data: list[str],
+    time_seconds: int,
     redis_client: Redis,
 ) -> bool:
     key = await _get_user_answers_key(
         session_uuid=session_uuid,
         user_uuid=user_uuid,
     )
+    ttl = time_seconds + 300
+
     async with redis_client.pipeline() as pipeline:
         await pipeline.hset(
             name=key,
@@ -123,13 +142,13 @@ async def save_user_answer(
         )
         await pipeline.expire(
             name=key,
-            time=86_400,
+            time=ttl,
             nx=True,
         )
 
         result = await pipeline.execute()
 
-    return bool(result[0])
+    return result is not None
 
 
 async def get_user_answered_question_uuids(
@@ -176,3 +195,53 @@ async def get_session_answers(
         result[user_uuid_str] = answers
 
     return result
+
+
+async def set_session_member(
+    session_uuid: UUID,
+    user_uuid: UUID,
+    username: str,
+    time_seconds: int,
+    redis_client: Redis,
+) -> bool:
+    key = await _get_session_members_key(uuid=session_uuid)
+    ttl = time_seconds + 300
+
+    async with redis_client.pipeline() as pipeline:
+        await pipeline.hset(
+            name=key,
+            key=str(user_uuid),
+            value=username,
+        )
+        await pipeline.expire(
+            name=key,
+            time=ttl,
+        )
+
+        result = await pipeline.execute()
+
+    return result is not None
+
+
+async def get_session_member(
+    session_uuid: UUID,
+    user_uuid: UUID,
+    redis_client: Redis,
+) -> str | None:
+    key = await _get_session_members_key(uuid=session_uuid)
+    username = await redis_client.hget(
+        name=key,
+        key=str(user_uuid),
+    )
+
+    return username
+
+
+async def get_session_members(
+    session_uuid: UUID,
+    redis_client: Redis,
+) -> dict[str, str]:
+    key = await _get_session_members_key(uuid=session_uuid)
+    members = await redis_client.hgetall(name=key)
+
+    return members

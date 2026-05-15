@@ -1,5 +1,6 @@
 import json
-from typing import Any
+from datetime import datetime, timezone
+from typing import Any, Literal
 from uuid import UUID
 
 from arq import ArqRedis
@@ -43,9 +44,13 @@ from app.sessions.redis_store import (
     set_session_info,
     get_session_info,
     get_user_answered_question_uuids,
-    save_user_answer,
+    set_user_answer,
     clear_session_data,
     get_session_answers,
+    set_session_member as redis_store_set_session_member,
+    get_session_members,
+    get_session_member,
+    get_session_completion_lock_key,
 )
 from app.users.service import get_users_by_ids, get_user_ids_by_uuids, get_user_by_uuid
 
@@ -53,7 +58,8 @@ from app.users.service import get_users_by_ids, get_user_ids_by_uuids, get_user_
 async def _calculate_member_score(
     grouped_answers: dict[int, list[int]],
     scoring_map: dict[int, dict[str, Any]],
-    option_id_to_uuid_map: dict[int, UUID],
+    options_mapping: dict[int | str, dict[str, Any]],
+    response_format: Literal["host", "member"] = "host",
 ) -> tuple[list[dict[str, Any]], int, float]:
     member_answers_data = []
     member_total_score = 0.0
@@ -63,47 +69,58 @@ async def _calculate_member_score(
         selected_option_ids = set(grouped_answers.get(question_id, []))
 
         if not selected_option_ids:
-            member_answers_data.append(
-                {
-                    "question_uuid": question_scoring["question_uuid"],
-                    "selected_option_uuids": [],
-                    "score": 0.00,
-                }
-            )
+            empty_answer = {
+                "question_uuid": question_scoring["question_uuid"],
+                "score": 0.00,
+            }
+
+            if response_format == "host":
+                empty_answer["selected_option_uuids"] = []
+            else:
+                empty_answer["selected_options"] = []
+
+            member_answers_data.append(empty_answer)
+
             continue
 
         member_total_answers += 1
         correct_selected = selected_option_ids.intersection(
-            question_scoring["correct_opts"]
+            question_scoring["correct_options"]
         )
         wrong_selected = selected_option_ids.intersection(
-            question_scoring["wrong_opts"]
+            question_scoring["wrong_options"]
         )
-        total_correct = len(question_scoring["correct_opts"])
-        total_wrong = len(question_scoring["wrong_opts"])
+        total_correct = len(question_scoring["correct_options"])
+        total_wrong = len(question_scoring["wrong_options"])
         correct_ratio = (
             len(correct_selected) / total_correct if total_correct > 0 else 0.0
         )
         wrong_ratio = len(wrong_selected) / total_wrong if total_wrong > 0 else 0.0
-        question_score = correct_ratio - wrong_ratio
-
-        if question_score < 0:
-            question_score = 0.0
-
+        question_score = max(correct_ratio - wrong_ratio, 0.0)
         member_total_score += question_score
-        selected_uuids = [
-            option_id_to_uuid_map[option_id]
-            for option_id in selected_option_ids
-            if option_id in option_id_to_uuid_map
-        ]
 
-        member_answers_data.append(
-            {
-                "question_uuid": question_scoring["question_uuid"],
-                "selected_option_uuids": selected_uuids,
-                "score": round(question_score, 2),
-            }
-        )
+        answer_data = {
+            "question_uuid": question_scoring["question_uuid"],
+            "score": round(question_score, 2),
+        }
+
+        if response_format == "host":
+            answer_data["selected_option_uuids"] = [
+                options_mapping[option_id]["uuid"]
+                for option_id in selected_option_ids
+                if option_id in options_mapping
+            ]
+        else:
+            answer_data["selected_options"] = [
+                {
+                    "uuid": options_mapping[option_id]["uuid"],
+                    "is_correct": options_mapping[option_id]["is_correct"],
+                }
+                for option_id in selected_option_ids
+                if option_id in options_mapping
+            ]
+
+        member_answers_data.append(answer_data)
 
     return member_answers_data, member_total_answers, member_total_score
 
@@ -114,81 +131,97 @@ async def _process_session_completion(
     db_session: AsyncSession,
     redis_client: Redis,
 ) -> None:
-    await complete_session_by_id(
-        id=session_db.id,
-        room_id=room_id,
-        db_session=db_session,
+    lock_key = await get_session_completion_lock_key(uuid=session_db.uuid)
+    lock = redis_client.lock(
+        name=lock_key,
+        timeout=10,
+        blocking_timeout=1,
     )
 
-    await publish_session_closed_event(
-        session_uuid=session_db.uuid,
-        redis_client=redis_client,
-    )
-
-    answers_data = await get_session_answers(
-        session_uuid=session_db.uuid,
-        redis_client=redis_client,
-    )
-
-    if answers_data:
-        question_mapping = {
-            str(question_db.uuid): question_db.id
-            for question_db in session_db.questions
-        }
-        option_mapping = {
-            str(option_db.uuid): option_db.id
-            for question_db in session_db.questions
-            for option_db in question_db.options
-        }
-        user_uuids = {UUID(user_uuid) for user_uuid in answers_data.keys()}
-        users_mapping = await get_user_ids_by_uuids(
-            uuids=user_uuids,
+    async with lock:
+        is_completed = await complete_session_by_id(
+            id=session_db.id,
+            room_id=room_id,
             db_session=db_session,
         )
-        members_to_create = []
 
-        for user_uuid_str, user_answers in answers_data.items():
-            user_id = users_mapping.get(UUID(user_uuid_str))
+        if not is_completed:
+            return
 
-            if not user_id:
-                continue
+        await publish_session_closed_event(
+            session_uuid=session_db.uuid,
+            redis_client=redis_client,
+        )
 
-            member_data = {"user_id": user_id, "answers": []}
+        answers_data = await get_session_answers(
+            session_uuid=session_db.uuid,
+            redis_client=redis_client,
+        )
+        session_members = await get_session_members(
+            session_uuid=session_db.uuid,
+            redis_client=redis_client,
+        )
 
-            for question_uuid_str, selected_options_json in user_answers.items():
-                question_id = question_mapping.get(question_uuid_str)
-
-                if not question_id:
-                    continue
-
-                selected_options = set(json.loads(selected_options_json))
-
-                for option_uuid_str in selected_options:
-                    option_id = option_mapping.get(option_uuid_str)
-
-                    if not option_id:
-                        continue
-
-                    member_data["answers"].append(
-                        {
-                            "session_question_id": question_id,
-                            "session_question_option_id": option_id,
-                        }
-                    )
-
-            members_to_create.append(member_data)
-
-        if members_to_create:
-            await bulk_create_session_members(
-                session_id=session_db.id,
-                create_session_members_data=members_to_create,
+        if session_members:
+            question_mapping = {
+                str(question_db.uuid): question_db.id
+                for question_db in session_db.questions
+            }
+            option_mapping = {
+                str(option_db.uuid): option_db.id
+                for question_db in session_db.questions
+                for option_db in question_db.options
+            }
+            user_uuids = {UUID(user_uuid) for user_uuid in session_members.keys()}
+            users_mapping = await get_user_ids_by_uuids(
+                uuids=user_uuids,
                 db_session=db_session,
             )
+            members_to_create = []
 
-    await clear_session_data(
-        session_uuid=session_db.uuid,
-        redis_client=redis_client,
-    )
+            for user_uuid_str, user_answers in answers_data.items():
+                user_id = users_mapping.get(UUID(user_uuid_str))
+
+                if not user_id:
+                    continue
+
+                member_data = {"user_id": user_id, "answers": []}
+                user_answers = answers_data.get(user_uuid_str, {})
+
+                for question_uuid_str, selected_options_json in user_answers.items():
+                    question_id = question_mapping.get(question_uuid_str)
+
+                    if not question_id:
+                        continue
+
+                    selected_options = set(json.loads(selected_options_json))
+
+                    for option_uuid_str in selected_options:
+                        option_id = option_mapping.get(option_uuid_str)
+
+                        if not option_id:
+                            continue
+
+                        member_data["answers"].append(
+                            {
+                                "session_question_id": question_id,
+                                "session_question_option_id": option_id,
+                            }
+                        )
+
+                members_to_create.append(member_data)
+
+            if members_to_create:
+                await bulk_create_session_members(
+                    session_id=session_db.id,
+                    create_session_members_data=members_to_create,
+                    db_session=db_session,
+                )
+
+        await clear_session_data(
+            session_uuid=session_db.uuid,
+            redis_client=redis_client,
+        )
 
 
 async def is_session_creator(
@@ -456,8 +489,8 @@ async def get_session(
 
         scoring_map[question_db.id] = {
             "question_uuid": question_db.uuid,
-            "correct_opts": correct_options,
-            "wrong_opts": wrong_options,
+            "correct_options": correct_options,
+            "wrong_options": wrong_options,
         }
 
         questions.append(
@@ -478,17 +511,12 @@ async def get_session(
             session_uuid=session_db.uuid,
             redis_client=redis_client,
         )
+        session_members = await get_session_members(
+            session_uuid=session_db.uuid,
+            redis_client=redis_client,
+        )
 
-        if answers_data:
-            user_uuids = {UUID(user_uuid_str) for user_uuid_str in answers_data.keys()}
-            users_mapping_ids = await get_user_ids_by_uuids(
-                uuids=user_uuids,
-                db_session=db_session,
-            )
-            users_mapping = await get_users_by_ids(
-                ids=set(users_mapping_ids.values()),
-                db_session=db_session,
-            )
+        if session_members:
             question_uuids_to_ids = {
                 str(question_db.uuid): question_db.id
                 for question_db in session_db.questions
@@ -499,9 +527,8 @@ async def get_session(
                 for option_db in question_db.options
             }
 
-            for user_uuid_str, user_answers in answers_data.items():
-                user_id = users_mapping_ids.get(UUID(user_uuid_str))
-                user = users_mapping.get(user_id) if user_id else None
+            for user_uuid_str, username in session_members.items():
+                user_answers = answers_data.get(user_uuid_str, {})
                 grouped_answers = {}
 
                 for question_uuid_str, options_json in user_answers.items():
@@ -517,6 +544,14 @@ async def get_session(
                         if option_str in option_uuids_to_ids
                     ]
 
+                options_mapping = {
+                    option_db.id: {
+                        "uuid": option_db.uuid,
+                        "is_correct": option_db.is_correct,
+                    }
+                    for question_db in session_db.questions
+                    for option_db in question_db.options
+                }
                 (
                     member_answers_data,
                     member_total_answers,
@@ -524,13 +559,13 @@ async def get_session(
                 ) = await _calculate_member_score(
                     grouped_answers=grouped_answers,
                     scoring_map=scoring_map,
-                    option_id_to_uuid_map=option_id_to_uuid_map,
+                    options_mapping=options_mapping,
                 )
 
                 members.append(
                     {
-                        "user_uuid": user.uuid if user else UUID(user_uuid_str),
-                        "username": user.username if user else "Unknown",
+                        "user_uuid": UUID(user_uuid_str),
+                        "username": username,
                         "answers": member_answers_data,
                         "total_answers": member_total_answers,
                         "score": round(member_total_score, 2),
@@ -560,6 +595,14 @@ async def get_session(
                     answer_db.session_question_option_id
                 )
 
+            options_mapping = {
+                option_db.id: {
+                    "uuid": option_db.uuid,
+                    "is_correct": option_db.is_correct,
+                }
+                for question_db in session_db.questions
+                for option_db in question_db.options
+            }
             (
                 member_answers_data,
                 member_total_answers,
@@ -567,7 +610,7 @@ async def get_session(
             ) = await _calculate_member_score(
                 grouped_answers=grouped_answers,
                 scoring_map=scoring_map,
-                option_id_to_uuid_map=option_id_to_uuid_map,
+                options_mapping=options_mapping,
             )
             user = users_mapping.get(member_db.user_id)
 
@@ -649,8 +692,8 @@ async def get_user_session(
 
         scoring_map[question_db.id] = {
             "question_uuid": question_db.uuid,
-            "correct_opts": correct_options,
-            "wrong_opts": wrong_options,
+            "correct_options": correct_options,
+            "wrong_options": wrong_options,
         }
 
         questions.append(
@@ -686,56 +729,18 @@ async def get_user_session(
 
         grouped_answers[question_db_id].append(answer_db.session_question_option_id)
 
-    for question_id, question_scoring in scoring_map.items():
-        selected_option_ids = set(grouped_answers.get(question_id, []))
+    options_mapping = {
+        option_db.id: {"uuid": option_db.uuid, "is_correct": option_db.is_correct}
+        for question_db in session_db.questions
+        for option_db in question_db.options
+    }
 
-        if not selected_option_ids:
-            answers.append(
-                {
-                    "question_uuid": question_scoring["question_uuid"],
-                    "selected_options": [],
-                    "score": 0.00,
-                }
-            )
-            continue
-
-        total_answers += 1
-
-        correct_selected = selected_option_ids.intersection(
-            question_scoring["correct_opts"]
-        )
-        wrong_selected = selected_option_ids.intersection(
-            question_scoring["wrong_opts"]
-        )
-        total_correct = len(question_scoring["correct_opts"])
-        total_wrong = len(question_scoring["wrong_opts"])
-        correct_ratio = (
-            len(correct_selected) / total_correct if total_correct > 0 else 0.0
-        )
-        wrong_ratio = len(wrong_selected) / total_wrong if total_wrong > 0 else 0.0
-        question_score = correct_ratio - wrong_ratio
-
-        if question_score < 0:
-            question_score = 0.0
-
-        score += question_score
-
-        selected_options = [
-            {
-                "uuid": options_mapping[option_id].uuid,
-                "is_correct": options_mapping[option_id].is_correct,
-            }
-            for option_id in selected_option_ids
-            if option_id in options_mapping
-        ]
-
-        answers.append(
-            {
-                "question_uuid": question_scoring["question_uuid"],
-                "selected_options": selected_options,
-                "score": round(question_score, 2),
-            }
-        )
+    answers, total_answers, score = await _calculate_member_score(
+        grouped_answers=grouped_answers,
+        scoring_map=scoring_map,
+        options_mapping=options_mapping,
+        response_format="member",
+    )
 
     result = {
         "uuid": session_db.uuid,
@@ -962,6 +967,52 @@ async def finalize_session(
     )
 
 
+async def set_session_member(
+    session_uuid: UUID,
+    user_uuid: UUID,
+    db_session: AsyncSession,
+    redis_client: Redis,
+) -> bool:
+    username = await get_session_member(
+        session_uuid=session_uuid,
+        user_uuid=user_uuid,
+        redis_client=redis_client,
+    )
+
+    if username is None:
+        user_db = await get_user_by_uuid(
+            uuid=user_uuid,
+            db_session=db_session,
+        )
+
+        if user_db is None:
+            return False
+
+        session_info_raw = await get_session_info(
+            session_uuid=session_uuid,
+            redis_client=redis_client,
+        )
+
+        if not session_info_raw:
+            return False
+
+        session_info = json.loads(session_info_raw)
+        current_ts = datetime.now(tz=timezone.utc).timestamp()
+        end_time_ts = session_info.get("end_time_ts", current_ts)
+        time_seconds = max(int(end_time_ts - current_ts), 0)
+        is_set = await redis_store_set_session_member(
+            session_uuid=session_uuid,
+            user_uuid=user_uuid,
+            username=user_db.username,
+            time_seconds=time_seconds,
+            redis_client=redis_client,
+        )
+
+        return is_set
+
+    return True
+
+
 async def get_ws_take_sync_state(
     session_uuid: UUID,
     user_uuid: UUID,
@@ -1001,7 +1052,6 @@ async def get_ws_take_sync_state(
 
 async def get_ws_host_sync_state(
     session_uuid: UUID,
-    db_session: AsyncSession,
     redis_client: Redis,
 ) -> dict[str, Any] | None:
     session_info_raw = await get_session_info(
@@ -1017,25 +1067,19 @@ async def get_ws_host_sync_state(
         session_uuid=session_uuid,
         redis_client=redis_client,
     )
-
+    session_members = await get_session_members(
+        session_uuid=session_uuid,
+        redis_client=redis_client,
+    )
     questions = session_info.get("questions", [])
     total_questions = len(questions)
     total_score = float(total_questions)
-
     members = []
 
-    if answers_data:
-        user_uuids = {UUID(user_uuid_str) for user_uuid_str in answers_data.keys()}
-        users_mapping_ids = await get_user_ids_by_uuids(
-            uuids=user_uuids,
-            db_session=db_session,
-        )
-        users_mapping = await get_users_by_ids(
-            ids=set(users_mapping_ids.values()),
-            db_session=db_session,
-        )
-
+    if session_members:
         scoring_map = {}
+        options_mapping = {}
+
         for question in session_info.get("questions", []):
             question_uuid_str = str(question["uuid"])
             correct_options = set()
@@ -1043,6 +1087,12 @@ async def get_ws_host_sync_state(
 
             for option in question.get("options", []):
                 option_uuid_str = str(option["uuid"])
+
+                options_mapping[option_uuid_str] = {
+                    "uuid": option["uuid"],
+                    "is_correct": option.get("is_correct", False),
+                }
+
                 if option.get("is_correct"):
                     correct_options.add(option_uuid_str)
                 else:
@@ -1054,71 +1104,33 @@ async def get_ws_host_sync_state(
                 "wrong_options": wrong_options,
             }
 
-        for user_uuid_str, user_answers in answers_data.items():
-            user_id = users_mapping_ids.get(UUID(user_uuid_str))
-            user = users_mapping.get(user_id) if user_id else None
+        for user_uuid_str, username in session_members.items():
+            user_answers = answers_data.get(user_uuid_str, {})
+            grouped_answers = {}
 
-            member_answers_data = []
-            member_total_score = 0.0
-            member_total_answers = 0
-
-            for question_uuid_str, question_scoring in scoring_map.items():
-                selected_options_json = user_answers.get(question_uuid_str)
-
-                if not selected_options_json:
-                    member_answers_data.append(
-                        {
-                            "question_uuid": str(question_scoring["question_uuid"]),
-                            "selected_option_uuids": [],
-                            "score": 0.00,
-                        }
+            for question_uuid_str, selected_options_json in user_answers.items():
+                if selected_options_json:
+                    grouped_answers[question_uuid_str] = json.loads(
+                        selected_options_json
                     )
-                    continue
 
-                selected_option_uuids = set(json.loads(selected_options_json))
-                member_total_answers += 1
-
-                correct_selected = selected_option_uuids.intersection(
-                    question_scoring["correct_options"]
-                )
-                wrong_selected = selected_option_uuids.intersection(
-                    question_scoring["wrong_options"]
-                )
-
-                total_correct = len(question_scoring["correct_options"])
-                total_wrong = len(question_scoring["wrong_options"])
-
-                correct_ratio = (
-                    len(correct_selected) / total_correct if total_correct > 0 else 0.0
-                )
-                wrong_ratio = (
-                    len(wrong_selected) / total_wrong if total_wrong > 0 else 0.0
-                )
-                question_score = correct_ratio - wrong_ratio
-
-                if question_score < 0:
-                    question_score = 0.0
-
-                member_total_score += question_score
-
-                member_answers_data.append(
-                    {
-                        "question_uuid": str(question_scoring["question_uuid"]),
-                        "selected_option_uuids": [
-                            str(opt) for opt in selected_option_uuids
-                        ],
-                        "score": round(question_score, 2),
-                    }
-                )
+            (
+                member_answers_data,
+                member_total_answers,
+                member_total_score,
+            ) = await _calculate_member_score(
+                grouped_answers=grouped_answers,
+                scoring_map=scoring_map,
+                options_mapping=options_mapping,
+            )
 
             members.append(
                 {
-                    "user_uuid": str(user.uuid) if user else user_uuid_str,
-                    "username": user.username if user else "Unknown",
+                    "user_uuid": UUID(user_uuid_str),
+                    "username": username,
                     "answers": member_answers_data,
                     "total_answers": member_total_answers,
                     "score": round(member_total_score, 2),
-                    "total_score": total_score,
                 }
             )
 
@@ -1128,6 +1140,7 @@ async def get_ws_host_sync_state(
         "end_time_ts": session_info.get("end_time_ts"),
         "questions": questions,
         "total_questions": total_questions,
+        "total_score": total_score,
         "members": members,
         "total_members": total_members,
     }
@@ -1172,8 +1185,10 @@ async def process_ws_take_event(
             }
 
         session_info = json.loads(session_info_raw)
+        current_ts = datetime.now(tz=timezone.utc).timestamp()
+        end_time_ts = session_info.get("end_time_ts", current_ts)
+        time_seconds = max(int(end_time_ts - current_ts), 0)
         all_questions = session_info.get("questions", [])
-
         target_question = next(
             (
                 question
@@ -1214,17 +1229,25 @@ async def process_ws_take_event(
                 "message": "One or more selected options are invalid for this question",
             }
 
-        await save_user_answer(
+        await set_user_answer(
             session_uuid=session_uuid,
             user_uuid=user_uuid,
             question_uuid=question_uuid,
             answer_data=answer_data,
+            time_seconds=time_seconds,
             redis_client=redis_client,
         )
+
+        session_members = await get_session_members(
+            session_uuid=session_uuid,
+            redis_client=redis_client,
+        )
+        username = session_members.get(str(user_uuid), "Unknown")
 
         host_event_payload = {
             "event": "user_answered",
             "user_uuid": str(user_uuid),
+            "username": username,
             "question_uuid": str(question_uuid),
             "answer_data": answer_data,
         }
