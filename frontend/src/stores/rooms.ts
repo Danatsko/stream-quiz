@@ -1,15 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { WebSocketService } from '@/services/websocket'
+import useNotificationsStore from '@/stores/notifications'
 import type {
   CreateRoomPayload,
   CreateSessionPayload,
   DetailedSession,
+  IncomingHostWsMessage,
   SummaryRoom,
   SummarySession,
   UpdateRoomPayload,
   UpdateSessionPayload,
 } from '@/types/rooms'
-import { AxiosError } from 'axios'
 import { roomsAPI } from '@/api/rooms'
 
 export const useRoomsStore = defineStore('rooms', () => {
@@ -25,6 +27,8 @@ export const useRoomsStore = defineStore('rooms', () => {
   const sessionsPage = ref<number | null>(null)
   const sessionsSize = 10
   const sessionsTotalPages = ref<number | null>(null)
+  const hostWs = ref<WebSocketService | null>(null)
+  const hostEndTimeTs = ref<number | null>(null)
   const isLoading = ref<boolean>(false)
 
   const clearRooms = (): void => {
@@ -242,6 +246,127 @@ export const useRoomsStore = defineStore('rooms', () => {
     }
   }
 
+  const connectHostSession = (sessionUuid: string): void => {
+    if (hostWs.value) {
+      hostWs.value.disconnect()
+    }
+
+    hostWs.value = new WebSocketService(sessionUuid, 'host')
+    hostWs.value.onOpen = (): void => {}
+
+    hostWs.value.onMessage = (message: IncomingHostWsMessage) => {
+      if (!session.value) {
+        return
+      }
+
+      if (message.event === 'sync_state') {
+        session.value.questions = message.questions
+        session.value.total_questions = message.total_questions
+        session.value.total_score = message.total_score
+        session.value.members = message.members
+        session.value.total_members = message.total_members
+        hostEndTimeTs.value = message.end_time_ts
+        session.value = { ...session.value }
+      } else if (message.event === 'user_answered') {
+        const { user_uuid, username, question_uuid, answer_data } = message
+        let member = session.value.members.find((m) => m.user_uuid === user_uuid)
+
+        if (!member) {
+          member = {
+            user_uuid,
+            username: username || 'Unknown',
+            answers: [],
+            total_answers: 0,
+            score: 0,
+          }
+          session.value.members.push(member)
+          session.value.total_members = session.value.members.length
+        }
+
+        const question = session.value.questions.find((q) => q.uuid === question_uuid)
+        let questionScore = 0
+
+        if (question) {
+          const correctOptions = question.options.filter((o) => o.is_correct).map((o) => o.uuid)
+          const wrongOptions = question.options.filter((o) => !o.is_correct).map((o) => o.uuid)
+
+          const safeAnswerData = Array.isArray(answer_data) ? answer_data : []
+          const selectedCorrect = safeAnswerData.filter((id: string) =>
+            correctOptions.includes(id),
+          ).length
+          const selectedWrong = safeAnswerData.filter((id: string) =>
+            wrongOptions.includes(id),
+          ).length
+
+          const correctRatio =
+            correctOptions.length > 0 ? selectedCorrect / correctOptions.length : 0
+          const wrongRatio = wrongOptions.length > 0 ? selectedWrong / wrongOptions.length : 0
+          questionScore = Math.max(0, correctRatio - wrongRatio)
+        }
+
+        const existingAnswer = member.answers.find((a) => a.question_uuid === question_uuid)
+
+        if (existingAnswer) {
+          const previouslyEmpty = existingAnswer.selected_option_uuids.length === 0
+
+          member.score -= existingAnswer.score
+          existingAnswer.selected_option_uuids = Array.isArray(answer_data) ? [...answer_data] : []
+          existingAnswer.score = questionScore
+          member.score += questionScore
+
+          if (previouslyEmpty && answer_data && answer_data.length > 0) {
+            member.total_answers += 1
+          } else if (!previouslyEmpty && (!answer_data || answer_data.length === 0)) {
+            member.total_answers -= 1
+          }
+        } else {
+          member.answers.push({
+            question_uuid,
+            selected_option_uuids: Array.isArray(answer_data) ? [...answer_data] : [],
+            score: questionScore,
+          })
+          member.score += questionScore
+          member.total_answers += 1
+        }
+
+        member.score = Math.round(member.score * 100) / 100
+
+        session.value = JSON.parse(JSON.stringify(session.value))
+      } else if (message.event === 'session_closed') {
+        useNotificationsStore().addNotification('Session has been completed', 'info')
+        session.value.status = 'completed'
+        disconnectHostSession()
+
+        if (session.value.room_uuid) {
+          getSession(session.value.room_uuid, session.value.uuid)
+        }
+      }
+    }
+
+    hostWs.value.onDisconnect = (event) => {
+      if (event.code === 1008) {
+        useNotificationsStore().addNotification(
+          event.reason || 'Session is not active or you are not a host',
+          'error',
+        )
+      }
+    }
+    hostWs.value.onError = (msg): void => {
+      useNotificationsStore().addNotification(msg, 'error')
+    }
+
+    hostWs.value.connect()
+  }
+
+  const disconnectHostSession = (): void => {
+    if (hostWs.value) {
+      hostWs.value.disconnect()
+      hostWs.value = null
+    }
+
+    hostEndTimeTs.value = null
+  }
+
   return {
     rooms,
     room,
@@ -255,6 +380,7 @@ export const useRoomsStore = defineStore('rooms', () => {
     sessionsPage,
     sessionsSize,
     sessionsTotalPages,
+    hostEndTimeTs,
     isLoading,
     clearRooms,
     clearRoom,
@@ -272,6 +398,8 @@ export const useRoomsStore = defineStore('rooms', () => {
     deleteSession,
     startSession,
     stopSession,
+    connectHostSession,
+    disconnectHostSession,
   }
 })
 

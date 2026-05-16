@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, computed, ref } from 'vue'
+import { onMounted, onBeforeUnmount, computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import useAuthStore from '@/stores/auth'
@@ -26,6 +26,9 @@ const sessionUuid = computed(() => route.params.uuid as string)
 const session = computed(() => roomsStore.session)
 const isLoading = computed(() => roomsStore.isLoading)
 
+const timeLeft = ref<string>('--:--:--')
+let timerInterval: number | null = null
+
 const currentUserUuid = computed((): string | null => {
   return authStore.user === null ? null : authStore.user.uuid
 })
@@ -36,7 +39,23 @@ const sessionStatusLabels: Record<string, string> = {
   completed: 'Completed',
 }
 
+watch(
+  () => session.value?.status,
+  (newStatus, oldStatus) => {
+    if (newStatus === 'active') {
+      if (session.value?.uuid) {
+        roomsStore.connectHostSession(session.value.uuid)
+      }
+    } else if (oldStatus === 'active') {
+      roomsStore.disconnectHostSession()
+    }
+  },
+  { immediate: true },
+)
+
 onMounted(async () => {
+  timerInterval = window.setInterval(updateTimer, 1000)
+
   if (sessionUuid.value) {
     try {
       await roomsStore.getSession(roomUuid.value, sessionUuid.value)
@@ -52,6 +71,11 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  if (timerInterval) {
+    clearInterval(timerInterval)
+  }
+
+  roomsStore.disconnectHostSession()
   roomsStore.clearSession()
 })
 
@@ -174,6 +198,22 @@ const getMemberOptionClass = (
 
   return ''
 }
+
+const updateTimer = () => {
+  if (!roomsStore.hostEndTimeTs) {
+    timeLeft.value = '--:--:--'
+
+    return
+  }
+  const now = Date.now() / 1000
+  const diff = Math.max(0, Math.round(roomsStore.hostEndTimeTs - now))
+
+  if (diff <= 0) {
+    timeLeft.value = '00:00:00'
+  } else {
+    timeLeft.value = formatDuration(diff)
+  }
+}
 </script>
 
 <template>
@@ -245,6 +285,11 @@ const getMemberOptionClass = (
                 {{ formatDuration(session.time_seconds) }}
               </span>
 
+              <span class="meta-item" v-if="session.status === 'active'">
+                <Icon icon="mdi:timer-sand" />
+                {{ timeLeft }}
+              </span>
+
               <span class="meta-item" v-if="session.status !== 'waiting'">
                 <Icon icon="mdi:help-circle-outline" />
                 {{ session.total_questions }} questions
@@ -258,7 +303,7 @@ const getMemberOptionClass = (
               <div class="meta-item" v-if="session.quiz_uuid">
                 <Icon icon="mdi:book-open-variant-outline" />
 
-                <div class="item-id" @click="copyToClipboard(session.uuid)" title="Copy UUID">
+                <div class="item-id" @click="copyToClipboard(session.quiz_uuid)" title="Copy UUID">
                   {{ session.quiz_uuid }}
                   <Icon icon="mdi:content-copy" class="copy-icon" />
                 </div>

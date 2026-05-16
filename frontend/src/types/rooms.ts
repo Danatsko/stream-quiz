@@ -105,3 +105,38 @@ export interface UpdateSessionPayload {
   description?: string
   time_seconds?: number
 }
+
+export interface HostWsSyncStateEvent {
+  event: 'sync_state'
+  end_time_ts: number | null
+  questions: Array<SessionQuestionBase>
+  total_questions: number
+  total_score: number
+  members: Array<SessionMemberBase>
+  total_members: number
+}
+
+export interface HostWsUserAnsweredEvent {
+  event: 'user_answered'
+  user_uuid: string
+  username: string
+  question_uuid: string
+  answer_data: Array<string>
+}
+
+export interface HostWsSessionClosedEvent {
+  event: 'session_closed'
+  message?: string
+}
+
+export interface HostWsErrorEvent {
+  event: 'error'
+  message: string
+}
+
+export type IncomingHostWsMessage =
+  | HostWsSyncStateEvent
+  | HostWsUserAnsweredEvent
+  | HostWsSessionClosedEvent
+  | HostWsErrorEvent
+  | { event: string; [key: string]: any }

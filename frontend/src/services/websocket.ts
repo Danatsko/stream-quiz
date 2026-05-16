@@ -13,9 +13,9 @@ export class WebSocketService {
   public onReconnectAttempt: ((attempt: number) => void) | null = null
   public onError: ((message: string) => void) | null = null
 
-  constructor(sessionUuid: string) {
+  constructor(sessionUuid: string, role: 'take' | 'host' = 'take') {
     const baseUrl = WS_URL
-    this.url = `${baseUrl}/sessions/${sessionUuid}`
+    this.url = `${baseUrl}/sessions/${sessionUuid}/${role}`
   }
 
   public connect(): void {
