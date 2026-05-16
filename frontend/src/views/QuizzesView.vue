@@ -26,7 +26,6 @@ const authStore = useAuthStore()
 const quizzesStore = useQuizzesStore()
 const router = useRouter()
 
-const activeTab = ref('All')
 const activeMenuUuid = ref<string | null>(null)
 const quizToDeleteUuid = ref<string | null>(null)
 const isCreateQuizDialogOpen = ref(false)
@@ -41,21 +40,10 @@ const currentUserUuid = computed((): string | null => {
 })
 
 const tabs = [
-  { label: 'All', name: 'All' },
-  { label: 'Owned', name: 'Owned' },
-  { label: 'Not owned', name: 'Not owned' },
+  { label: 'All', value: 'all' },
+  { label: 'Owned', value: 'owned' },
+  { label: 'Not owned', value: 'not_owned' },
 ]
-
-const filteredQuizzes = computed(() => {
-  if (activeTab.value === 'Owned') {
-    return quizzesStore.quizzes.filter((quiz) => quiz.creator_uuid === currentUserUuid.value)
-  }
-  if (activeTab.value === 'Not owned') {
-    return quizzesStore.quizzes.filter((quiz) => quiz.creator_uuid !== currentUserUuid.value)
-  }
-
-  return quizzesStore.quizzes
-})
 
 const copyToClipboard = (text: string): void => {
   navigator.clipboard.writeText(text)
@@ -181,10 +169,10 @@ const confirmDeleteQuiz = async (): Promise<void> => {
         <div class="main-nav-tab">
           <AppButton
             v-for="tab in tabs"
-            :key="tab.name"
+            :key="tab.value"
             class="tab-btn"
-            :class="{ active: activeTab === tab.name }"
-            @click="activeTab = tab.name"
+            :class="{ active: quizzesStore.ownershipFilter === tab.value }"
+            @click="quizzesStore.setOwnershipFilter(tab.value)"
             :title="tab.label"
             :aria-label="tab.label"
           >
@@ -194,14 +182,14 @@ const confirmDeleteQuiz = async (): Promise<void> => {
       </div>
 
       <AppAsyncList
-        :items="filteredQuizzes"
+        :items="quizzesStore.quizzes"
         :is-loading="quizzesStore.isLoading"
         empty-icon="mdi:book-open-variant-outline"
         empty-title="There are no quizzes"
         empty-text="No quiz found for the selected category"
         @load-more="quizzesStore.getQuizzes"
       >
-        <AppListCard v-for="quiz in filteredQuizzes" :key="quiz.uuid">
+        <AppListCard v-for="quiz in quizzesStore.quizzes" :key="quiz.uuid">
           <template v-slot:icon>
             <Icon icon="mdi:book-open-variant-outline" />
           </template>

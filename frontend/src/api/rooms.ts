@@ -53,11 +53,17 @@ export const roomsAPI = {
     return response.data
   },
 
-  async getSessions(roomUuid: string, page: number, size: number): Promise<GetSessionsResponse> {
+  async getSessions(
+    roomUuid: string,
+    page: number,
+    size: number,
+    status: string = 'all',
+  ): Promise<GetSessionsResponse> {
     const response = await api.get<GetSessionsResponse>(`/rooms/${roomUuid}/sessions`, {
       params: {
         page: page,
         size: size,
+        status: status,
       },
     })
 

@@ -15,11 +15,16 @@ export const quizzesAPI = {
     return response.data
   },
 
-  async getQuizzes(page: number, size: number): Promise<GetQuizzesResponse> {
+  async getQuizzes(
+    page: number,
+    size: number,
+    ownership: string = 'all',
+  ): Promise<GetQuizzesResponse> {
     const response = await api.get<GetQuizzesResponse>('/quizzes', {
       params: {
         page: page,
         size: size,
+        ownership: ownership,
       },
     })
 

@@ -40,7 +40,6 @@ const router = useRouter()
 const authStore = useAuthStore()
 const roomsStore = useRoomsStore()
 
-const activeTab = ref('All')
 const activeMenuUuid = ref<string | null>(null)
 const sessionToDeleteUuid = ref<string | null>(null)
 const isCreateSessionDialogOpen = ref(false)
@@ -62,25 +61,11 @@ const currentUserUuid = computed((): string | null => {
 })
 
 const tabs = [
-  { label: 'All', name: 'All' },
-  { label: 'Waiting', name: 'Waiting' },
-  { label: 'Active', name: 'Active' },
-  { label: 'Completed', name: 'Completed' },
+  { label: 'All', value: 'all' },
+  { label: 'Waiting', value: 'waiting' },
+  { label: 'Active', value: 'active' },
+  { label: 'Completed', value: 'completed' },
 ]
-
-const filteredSessions = computed(() => {
-  if (activeTab.value === 'Waiting') {
-    return roomsStore.sessions.filter((session) => session.status === 'waiting')
-  }
-  if (activeTab.value === 'Active') {
-    return roomsStore.sessions.filter((session) => session.status == 'active')
-  }
-  if (activeTab.value === 'Completed') {
-    return roomsStore.sessions.filter((session) => session.status == 'completed')
-  }
-
-  return roomsStore.sessions
-})
 
 const copyToClipboard = (text: string): void => {
   navigator.clipboard.writeText(text)
@@ -349,10 +334,10 @@ const confirmDeleteSession = async (): Promise<void> => {
           <div class="main-nav-tab">
             <AppButton
               v-for="tab in tabs"
-              :key="tab.name"
+              :key="tab.value"
               class="tab-btn"
-              :class="{ active: activeTab === tab.name }"
-              @click="activeTab = tab.name"
+              :class="{ active: roomsStore.sessionStatusFilter === tab.value }"
+              @click="roomsStore.setSessionStatusFilter(roomUuid, tab.value)"
               :title="tab.label"
               :aria-label="tab.label"
             >
@@ -363,14 +348,14 @@ const confirmDeleteSession = async (): Promise<void> => {
 
         <div class="sessions-list-wrapper">
           <AppAsyncList
-            :items="filteredSessions"
+            :items="roomsStore.sessions"
             :is-loading="roomsStore.isLoading"
             empty-icon="mdi:timer-play-outline"
             empty-title="There are no sessions"
             empty-text="No session found for the selected category"
             @load-more="() => roomsStore.getSessions(roomUuid)"
           >
-            <AppListCard v-for="session in filteredSessions" :key="session.uuid">
+            <AppListCard v-for="session in roomsStore.sessions" :key="session.uuid">
               <template v-slot:icon>
                 <Icon icon="mdi:timer-play-outline" />
               </template>

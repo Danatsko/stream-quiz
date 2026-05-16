@@ -17,6 +17,7 @@ export const useQuizzesStore = defineStore('quizzes', () => {
   const page = ref<number | null>(null)
   const size = 10
   const totalPages = ref<number | null>(null)
+  const ownershipFilter = ref<string>('all')
   const isLoading = ref<boolean>(false)
 
   const clearQuizzes = (): void => {
@@ -28,6 +29,17 @@ export const useQuizzesStore = defineStore('quizzes', () => {
 
   const clearQuiz = (): void => {
     quiz.value = null
+  }
+
+  const setOwnershipFilter = async (filter: string): Promise<void> => {
+    if (ownershipFilter.value === filter) {
+      return
+    }
+
+    ownershipFilter.value = filter
+
+    clearQuizzes()
+    await getQuizzes()
   }
 
   const createQuiz = async (payload: CreateQuizPayload): Promise<string> => {
@@ -53,7 +65,7 @@ export const useQuizzesStore = defineStore('quizzes', () => {
 
     try {
       const nextPage = page.value === null ? 1 : page.value + 1
-      const response = await quizzesAPI.getQuizzes(nextPage, size)
+      const response = await quizzesAPI.getQuizzes(nextPage, size, ownershipFilter.value)
       quizzes.value.push(...response.quizzes)
       totalQuizzes.value = response.total_quizzes
       page.value = response.page
@@ -126,9 +138,11 @@ export const useQuizzesStore = defineStore('quizzes', () => {
     page,
     size,
     totalPages,
+    ownershipFilter,
     isLoading,
     clearQuizzes,
     clearQuiz,
+    setOwnershipFilter,
     createQuiz,
     getQuizzes,
     getQuiz,

@@ -27,6 +27,7 @@ export const useRoomsStore = defineStore('rooms', () => {
   const sessionsPage = ref<number | null>(null)
   const sessionsSize = 10
   const sessionsTotalPages = ref<number | null>(null)
+  const sessionStatusFilter = ref<string>('all')
   const hostWs = ref<WebSocketService | null>(null)
   const hostEndTimeTs = ref<number | null>(null)
   const isLoading = ref<boolean>(false)
@@ -51,6 +52,17 @@ export const useRoomsStore = defineStore('rooms', () => {
 
   const clearSession = (): void => {
     session.value = null
+  }
+
+  const setSessionStatusFilter = async (roomUuid: string, filter: string): Promise<void> => {
+    if (sessionStatusFilter.value === filter) {
+      return
+    }
+
+    sessionStatusFilter.value = filter
+
+    clearSessions()
+    await getSessions(roomUuid)
   }
 
   const createRoom = async (payload: CreateRoomPayload): Promise<string> => {
@@ -164,7 +176,12 @@ export const useRoomsStore = defineStore('rooms', () => {
 
     try {
       const nextPage = sessionsPage.value === null ? 1 : sessionsPage.value + 1
-      const response = await roomsAPI.getSessions(roomUuid, nextPage, sessionsSize)
+      const response = await roomsAPI.getSessions(
+        roomUuid,
+        nextPage,
+        sessionsSize,
+        sessionStatusFilter.value,
+      )
       sessions.value.push(...response.sessions)
       totalSessions.value = response.total_sessions
       sessionsPage.value = response.page
@@ -380,12 +397,14 @@ export const useRoomsStore = defineStore('rooms', () => {
     sessionsPage,
     sessionsSize,
     sessionsTotalPages,
+    sessionStatusFilter,
     hostEndTimeTs,
     isLoading,
     clearRooms,
     clearRoom,
     clearSessions,
     clearSession,
+    setSessionStatusFilter,
     createRoom,
     getRooms,
     getRoom,

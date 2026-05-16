@@ -11,8 +11,6 @@ import { formatDuration } from '@/utils/formatters'
 import AppBadge from '@/components/AppBadge.vue'
 
 const sessionStatusLabels: Record<string, string> = {
-  waiting: 'Waiting',
-  active: 'Active',
   completed: 'Completed',
 }
 
