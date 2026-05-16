@@ -15,6 +15,17 @@ from app.sessions.models import (
 )
 
 
+async def _sessions_status_filter(
+    status: Literal["all", "waiting", "active", "completed"],
+) -> list[Any]:
+    condition = []
+
+    if status != "all":
+        condition.append(Session.status == SessionStatus(status))
+
+    return condition
+
+
 async def create_session(
     title: str,
     description: str,
@@ -42,11 +53,14 @@ async def create_session(
 async def get_sessions_total_count_by_room_id(
     room_id: int,
     db_session: AsyncSession,
+    status: Literal["all", "waiting", "active", "completed"] = "all",
 ) -> int:
+    status_filter = await _sessions_status_filter(status=status)
     stmt = (
         select(func.count())
         .select_from(Session)
         .where(
+            *status_filter,
             Session.room_id == room_id,
             Session.deleted_at.is_(None),
         )
@@ -59,12 +73,15 @@ async def get_sessions_total_count_by_room_id(
 async def get_sessions_total_count_by_user_id(
     user_id: int,
     db_session: AsyncSession,
+    status: Literal["all", "waiting", "active", "completed"] = "all",
 ) -> int:
+    status_filter = await _sessions_status_filter(status=status)
     stmt = (
         select(func.count())
         .select_from(Session)
         .join(Session.members)
         .where(
+            *status_filter,
             SessionMember.user_id == user_id,
             Session.deleted_at.is_(None),
         )
@@ -79,10 +96,13 @@ async def get_sessions_list_by_room_id(
     limit: int,
     offset: int,
     db_session: AsyncSession,
+    status: Literal["all", "waiting", "active", "completed"] = "all",
 ) -> list[Session]:
+    status_filter = await _sessions_status_filter(status=status)
     stmt = (
         select(Session)
         .where(
+            *status_filter,
             Session.room_id == room_id,
             Session.deleted_at.is_(None),
         )
@@ -100,11 +120,14 @@ async def get_sessions_list_by_user_id(
     limit: int,
     offset: int,
     db_session: AsyncSession,
+    status: Literal["all", "waiting", "active", "completed"] = "all",
 ) -> list[Session]:
+    status_filter = await _sessions_status_filter(status=status)
     stmt = (
         select(Session)
         .join(Session.members)
         .where(
+            *status_filter,
             SessionMember.user_id == user_id,
             Session.deleted_at.is_(None),
         )

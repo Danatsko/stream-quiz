@@ -1,4 +1,4 @@
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from arq import ArqRedis
@@ -205,6 +205,9 @@ async def get_sessions(
     db_session: Annotated[AsyncSession, Depends(get_db_session)],
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 10,
+    status: Annotated[
+        Literal["all", "waiting", "active", "completed"], Query()
+    ] = "all",
 ) -> GetSessionsResponse:
     user_uuid = auth_context["user_uuid"]
     result = await service_get_sessions(
@@ -213,6 +216,7 @@ async def get_sessions(
         room_uuid=room_uuid,
         user_uuid=user_uuid,
         db_session=db_session,
+        status=status,
     )
 
     return GetSessionsResponse(

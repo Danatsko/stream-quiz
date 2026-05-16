@@ -1,5 +1,5 @@
 from uuid import UUID
-from typing import Any
+from typing import Any, Literal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -117,6 +117,7 @@ async def get_quizzes(
     size: int,
     user_uuid: UUID,
     db_session: AsyncSession,
+    ownership: Literal["all", "owned", "not_owned"] = "all",
 ) -> dict[str, Any]:
     offset = (page - 1) * size
     user_db = await get_user_by_uuid(
@@ -130,6 +131,7 @@ async def get_quizzes(
     total_quizzes_db = await get_available_quizzes_total_count(
         user_id=user_db.id,
         db_session=db_session,
+        ownership=ownership,
     )
 
     if total_quizzes_db == 0:
@@ -148,6 +150,7 @@ async def get_quizzes(
         limit=size,
         offset=offset,
         db_session=db_session,
+        ownership=ownership,
     )
     creator_ids = {quiz_db.creator_id for quiz_db, _ in quizzes_db}
     creators_mapping = await get_user_uuids_by_ids(

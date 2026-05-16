@@ -1,5 +1,5 @@
 from uuid import UUID
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, status, Request, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -62,6 +62,7 @@ async def get_quizzes(
     db_session: Annotated[AsyncSession, Depends(get_db_session)],
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 10,
+    ownership: Annotated[Literal["all", "owned", "not_owned"], Query()] = "all",
 ) -> GetQuizzesResponse:
     user_uuid = auth_context["user_uuid"]
     result = await service_get_quizzes(
@@ -69,6 +70,7 @@ async def get_quizzes(
         size=size,
         user_uuid=user_uuid,
         db_session=db_session,
+        ownership=ownership,
     )
 
     return GetQuizzesResponse(

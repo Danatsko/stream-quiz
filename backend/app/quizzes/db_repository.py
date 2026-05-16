@@ -1,11 +1,33 @@
 from uuid import UUID, uuid7
-from typing import Any
+from typing import Any, Literal
 
 from sqlalchemy import or_, select, func, update, delete, insert
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.quizzes.models import Quiz, QuizQuestion, QuizQuestionOption
+
+
+async def _quizzes_ownership_filter(
+    user_id: int,
+    ownership: Literal["all", "owned", "not_owned"],
+) -> list[Any]:
+    condition = []
+
+    if ownership == "all":
+        condition.append(
+            or_(
+                Quiz.is_public.is_(True),
+                Quiz.creator_id == user_id,
+            )
+        )
+    elif ownership == "owned":
+        condition.append(Quiz.creator_id == user_id)
+    elif ownership == "not_owned":
+        condition.append(Quiz.creator_id != user_id)
+        condition.append(Quiz.is_public.is_(True))
+
+    return condition
 
 
 async def create_quiz(
@@ -31,15 +53,17 @@ async def create_quiz(
 async def get_available_quizzes_total_count(
     user_id: int,
     db_session: AsyncSession,
+    ownership: Literal["all", "owned", "not_owned"] = "all",
 ) -> int:
+    ownership_filter = await _quizzes_ownership_filter(
+        user_id=user_id,
+        ownership=ownership,
+    )
     stmt = (
         select(func.count())
         .select_from(Quiz)
         .where(
-            or_(
-                Quiz.is_public.is_(True),
-                Quiz.creator_id == user_id,
-            ),
+            *ownership_filter,
             Quiz.deleted_at.is_(None),
         )
     )
@@ -53,7 +77,12 @@ async def get_available_quizzes_list(
     limit: int,
     offset: int,
     db_session: AsyncSession,
+    ownership: Literal["all", "owned", "not_owned"] = "all",
 ) -> list[tuple[Quiz, int]]:
+    ownership_filter = await _quizzes_ownership_filter(
+        user_id=user_id,
+        ownership=ownership,
+    )
     stmt = (
         select(
             Quiz,
@@ -61,10 +90,7 @@ async def get_available_quizzes_list(
         )
         .outerjoin(QuizQuestion, QuizQuestion.quiz_id == Quiz.id)
         .where(
-            or_(
-                Quiz.is_public.is_(True),
-                Quiz.creator_id == user_id,
-            ),
+            *ownership_filter,
             Quiz.deleted_at.is_(None),
         )
         .group_by(Quiz.id)

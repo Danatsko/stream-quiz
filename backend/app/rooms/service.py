@@ -1,5 +1,5 @@
 from uuid import UUID
-from typing import Any
+from typing import Any, Literal
 
 from arq import ArqRedis
 from redis.asyncio import Redis
@@ -259,6 +259,7 @@ async def get_sessions(
     room_uuid: UUID,
     user_uuid: UUID,
     db_session: AsyncSession,
+    status: Literal["all", "waiting", "active", "completed"] = "all",
 ) -> dict[str, Any]:
     user_db = await get_user_by_uuid(
         uuid=user_uuid,
@@ -284,6 +285,7 @@ async def get_sessions(
         user_id=user_db.id,
         room_uuid=room_db.uuid,
         db_session=db_session,
+        status=status,
     )
 
     return result

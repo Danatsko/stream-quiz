@@ -223,6 +223,7 @@ async def get_me_sessions(
         size=size,
         user_id=user_db.id,
         db_session=db_session,
+        status="completed",
     )
 
     return result
