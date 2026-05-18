@@ -9,7 +9,9 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     UniqueConstraint,
+    Index,
 )
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.models import Base, UUIDMixin, SoftDeleteMixin
@@ -78,10 +80,28 @@ class Session(Base, UUIDMixin, SoftDeleteMixin):
         lazy="raise_on_sql",
     )
 
+    @hybrid_property
+    def search_vector(self):
+        return f"{self.title} {self.description}"
+
+    @search_vector.expression
+    def search_vector(cls):
+        return (cls.title + " " + cls.description).self_group()
+
     __table_args__ = (
-        CheckConstraint("time_seconds > 0", name="chk_positive_time_seconds"),
         CheckConstraint(
-            "time_seconds <= 604800", name="chk_less_equal_week_time_seconds"
+            "time_seconds > 0",
+            name="chk_positive_time_seconds",
+        ),
+        CheckConstraint(
+            "time_seconds <= 604800",
+            name="chk_less_equal_week_time_seconds",
+        ),
+        Index(
+            "ix_session_search_trgm",
+            text("(title || ' ' || description)"),
+            postgresql_using="gin",
+            postgresql_ops={"(title || ' ' || description)": "gin_trgm_ops"},
         ),
     )
 

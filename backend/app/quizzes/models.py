@@ -1,4 +1,5 @@
-from sqlalchemy import BigInteger, String, Boolean, ForeignKey, false, text
+from sqlalchemy import BigInteger, String, Boolean, ForeignKey, false, text, Index
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.models import Base, UUIDMixin, SoftDeleteMixin
@@ -36,6 +37,23 @@ class Quiz(Base, UUIDMixin, SoftDeleteMixin):
         back_populates="quiz",
         cascade="all, delete-orphan",
         lazy="raise_on_sql",
+    )
+
+    @hybrid_property
+    def search_vector(self):
+        return f"{self.title} {self.description}"
+
+    @search_vector.expression
+    def search_vector(cls):
+        return (cls.title + " " + cls.description).self_group()
+
+    __table_args__ = (
+        Index(
+            "ix_quiz_search_trgm",
+            text("(title || ' ' || description)"),
+            postgresql_using="gin",
+            postgresql_ops={"(title || ' ' || description)": "gin_trgm_ops"},
+        ),
     )
 
 
