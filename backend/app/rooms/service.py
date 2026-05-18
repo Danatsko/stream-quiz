@@ -71,6 +71,7 @@ async def get_rooms(
     size: int,
     user_uuid: UUID,
     db_session: AsyncSession,
+    q: str | None = None,
 ) -> dict[str, Any]:
     offset = (page - 1) * size
     user_db = await get_user_by_uuid(
@@ -84,6 +85,7 @@ async def get_rooms(
     total_rooms_db = await get_rooms_total_count(
         user_id=user_db.id,
         db_session=db_session,
+        q=q,
     )
 
     if total_rooms_db == 0:
@@ -102,6 +104,7 @@ async def get_rooms(
         limit=size,
         offset=offset,
         db_session=db_session,
+        q=q,
     )
     total_pages = (total_rooms_db + size - 1) // size
     rooms = []
@@ -260,6 +263,7 @@ async def get_sessions(
     user_uuid: UUID,
     db_session: AsyncSession,
     status: Literal["all", "waiting", "active", "completed"] = "all",
+    q: str | None = None,
 ) -> dict[str, Any]:
     user_db = await get_user_by_uuid(
         uuid=user_uuid,
@@ -286,6 +290,7 @@ async def get_sessions(
         room_uuid=room_db.uuid,
         db_session=db_session,
         status=status,
+        q=q,
     )
 
     return result

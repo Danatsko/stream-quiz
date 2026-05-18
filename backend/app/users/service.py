@@ -207,6 +207,7 @@ async def get_me_sessions(
     size: int,
     user_uuid: UUID,
     db_session: AsyncSession,
+    q: str | None = None,
 ) -> dict[str, Any]:
     from app.sessions.service import get_user_sessions
 
@@ -224,6 +225,7 @@ async def get_me_sessions(
         user_id=user_db.id,
         db_session=db_session,
         status="completed",
+        q=q,
     )
 
     return result

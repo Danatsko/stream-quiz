@@ -1,7 +1,7 @@
 from typing import Any, Literal
 from uuid import UUID, uuid7
 
-from sqlalchemy import insert, update, func, select
+from sqlalchemy import insert, update, func, select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -18,12 +18,26 @@ from app.sessions.models import (
 async def _sessions_status_filter(
     status: Literal["all", "waiting", "active", "completed"],
 ) -> list[Any]:
-    condition = []
+    conditions = []
 
     if status != "all":
-        condition.append(Session.status == SessionStatus(status))
+        conditions.append(Session.status == SessionStatus(status))
 
-    return condition
+    return conditions
+
+
+async def _sessions_search_filter(q: str | None = None) -> list[Any]:
+    conditions = []
+
+    if q is not None:
+        conditions.append(
+            or_(
+                Session.search_vector.ilike(f"%{q}%"),
+                Session.search_vector.bool_op("%>")(q),
+            )
+        )
+
+    return conditions
 
 
 async def create_session(
@@ -54,13 +68,16 @@ async def get_sessions_total_count_by_room_id(
     room_id: int,
     db_session: AsyncSession,
     status: Literal["all", "waiting", "active", "completed"] = "all",
+    q: str | None = None,
 ) -> int:
     status_filter = await _sessions_status_filter(status=status)
+    search_filter = await _sessions_search_filter(q=q)
     stmt = (
         select(func.count())
         .select_from(Session)
         .where(
             *status_filter,
+            *search_filter,
             Session.room_id == room_id,
             Session.deleted_at.is_(None),
         )
@@ -74,14 +91,17 @@ async def get_sessions_total_count_by_user_id(
     user_id: int,
     db_session: AsyncSession,
     status: Literal["all", "waiting", "active", "completed"] = "all",
+    q: str | None = None,
 ) -> int:
     status_filter = await _sessions_status_filter(status=status)
+    search_filter = await _sessions_search_filter(q=q)
     stmt = (
         select(func.count())
         .select_from(Session)
         .join(Session.members)
         .where(
             *status_filter,
+            *search_filter,
             SessionMember.user_id == user_id,
             Session.deleted_at.is_(None),
         )
@@ -97,12 +117,15 @@ async def get_sessions_list_by_room_id(
     offset: int,
     db_session: AsyncSession,
     status: Literal["all", "waiting", "active", "completed"] = "all",
+    q: str | None = None,
 ) -> list[Session]:
     status_filter = await _sessions_status_filter(status=status)
+    search_filter = await _sessions_search_filter(q=q)
     stmt = (
         select(Session)
         .where(
             *status_filter,
+            *search_filter,
             Session.room_id == room_id,
             Session.deleted_at.is_(None),
         )
@@ -121,13 +144,16 @@ async def get_sessions_list_by_user_id(
     offset: int,
     db_session: AsyncSession,
     status: Literal["all", "waiting", "active", "completed"] = "all",
+    q: str | None = None,
 ) -> list[Session]:
     status_filter = await _sessions_status_filter(status=status)
+    search_filter = await _sessions_search_filter(q=q)
     stmt = (
         select(Session)
         .join(Session.members)
         .where(
             *status_filter,
+            *search_filter,
             SessionMember.user_id == user_id,
             Session.deleted_at.is_(None),
         )

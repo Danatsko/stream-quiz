@@ -1,10 +1,24 @@
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import insert, select, update, func
+from sqlalchemy import insert, select, update, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.rooms.models import Room
+
+
+async def _rooms_search_filter(q: str | None = None) -> list[Any]:
+    conditions = []
+
+    if q is not None:
+        conditions.append(
+            or_(
+                Room.search_vector.ilike(f"%{q}%"),
+                Room.search_vector.bool_op("%>")(q),
+            )
+        )
+
+    return conditions
 
 
 async def create_room(
@@ -30,11 +44,14 @@ async def create_room(
 async def get_rooms_total_count(
     user_id: int,
     db_session: AsyncSession,
+    q: str | None = None,
 ) -> int:
+    search_filter = await _rooms_search_filter(q=q)
     stmt = (
         select(func.count())
         .select_from(Room)
         .where(
+            *search_filter,
             Room.creator_id == user_id,
             Room.deleted_at.is_(None),
         )
@@ -49,10 +66,13 @@ async def get_rooms_list(
     limit: int,
     offset: int,
     db_session: AsyncSession,
+    q: str | None = None,
 ) -> list[Room]:
+    search_filter = await _rooms_search_filter(q=q)
     stmt = (
         select(Room)
         .where(
+            *search_filter,
             Room.creator_id == user_id,
             Room.deleted_at.is_(None),
         )

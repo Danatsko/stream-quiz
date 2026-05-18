@@ -12,22 +12,36 @@ async def _quizzes_ownership_filter(
     user_id: int,
     ownership: Literal["all", "owned", "not_owned"],
 ) -> list[Any]:
-    condition = []
+    conditions = []
 
     if ownership == "all":
-        condition.append(
+        conditions.append(
             or_(
                 Quiz.is_public.is_(True),
                 Quiz.creator_id == user_id,
             )
         )
     elif ownership == "owned":
-        condition.append(Quiz.creator_id == user_id)
+        conditions.append(Quiz.creator_id == user_id)
     elif ownership == "not_owned":
-        condition.append(Quiz.creator_id != user_id)
-        condition.append(Quiz.is_public.is_(True))
+        conditions.append(Quiz.creator_id != user_id)
+        conditions.append(Quiz.is_public.is_(True))
 
-    return condition
+    return conditions
+
+
+async def _quizzes_search_filter(q: str | None = None) -> list[Any]:
+    conditions = []
+
+    if q is not None:
+        conditions.append(
+            or_(
+                Quiz.search_vector.ilike(f"%{q}%"),
+                Quiz.search_vector.bool_op("%>")(q),
+            )
+        )
+
+    return conditions
 
 
 async def create_quiz(
@@ -54,16 +68,19 @@ async def get_available_quizzes_total_count(
     user_id: int,
     db_session: AsyncSession,
     ownership: Literal["all", "owned", "not_owned"] = "all",
+    q: str | None = None,
 ) -> int:
     ownership_filter = await _quizzes_ownership_filter(
         user_id=user_id,
         ownership=ownership,
     )
+    search_filter = await _quizzes_search_filter(q=q)
     stmt = (
         select(func.count())
         .select_from(Quiz)
         .where(
             *ownership_filter,
+            *search_filter,
             Quiz.deleted_at.is_(None),
         )
     )
@@ -78,11 +95,13 @@ async def get_available_quizzes_list(
     offset: int,
     db_session: AsyncSession,
     ownership: Literal["all", "owned", "not_owned"] = "all",
+    q: str | None = None,
 ) -> list[tuple[Quiz, int]]:
     ownership_filter = await _quizzes_ownership_filter(
         user_id=user_id,
         ownership=ownership,
     )
+    search_filter = await _quizzes_search_filter(q=q)
     stmt = (
         select(
             Quiz,
@@ -91,6 +110,7 @@ async def get_available_quizzes_list(
         .outerjoin(QuizQuestion, QuizQuestion.quiz_id == Quiz.id)
         .where(
             *ownership_filter,
+            *search_filter,
             Quiz.deleted_at.is_(None),
         )
         .group_by(Quiz.id)

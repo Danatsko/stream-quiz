@@ -76,6 +76,7 @@ async def get_rooms(
     db_session: Annotated[AsyncSession, Depends(get_db_session)],
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 10,
+    q: Annotated[str | None, Query(max_length=100)] = None,
 ) -> GetRoomsResponse:
     user_uuid = auth_context["user_uuid"]
     result = await service_get_rooms(
@@ -83,6 +84,7 @@ async def get_rooms(
         size=size,
         user_uuid=user_uuid,
         db_session=db_session,
+        q=q,
     )
 
     return GetRoomsResponse(
@@ -208,6 +210,7 @@ async def get_sessions(
     status: Annotated[
         Literal["all", "waiting", "active", "completed"], Query()
     ] = "all",
+    q: Annotated[str | None, Query(max_length=100)] = None,
 ) -> GetSessionsResponse:
     user_uuid = auth_context["user_uuid"]
     result = await service_get_sessions(
@@ -217,6 +220,7 @@ async def get_sessions(
         user_uuid=user_uuid,
         db_session=db_session,
         status=status,
+        q=q,
     )
 
     return GetSessionsResponse(

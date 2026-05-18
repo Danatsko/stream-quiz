@@ -106,6 +106,7 @@ async def get_me_sessions(
     db_session: Annotated[AsyncSession, Depends(get_db_session)],
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 10,
+    q: Annotated[str | None, Query(max_length=100)] = None,
 ) -> GetMeSessionsResponse:
     user_uuid = auth_context["user_uuid"]
     result = await service_get_me_sessions(
@@ -113,6 +114,7 @@ async def get_me_sessions(
         size=size,
         user_uuid=user_uuid,
         db_session=db_session,
+        q=q,
     )
 
     return GetMeSessionsResponse(

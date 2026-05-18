@@ -296,12 +296,14 @@ async def get_sessions(
     room_uuid: UUID,
     db_session: AsyncSession,
     status: Literal["all", "waiting", "active", "completed"] = "all",
+    q: str | None = None,
 ) -> dict[str, Any]:
     offset = (page - 1) * size
     total_sessions_db = await get_sessions_total_count_by_room_id(
         room_id=room_id,
         db_session=db_session,
         status=status,
+        q=q,
     )
 
     if total_sessions_db == 0:
@@ -321,6 +323,7 @@ async def get_sessions(
         offset=offset,
         db_session=db_session,
         status=status,
+        q=q,
     )
     quizzes_ids = {session_db.quiz_id for session_db in sessions_db}
     quizzes_mapping = await get_available_quiz_uuids_by_ids(
@@ -365,12 +368,14 @@ async def get_user_sessions(
     user_id: int,
     db_session: AsyncSession,
     status: Literal["all", "waiting", "active", "completed"] = "all",
+    q: str | None = None,
 ) -> dict[str, Any]:
     offset = (page - 1) * size
     total_sessions_db = await get_sessions_total_count_by_user_id(
         user_id=user_id,
         db_session=db_session,
         status=status,
+        q=q,
     )
 
     if total_sessions_db == 0:
@@ -390,6 +395,7 @@ async def get_user_sessions(
         offset=offset,
         db_session=db_session,
         status=status,
+        q=q,
     )
     quizzes_ids = {session_db.quiz_id for session_db in sessions_db}
     quizzes_mapping = await get_available_quiz_uuids_by_ids(
