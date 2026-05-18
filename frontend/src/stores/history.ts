@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { AxiosError } from 'axios'
 import type { DetailedSession, SummarySession } from '@/types/history.ts'
 import { historyAPI } from '@/api/history.ts'
 
@@ -11,6 +10,7 @@ export const useHistoryStore = defineStore('history', () => {
   const page = ref<number | null>(null)
   const size = 10
   const totalPages = ref<number | null>(null)
+  const searchQuery = ref<string>('')
   const isLoading = ref<boolean>(false)
 
   const clearSessions = (): void => {
@@ -24,6 +24,17 @@ export const useHistoryStore = defineStore('history', () => {
     session.value = null
   }
 
+  const setSearchQuery = async (query: string): Promise<void> => {
+    if (searchQuery.value === query) {
+      return
+    }
+
+    searchQuery.value = query
+
+    clearSessions()
+    await getSessions()
+  }
+
   const getSessions = async (): Promise<void> => {
     if (page.value !== null && totalPages.value !== null && page.value >= totalPages.value) {
       return
@@ -33,7 +44,7 @@ export const useHistoryStore = defineStore('history', () => {
 
     try {
       const nextPage = page.value === null ? 1 : page.value + 1
-      const response = await historyAPI.getMeSessions(nextPage, size)
+      const response = await historyAPI.getMeSessions(nextPage, size, searchQuery.value)
       sessions.value.push(...response.sessions)
       totalSessions.value = response.total_sessions
       page.value = response.page
@@ -64,9 +75,11 @@ export const useHistoryStore = defineStore('history', () => {
     page,
     size,
     totalPages,
+    searchQuery,
     isLoading,
     clearSessions,
     clearSession,
+    setSearchQuery,
     getSessions,
     getSession,
   }

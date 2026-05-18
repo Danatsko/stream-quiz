@@ -7,7 +7,6 @@ import type {
   SummaryQuiz,
   UpdateQuizPayload,
 } from '@/types/quizzes'
-import { AxiosError } from 'axios'
 import { quizzesAPI } from '@/api/quizzes'
 
 export const useQuizzesStore = defineStore('quizzes', () => {
@@ -18,6 +17,7 @@ export const useQuizzesStore = defineStore('quizzes', () => {
   const size = 10
   const totalPages = ref<number | null>(null)
   const ownershipFilter = ref<string>('all')
+  const searchQuery = ref<string>('')
   const isLoading = ref<boolean>(false)
 
   const clearQuizzes = (): void => {
@@ -37,6 +37,17 @@ export const useQuizzesStore = defineStore('quizzes', () => {
     }
 
     ownershipFilter.value = filter
+
+    clearQuizzes()
+    await getQuizzes()
+  }
+
+  const setSearchQuery = async (query: string): Promise<void> => {
+    if (searchQuery.value === query) {
+      return
+    }
+
+    searchQuery.value = query
 
     clearQuizzes()
     await getQuizzes()
@@ -65,7 +76,12 @@ export const useQuizzesStore = defineStore('quizzes', () => {
 
     try {
       const nextPage = page.value === null ? 1 : page.value + 1
-      const response = await quizzesAPI.getQuizzes(nextPage, size, ownershipFilter.value)
+      const response = await quizzesAPI.getQuizzes(
+        nextPage,
+        size,
+        ownershipFilter.value,
+        searchQuery.value,
+      )
       quizzes.value.push(...response.quizzes)
       totalQuizzes.value = response.total_quizzes
       page.value = response.page
@@ -139,10 +155,12 @@ export const useQuizzesStore = defineStore('quizzes', () => {
     size,
     totalPages,
     ownershipFilter,
+    searchQuery,
     isLoading,
     clearQuizzes,
     clearQuiz,
     setOwnershipFilter,
+    setSearchQuery,
     createQuiz,
     getQuizzes,
     getQuiz,

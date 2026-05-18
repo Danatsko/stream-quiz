@@ -9,6 +9,7 @@ import AppListCard from '@/components/AppListCard.vue'
 import useHistoryStore from '@/stores/history'
 import { formatDuration } from '@/utils/formatters'
 import AppBadge from '@/components/AppBadge.vue'
+import AppSearchInput from '@/components/AppSearchInput.vue'
 
 const sessionStatusLabels: Record<string, string> = {
   completed: 'Completed',
@@ -42,11 +43,19 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   historyStore.clearSessions()
 })
+
+const handleSearch = async (query: string): Promise<void> => {
+  await historyStore.setSearchQuery(query)
+}
 </script>
 
 <template>
   <div class="layout">
     <main class="main">
+      <div class="main-nav">
+        <AppSearchInput :style="{ padding: '0.25rem' }" @search="handleSearch" />
+      </div>
+
       <AppAsyncList
         :items="historyStore.sessions"
         :is-loading="historyStore.isLoading"
@@ -125,6 +134,16 @@ onBeforeUnmount(() => {
   min-height: 0;
   padding-right: 1rem;
   padding-top: 1.25rem;
+}
+.main-nav {
+  padding-bottom: 1rem;
+  padding-right: 1rem;
+  padding-left: 0.25rem;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 1rem;
 }
 
 .info-top {

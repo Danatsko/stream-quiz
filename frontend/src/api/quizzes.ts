@@ -19,12 +19,14 @@ export const quizzesAPI = {
     page: number,
     size: number,
     ownership: string = 'all',
+    q: string = '',
   ): Promise<GetQuizzesResponse> {
     const response = await api.get<GetQuizzesResponse>('/quizzes', {
       params: {
         page: page,
         size: size,
         ownership: ownership,
+        q: q || undefined,
       },
     })
 

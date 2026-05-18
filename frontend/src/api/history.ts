@@ -2,11 +2,12 @@ import api from '@/services/api'
 import type { GetMeSessionResponse, GetMeSessionsResponse } from '@/types/history'
 
 export const historyAPI = {
-  async getMeSessions(page: number, size: number): Promise<GetMeSessionsResponse> {
+  async getMeSessions(page: number, size: number, q: string = ''): Promise<GetMeSessionsResponse> {
     const response = await api.get<GetMeSessionsResponse>('users/me/sessions', {
       params: {
         page: page,
         size: size,
+        q: q || undefined,
       },
     })
 

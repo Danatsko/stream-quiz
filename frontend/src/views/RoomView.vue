@@ -13,6 +13,8 @@ import { formatDateTime, formatDuration } from '@/utils/formatters'
 import AppDurationInput from '@/components/AppDurationInput.vue'
 import AppInput from '@/components/AppInput.vue'
 import AppTextarea from '@/components/AppTextarea.vue'
+import rooms from '@/stores/rooms'
+import AppSearchInput from '@/components/AppSearchInput.vue'
 
 interface CreateSessionFormState {
   title: string
@@ -252,6 +254,10 @@ const confirmDeleteSession = async (): Promise<void> => {
     closeDeleteSessionDialog()
   } catch (error) {}
 }
+
+const handleSearch = async (query: string): Promise<void> => {
+  await roomsStore.setSessionSearchQuery(roomUuid.value, query)
+}
 </script>
 
 <template>
@@ -322,7 +328,7 @@ const confirmDeleteSession = async (): Promise<void> => {
           </template>
         </AppListCard>
 
-        <div class="main-nav">
+        <div class="main-nav" :style="{ 'justify-content': 'flex-end' }">
           <AppButton
             @click="openCreateSessionDialog"
             title="Create session"
@@ -331,6 +337,8 @@ const confirmDeleteSession = async (): Promise<void> => {
           >
         </div>
         <div class="main-nav">
+          <AppSearchInput :style="{ padding: '0.25rem' }" @search="handleSearch" />
+
           <div class="main-nav-tab">
             <AppButton
               v-for="tab in tabs"
@@ -732,10 +740,12 @@ const confirmDeleteSession = async (): Promise<void> => {
 
 .main-nav {
   padding-right: 1rem;
+  padding-left: 0.75rem;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
+  gap: 1rem;
 }
 .main-nav-tab {
   display: flex;

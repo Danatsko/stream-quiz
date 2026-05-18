@@ -28,6 +28,8 @@ export const useRoomsStore = defineStore('rooms', () => {
   const sessionsSize = 10
   const sessionsTotalPages = ref<number | null>(null)
   const sessionStatusFilter = ref<string>('all')
+  const roomSearchQuery = ref<string>('')
+  const sessionSearchQuery = ref<string>('')
   const hostWs = ref<WebSocketService | null>(null)
   const hostEndTimeTs = ref<number | null>(null)
   const isLoading = ref<boolean>(false)
@@ -65,6 +67,28 @@ export const useRoomsStore = defineStore('rooms', () => {
     await getSessions(roomUuid)
   }
 
+  const setRoomSearchQuery = async (query: string): Promise<void> => {
+    if (roomSearchQuery.value === query) {
+      return
+    }
+
+    roomSearchQuery.value = query
+
+    clearRooms()
+    await getRooms()
+  }
+
+  const setSessionSearchQuery = async (roomUuid: string, query: string): Promise<void> => {
+    if (sessionSearchQuery.value === query) {
+      return
+    }
+
+    sessionSearchQuery.value = query
+
+    clearSessions()
+    await getSessions(roomUuid)
+  }
+
   const createRoom = async (payload: CreateRoomPayload): Promise<string> => {
     isLoading.value = true
 
@@ -92,7 +116,7 @@ export const useRoomsStore = defineStore('rooms', () => {
 
     try {
       const nextPage = roomsPage.value === null ? 1 : roomsPage.value + 1
-      const response = await roomsAPI.getRooms(nextPage, roomsSize)
+      const response = await roomsAPI.getRooms(nextPage, roomsSize, roomSearchQuery.value)
       rooms.value.push(...response.rooms)
       totalRooms.value = response.total_rooms
       roomsPage.value = response.page
@@ -181,6 +205,7 @@ export const useRoomsStore = defineStore('rooms', () => {
         nextPage,
         sessionsSize,
         sessionStatusFilter.value,
+        sessionSearchQuery.value,
       )
       sessions.value.push(...response.sessions)
       totalSessions.value = response.total_sessions
@@ -398,6 +423,8 @@ export const useRoomsStore = defineStore('rooms', () => {
     sessionsSize,
     sessionsTotalPages,
     sessionStatusFilter,
+    roomSearchQuery,
+    sessionSearchQuery,
     hostEndTimeTs,
     isLoading,
     clearRooms,
@@ -405,6 +432,8 @@ export const useRoomsStore = defineStore('rooms', () => {
     clearSessions,
     clearSession,
     setSessionStatusFilter,
+    setRoomSearchQuery,
+    setSessionSearchQuery,
     createRoom,
     getRooms,
     getRoom,

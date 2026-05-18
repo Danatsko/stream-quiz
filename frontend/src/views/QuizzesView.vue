@@ -12,6 +12,7 @@ import AppBadge from '@/components/AppBadge.vue'
 import { formatDateTime } from '@/utils/formatters'
 import AppInput from '@/components/AppInput.vue'
 import AppTextarea from '@/components/AppTextarea.vue'
+import AppSearchInput from '@/components/AppSearchInput.vue'
 
 interface CreateQuizFormState {
   title: string
@@ -152,6 +153,10 @@ const confirmDeleteQuiz = async (): Promise<void> => {
     closeDeleteQuizDialog()
   } catch (error) {}
 }
+
+const handleSearch = async (query: string): Promise<void> => {
+  await quizzesStore.setSearchQuery(query)
+}
 </script>
 
 <template>
@@ -166,6 +171,8 @@ const confirmDeleteQuiz = async (): Promise<void> => {
 
     <main class="main">
       <div class="main-nav">
+        <AppSearchInput :style="{ padding: '0.25rem' }" @search="handleSearch" />
+
         <div class="main-nav-tab">
           <AppButton
             v-for="tab in tabs"
@@ -373,14 +380,15 @@ const confirmDeleteQuiz = async (): Promise<void> => {
 .main-nav {
   padding-bottom: 1rem;
   padding-right: 1rem;
+  padding-left: 0.25rem;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
+  gap: 1rem;
 }
 .main-nav-tab {
   display: flex;
-  padding: 0.25rem;
   border-radius: 9px;
   border: 1px solid var(--color-border);
 }

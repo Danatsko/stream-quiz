@@ -11,6 +11,7 @@ import AppListCard from '@/components/AppListCard.vue'
 import { formatDateTime } from '@/utils/formatters'
 import AppInput from '@/components/AppInput.vue'
 import AppTextarea from '@/components/AppTextarea.vue'
+import AppSearchInput from '@/components/AppSearchInput.vue'
 
 interface CreateRoomFormState {
   title: string
@@ -145,6 +146,10 @@ const confirmDeleteRoom = async (): Promise<void> => {
     closeDeleteRoomDialog()
   } catch (error) {}
 }
+
+const handleSearch = async (query: string): Promise<void> => {
+  await roomsStore.setRoomSearchQuery(query)
+}
 </script>
 
 <template>
@@ -158,6 +163,10 @@ const confirmDeleteRoom = async (): Promise<void> => {
     </header>
 
     <main class="main">
+      <div class="main-nav">
+        <AppSearchInput :style="{ padding: '0.25rem' }" @search="handleSearch" />
+      </div>
+
       <AppAsyncList
         :items="roomsStore.rooms"
         :is-loading="roomsStore.isLoading"
@@ -338,6 +347,16 @@ const confirmDeleteRoom = async (): Promise<void> => {
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
+}
+.main-nav {
+  padding-bottom: 1rem;
+  padding-right: 1rem;
+  padding-left: 0.25rem;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 1rem;
 }
 
 .info-top {

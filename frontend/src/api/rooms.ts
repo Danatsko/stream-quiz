@@ -19,11 +19,12 @@ export const roomsAPI = {
     return response.data
   },
 
-  async getRooms(page: number, size: number): Promise<GetRoomsResponse> {
+  async getRooms(page: number, size: number, q: string = ''): Promise<GetRoomsResponse> {
     const response = await api.get<GetRoomsResponse>('/rooms', {
       params: {
         page: page,
         size: size,
+        q: q || undefined,
       },
     })
 
@@ -58,12 +59,14 @@ export const roomsAPI = {
     page: number,
     size: number,
     status: string = 'all',
+    q: string = '',
   ): Promise<GetSessionsResponse> {
     const response = await api.get<GetSessionsResponse>(`/rooms/${roomUuid}/sessions`, {
       params: {
         page: page,
         size: size,
         status: status,
+        q: q || undefined,
       },
     })
 
