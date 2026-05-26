@@ -1,4 +1,4 @@
-const WS_URL: string = window.APP_CONFIG.WS_URL
+const WS_PATH: string = window.APP_CONFIG.WS_PATH
 
 export class WebSocketService {
   private ws: WebSocket | null = null
@@ -14,7 +14,13 @@ export class WebSocketService {
   public onError: ((message: string) => void) | null = null
 
   constructor(sessionUuid: string, role: 'take' | 'host' = 'take') {
-    const baseUrl = WS_URL
+    let baseUrl = WS_PATH
+
+    if (baseUrl.startsWith('/')) {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      baseUrl = `${protocol}//${window.location.host}${baseUrl}`
+    }
+
     this.url = `${baseUrl}/sessions/${sessionUuid}/${role}`
   }
 

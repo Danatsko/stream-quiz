@@ -23,7 +23,7 @@ COPY --link . .
 
 EXPOSE 5173
 
-CMD ["sh", "-c", "echo \"window.APP_CONFIG = { API_URL: '${API_URL}', WS_URL: '${WS_URL}' };\" > public/config.js && npm run dev -- --host 0.0.0.0"]
+CMD ["sh", "-c", "echo \"window.APP_CONFIG = { API_PATH: '${API_PATH}', WS_PATH: '${WS_PATH}' };\" > public/config.js && npm run dev -- --host 0.0.0.0"]
 
 FROM base AS builder
 
@@ -43,7 +43,7 @@ USER root
 
 COPY --link nginx/security_headers.conf /etc/nginx/security_headers.conf
 
-COPY --link nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY --link nginx/default.conf.template /etc/nginx/templates/default.conf.template
 
 RUN rm /docker-entrypoint.d/20-envsubst-on-templates.sh
 

@@ -2,7 +2,7 @@
 
 interface Window {
   APP_CONFIG: {
-    API_URL: string
-    WS_URL: string
+    API_PATH: string
+    WS_PATH: string
   }
 }

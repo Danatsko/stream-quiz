@@ -2,10 +2,10 @@ import axios from 'axios'
 import router from '@/router'
 import useNotificationsStore from '@/stores/notifications'
 
-const API_URL: string = window.APP_CONFIG.API_URL
+const API_PATH: string = window.APP_CONFIG.API_PATH
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: API_PATH,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
