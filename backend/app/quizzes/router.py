@@ -28,7 +28,7 @@ quizzes_router = APIRouter()
 
 
 @quizzes_router.post(
-    path="/",
+    path="",
     status_code=status.HTTP_201_CREATED,
     response_model=CreateQuizResponse,
 )
@@ -51,7 +51,7 @@ async def create_quiz(
 
 
 @quizzes_router.get(
-    path="/",
+    path="",
     status_code=status.HTTP_200_OK,
     response_model=GetQuizzesResponse,
 )

@@ -42,7 +42,7 @@ rooms_router = APIRouter()
 
 
 @rooms_router.post(
-    path="/",
+    path="",
     status_code=status.HTTP_201_CREATED,
     response_model=CreateRoomResponse,
 )
@@ -65,7 +65,7 @@ async def create_room(
 
 
 @rooms_router.get(
-    path="/",
+    path="",
     status_code=status.HTTP_200_OK,
     response_model=GetRoomsResponse,
 )
