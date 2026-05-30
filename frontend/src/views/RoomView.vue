@@ -23,7 +23,7 @@ interface CreateSessionFormState {
   quiz_uuid: string
 }
 
-const MIN_TITLE_LENGTH = 3
+const MIN_TITLE_LENGTH = 1
 const MAX_TITLE_LENGTH = 100
 const MAX_DESCRIPTION_LENGTH = 500
 const MIN_TIME_SECONDS = 1

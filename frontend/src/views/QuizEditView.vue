@@ -36,13 +36,13 @@ interface EditQuiz {
   questions: Array<EditQuestion>
 }
 
-const MIN_QUIZ_TITLE_LENGTH = 3
+const MIN_QUIZ_TITLE_LENGTH = 1
 const MAX_QUIZ_TITLE_LENGTH = 100
 const MAX_QUIZ_DESCRIPTION_LENGTH = 500
 const MIN_QUESTION_TEXT_LENGTH = 3
 const MAX_QUESTION_TEXT_LENGTH = 500
 const MIN_QUESTION_OPTIONS = 1
-const MIN_OPTION_TEXT_LENGTH = 3
+const MIN_OPTION_TEXT_LENGTH = 1
 const MAX_OPTION_TEXT_LENGTH = 500
 
 const route = useRoute()
