@@ -23,7 +23,7 @@ class SessionQuestionOptionBase(Base):
     text: Annotated[
         str,
         StringConstraints(
-            min_length=3,
+            min_length=1,
             max_length=500,
         ),
     ]
@@ -57,7 +57,7 @@ class SessionBase(Base):
     title: Annotated[
         str,
         StringConstraints(
-            min_length=3,
+            min_length=1,
             max_length=100,
         ),
     ]

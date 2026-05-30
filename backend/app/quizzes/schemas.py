@@ -11,7 +11,7 @@ class QuizQuestionOptionBase(Base):
     text: Annotated[
         str,
         StringConstraints(
-            min_length=3,
+            min_length=1,
             max_length=500,
         ),
     ]
@@ -32,7 +32,7 @@ class QuizBase(Base):
     title: Annotated[
         str,
         StringConstraints(
-            min_length=3,
+            min_length=1,
             max_length=100,
         ),
     ]
@@ -86,7 +86,7 @@ class UpdateQuizRequest(Base):
         Annotated[
             str,
             StringConstraints(
-                min_length=3,
+                min_length=1,
                 max_length=100,
             ),
         ]
