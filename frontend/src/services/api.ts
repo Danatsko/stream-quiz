@@ -12,6 +12,21 @@ const api = axios.create({
   },
 })
 
+let isRefreshing = false
+let failedQueue: Array<{ resolve: (value?: unknown) => void; reject: (reason?: any) => void }> = []
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token)
+    }
+  })
+
+  failedQueue = []
+}
+
 api.interceptors.response.use(
   (response) => {
     return response
@@ -32,13 +47,29 @@ api.interceptors.response.use(
       !originalRequest._retry &&
       !originalRequest.url?.includes('/auth/login')
     ) {
+      if (isRefreshing) {
+        return new Promise(function (resolve, reject) {
+          failedQueue.push({ resolve, reject })
+        })
+          .then(() => {
+            return api(originalRequest)
+          })
+          .catch((err) => {
+            return Promise.reject(err)
+          })
+      }
+
       originalRequest._retry = true
+      isRefreshing = true
 
       try {
         await api.post('/auth/refresh')
+        processQueue(null)
 
         return api(originalRequest)
       } catch (refreshError) {
+        processQueue(refreshError)
+
         const { useAuthStore } = await import('@/stores/auth')
         const authStore = useAuthStore()
 
@@ -48,7 +79,9 @@ api.interceptors.response.use(
         }
 
         return Promise.reject(refreshError)
-      }
+      } finally {
+      isRefreshing = false;
+    }
     }
 
     let errorMessage = 'An unknown error occurred'
