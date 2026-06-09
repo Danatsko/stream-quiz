@@ -1,0 +1,62 @@
+# syntax=docker/dockerfile:1
+
+FROM node:20-bookworm-slim AS base
+
+FROM base AS deps
+
+WORKDIR /app
+
+RUN --mount=type=cache,target=/root/.npm \
+    --mount=type=bind,source=package.json,target=package.json \
+    --mount=type=bind,source=package-lock.json,target=package-lock.json \
+    npm ci
+
+FROM base AS development
+
+ENV NODE_ENV=development
+
+WORKDIR /app
+
+COPY --link --from=deps /app/node_modules ./node_modules
+
+COPY --link . .
+
+EXPOSE 5173
+
+CMD ["sh", "-c", "echo \"window.APP_CONFIG = { API_PATH: '${API_PATH}', WS_PATH: '${WS_PATH}' };\" > public/config.js && npm run dev -- --host 0.0.0.0"]
+
+FROM base AS builder
+
+ENV NODE_ENV=production
+
+WORKDIR /app
+
+COPY --link --from=deps /app/node_modules ./node_modules
+
+COPY --link . .
+
+RUN npm run build
+
+FROM nginxinc/nginx-unprivileged:alpine AS production
+
+USER root
+
+COPY --link nginx/security_headers.conf /etc/nginx/security_headers.conf
+
+COPY --link nginx/default.conf.template /etc/nginx/templates/default.conf.template
+
+RUN rm /docker-entrypoint.d/20-envsubst-on-templates.sh
+
+COPY --link entrypoint.sh /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh
+
+COPY --link --from=builder --chown=101:101 /app/dist /usr/share/nginx/html
+
+USER nginx
+
+EXPOSE 8080
+
+ENTRYPOINT ["/entrypoint.sh"]
+
+CMD ["nginx", "-g", "daemon off;"]

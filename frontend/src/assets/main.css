@@ -1,0 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;400;500;600;700&display=swap');
+
+:root {
+  --color-background: #000000;
+  --color-background-secondary: #121212;
+  --color-text: #ffffff;
+  --color-text-secondary: #9ca3af;
+  --color-border: #2a2a2a;
+  --color-primary: #9823f5;
+  --color-secondary: #c45037;
+  --linear-gradient-primary: -webkit-linear-gradient(
+    50deg,
+    var(--color-primary),
+    var(--color-secondary)
+  );
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 10px;
+}
+
+#nprogress .bar {
+  background: var(--linear-gradient-primary) !important;
+  height: 3px !important;
+}
+
+#nprogress .peg {
+  box-shadow:
+    0 0 1px var(--color-primary),
+    0 0 3px var(--color-secondary) !important;
+  opacity: 1 !important;
+}
+
+#nprogress .spinner-icon {
+  border-top-color: var(--color-primary) !important;
+  border-left-color: var(--color-primary) !important;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family:
+    'Inter',
+    sans-serif,
+    -apple-system,
+    BlinkMacSystemFont;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  cursor: default;
+}

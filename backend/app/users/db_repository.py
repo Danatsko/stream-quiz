@@ -1,0 +1,172 @@
+from typing import Any
+from uuid import UUID
+
+from sqlalchemy import select, insert, update, func
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.users.models import User
+
+
+async def create_user(
+    username: str,
+    email: str,
+    password: str,
+    db_session: AsyncSession,
+) -> User:
+    stmt = (
+        insert(User)
+        .values(
+            username=username,
+            email=email,
+            password=password,
+        )
+        .returning(User)
+    )
+    result = await db_session.scalar(stmt)
+
+    return result
+
+
+async def get_user_by_email(
+    email: str,
+    db_session: AsyncSession,
+) -> User | None:
+    stmt = select(User).where(
+        User.email == email,
+        User.deleted_at.is_(None),
+    )
+    result = await db_session.scalar(stmt)
+
+    return result
+
+
+async def get_user_by_id(
+    id: int,
+    db_session: AsyncSession,
+) -> User | None:
+    stmt = select(User).where(
+        User.id == id,
+        User.deleted_at.is_(None),
+    )
+    result = await db_session.scalar(stmt)
+
+    return result
+
+
+async def get_user_by_uuid(
+    uuid: UUID,
+    db_session: AsyncSession,
+) -> User | None:
+    stmt = select(User).where(
+        User.uuid == uuid,
+        User.deleted_at.is_(None),
+    )
+    result = await db_session.scalar(stmt)
+
+    return result
+
+
+async def get_user_uuids_by_ids(
+    ids: set[int],
+    db_session: AsyncSession,
+) -> dict[int, UUID]:
+    if not ids:
+        return {}
+
+    stmt = select(User.id, User.uuid).where(
+        User.id.in_(ids),
+        User.deleted_at.is_(None),
+    )
+    result = await db_session.execute(stmt)
+    result = dict(result.all())
+
+    return result
+
+
+async def get_user_ids_by_uuids(
+    uuids: set[UUID],
+    db_session: AsyncSession,
+) -> dict[UUID, int]:
+    if not uuids:
+        return {}
+
+    stmt = select(User.uuid, User.id).where(
+        User.uuid.in_(uuids),
+        User.deleted_at.is_(None),
+    )
+    result = await db_session.execute(stmt)
+    result = dict(result.all())
+
+    return result
+
+
+async def get_users_by_ids(
+    ids: set[int],
+    db_session: AsyncSession,
+) -> dict[int, User]:
+    if not ids:
+        return {}
+
+    stmt = select(User.id, User).where(
+        User.id.in_(ids),
+        User.deleted_at.is_(None),
+    )
+    result = await db_session.execute(stmt)
+    result = dict(result.all())
+
+    return result
+
+
+async def update_user_by_uuid(
+    uuid: UUID,
+    update_user_data: dict[str, Any],
+    db_session: AsyncSession,
+) -> bool:
+    if not update_user_data:
+        return False
+
+    stmt = (
+        update(User)
+        .where(
+            User.uuid == uuid,
+            User.deleted_at.is_(None),
+        )
+        .values(**update_user_data)
+    )
+    result = await db_session.execute(stmt)
+
+    return result.rowcount == 1
+
+
+async def verify_user_by_uuid(
+    uuid: UUID,
+    db_session: AsyncSession,
+) -> bool:
+    stmt = (
+        update(User)
+        .where(
+            User.uuid == uuid,
+            User.deleted_at.is_(None),
+        )
+        .values(is_verified=True)
+    )
+    result = await db_session.execute(stmt)
+
+    return result.rowcount == 1
+
+
+async def soft_delete_user_by_uuid(
+    uuid: UUID,
+    db_session: AsyncSession,
+) -> bool:
+    stmt = (
+        update(User)
+        .where(
+            User.uuid == uuid,
+            User.deleted_at.is_(None),
+        )
+        .values(deleted_at=func.now())
+    )
+    result = await db_session.execute(stmt)
+
+    return result.rowcount == 1
